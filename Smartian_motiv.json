@@ -1,0 +1,332 @@
+{
+  "success": true,
+  "error": null,
+  "results": {
+    "printers": [
+      {
+        "elements": [],
+        "description": {
+          "payable": {},
+          "timestamp": {},
+          "block_number": {},
+          "msg_sender": {
+            "C": [
+              "constructor()",
+              "f(uint256)"
+            ]
+          },
+          "msg_gas": {},
+          "assert": {},
+          "constant_functions": {
+            "C": [
+              "echidna_bug()"
+            ]
+          },
+          "constants_used": {
+            "C": {
+              "g(uint256)": [
+                [
+                  {
+                    "value": "32",
+                    "type": "uint256"
+                  }
+                ],
+                [
+                  {
+                    "value": "1",
+                    "type": "uint256"
+                  }
+                ],
+                [
+                  {
+                    "value": "10",
+                    "type": "uint256"
+                  }
+                ],
+                [
+                  {
+                    "value": "0",
+                    "type": "uint256"
+                  }
+                ]
+              ],
+              "h(uint256)": [
+                [
+                  {
+                    "value": "True",
+                    "type": "bool"
+                  }
+                ],
+                [
+                  {
+                    "value": "0",
+                    "type": "uint256"
+                  }
+                ],
+                [
+                  {
+                    "value": "62",
+                    "type": "uint256"
+                  }
+                ]
+              ],
+              "echidna_bug()": [
+                [
+                  {
+                    "value": "False",
+                    "type": "bool"
+                  }
+                ]
+              ]
+            }
+          },
+          "constants_used_in_binary": {
+            "C": {
+              "g(uint256)": {
+                "==": [
+                  [
+                    {
+                      "value": "1",
+                      "type": "uint256"
+                    }
+                  ]
+                ],
+                "-": [
+                  [
+                    {
+                      "value": "10",
+                      "type": "uint256"
+                    }
+                  ]
+                ]
+              },
+              "h(uint256)": {
+                "==": [
+                  [
+                    {
+                      "value": "62",
+                      "type": "uint256"
+                    }
+                  ]
+                ]
+              }
+            }
+          },
+          "functions_relations": {
+            "C": {
+              "constructor()": {
+                "impacts": [
+                  "f(uint256)"
+                ],
+                "is_impacted_by": []
+              },
+              "f(uint256)": {
+                "impacts": [
+                  "g(uint256)"
+                ],
+                "is_impacted_by": [
+                  "constructor()"
+                ]
+              },
+              "g(uint256)": {
+                "impacts": [
+                  "h(uint256)"
+                ],
+                "is_impacted_by": [
+                  "f(uint256)"
+                ]
+              },
+              "h(uint256)": {
+                "impacts": [
+                  "echidna_bug()"
+                ],
+                "is_impacted_by": [
+                  "g(uint256)"
+                ]
+              },
+              "echidna_bug()": {
+                "impacts": [],
+                "is_impacted_by": [
+                  "h(uint256)"
+                ]
+              }
+            }
+          },
+          "constructors": {
+            "C": "constructor()"
+          },
+          "have_external_calls": {},
+          "call_a_parameter": {},
+          "use_balance": {},
+          "solc_versions": [
+            "0.8.16"
+          ],
+          "with_fallback": [],
+          "with_receive": []
+        },
+        "markdown": {
+          "payable": {},
+          "timestamp": {},
+          "block_number": {},
+          "msg_sender": {
+            "C": [
+              "constructor()",
+              "f(uint256)"
+            ]
+          },
+          "msg_gas": {},
+          "assert": {},
+          "constant_functions": {
+            "C": [
+              "echidna_bug()"
+            ]
+          },
+          "constants_used": {
+            "C": {
+              "g(uint256)": [
+                [
+                  {
+                    "value": "32",
+                    "type": "uint256"
+                  }
+                ],
+                [
+                  {
+                    "value": "1",
+                    "type": "uint256"
+                  }
+                ],
+                [
+                  {
+                    "value": "10",
+                    "type": "uint256"
+                  }
+                ],
+                [
+                  {
+                    "value": "0",
+                    "type": "uint256"
+                  }
+                ]
+              ],
+              "h(uint256)": [
+                [
+                  {
+                    "value": "True",
+                    "type": "bool"
+                  }
+                ],
+                [
+                  {
+                    "value": "0",
+                    "type": "uint256"
+                  }
+                ],
+                [
+                  {
+                    "value": "62",
+                    "type": "uint256"
+                  }
+                ]
+              ],
+              "echidna_bug()": [
+                [
+                  {
+                    "value": "False",
+                    "type": "bool"
+                  }
+                ]
+              ]
+            }
+          },
+          "constants_used_in_binary": {
+            "C": {
+              "g(uint256)": {
+                "==": [
+                  [
+                    {
+                      "value": "1",
+                      "type": "uint256"
+                    }
+                  ]
+                ],
+                "-": [
+                  [
+                    {
+                      "value": "10",
+                      "type": "uint256"
+                    }
+                  ]
+                ]
+              },
+              "h(uint256)": {
+                "==": [
+                  [
+                    {
+                      "value": "62",
+                      "type": "uint256"
+                    }
+                  ]
+                ]
+              }
+            }
+          },
+          "functions_relations": {
+            "C": {
+              "constructor()": {
+                "impacts": [
+                  "f(uint256)"
+                ],
+                "is_impacted_by": []
+              },
+              "f(uint256)": {
+                "impacts": [
+                  "g(uint256)"
+                ],
+                "is_impacted_by": [
+                  "constructor()"
+                ]
+              },
+              "g(uint256)": {
+                "impacts": [
+                  "h(uint256)"
+                ],
+                "is_impacted_by": [
+                  "f(uint256)"
+                ]
+              },
+              "h(uint256)": {
+                "impacts": [
+                  "echidna_bug()"
+                ],
+                "is_impacted_by": [
+                  "g(uint256)"
+                ]
+              },
+              "echidna_bug()": {
+                "impacts": [],
+                "is_impacted_by": [
+                  "h(uint256)"
+                ]
+              }
+            }
+          },
+          "constructors": {
+            "C": "constructor()"
+          },
+          "have_external_calls": {},
+          "call_a_parameter": {},
+          "use_balance": {},
+          "solc_versions": [
+            "0.8.16"
+          ],
+          "with_fallback": [],
+          "with_receive": []
+        },
+        "first_markdown_element": "",
+        "id": "28d0d472be5f05a7a51f62b26fdca0c948810a60c81f530f781b21d8602eb88e",
+        "printer": "echidna"
+      }
+    ]
+  }
+}
