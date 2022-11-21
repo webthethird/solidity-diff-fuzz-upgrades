@@ -7,7 +7,7 @@ import "../helpers.sol";
 import { ExposedBytesLib } from "../../expose/example/BytesLib.sol";
 
 // Using via interface due to incompatible solidity version.
-import { ExposedBytesUtil } from "../addresses.sol";
+import { ExposedBytesUtil_ADDR } from "../addresses.sol";
 import { BytesUtil } from "../../interface/example/BytesUtil.sol";
 
 contract Test {
