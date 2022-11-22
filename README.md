@@ -28,6 +28,7 @@ Before any fuzzing can be run, `build.sh` needs to be executed, which has the fo
 - curl
 - [etheno](https://github.com/crytic/etheno)
 - [foundry](https://book.getfoundry.sh/getting-started/installation.html)
+- [ethereum-sources-downloader](https://github.com/SergeKireev/ethereum-sources-downloader)
 
 After the buildscript was successfully executed, the implementation directory should be populated, there'll be a `echidna-init.json` file and a ganache instance will still be running in the background.
 
