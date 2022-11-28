@@ -2,8 +2,8 @@ pragma solidity ^0.5.16;
 
 contract Token {
     uint256 public totalSupply;
-    mapping (address => uint96) internal balances;
-    /*-----------------------------------snip-------------------------------------*/
+    mapping (address => uint256) internal balances;
+/*-----------------------------------snip-------------------------------------*/
     function balanceOf(address account) external view returns (uint) { return balances[account]; }
     function transfer(address dst, uint amount) external { _transfer(msg.sender, dst, amount); }
     function _transfer(address src, address dst, uint amount) internal {
@@ -46,10 +46,10 @@ contract SimpleComptroller {
     function updateCompSupplyAccrued(address cToken) internal {
         CompMarketState storage supplyState = compSupplyState[cToken];
         uint deltaBlocks = block.number - uint(supplyState.block);
-        uint compAccrued = deltaBlocks * compSpeeds[cToken];
-        uint ratio = compAccrued / Token(cToken).totalSupply();
+        uint accrued = deltaBlocks * compSpeeds[cToken];
+        uint ratio = accrued / Token(cToken).totalSupply();
         uint index = supplyState.compAccruedPerUnit + ratio;
-        compSupplyState[cToken] = CompMarketState({ index: index, block: block.number });
+        compSupplyState[cToken] = CompMarketState({ compAccruedPerUnit: index, block: block.number });
     }
 /*-----------------------------------snip-------------------------------------*/
     function claimComp(Token[] memory cTokens) public {
@@ -75,6 +75,6 @@ contract SimpleComptroller {
             // Initialize supply state compAccruedPerUnit with default value
             supplyState.compAccruedPerUnit = compInitialAccruedPerUnit;
         }
-         supplyState.block = block.number;
+        supplyState.block = uint32(block.number);
     }
 }
