@@ -5,8 +5,8 @@ contract Token {
     mapping (address => uint96) internal balances;
     /*-----------------------------------snip-------------------------------------*/
     function balanceOf(address account) external view returns (uint) { return balances[account]; }
-    function transfer(address dst, uint amount) external { transfer(msg.sender, dst, amount); }
-    function transfer(address src, address dst, uint amount) external {
+    function transfer(address dst, uint amount) external { _transfer(msg.sender, dst, amount); }
+    function _transfer(address src, address dst, uint amount) internal {
         if(balances[src] >= amount) {
             balances[src] -= amount;
             balances[dst] += amount;
@@ -27,8 +27,7 @@ contract SimpleComptroller {
     mapping(address => uint) public compSpeeds;
 /*-----------------------------------snip-------------------------------------*/
     function distributeSupplierComp(address cToken, address supplier) internal {
-        CompMarketState storage supplyState = compSupplyState[cToken];
-        uint supplyAccruedPerUnit = supplyState.compAccruedPerUnit;
+        uint supplyAccruedPerUnit = compSupplyState[cToken].compAccruedPerUnit;
         uint supplierAccruedPerUnit = compSupplierAccruedPerUnit[cToken][supplier];
 
         compSupplierAccruedPerUnit[cToken][supplier] = supplyAccruedPerUnit;
