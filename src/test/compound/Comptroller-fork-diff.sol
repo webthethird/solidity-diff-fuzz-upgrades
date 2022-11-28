@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "../../../lib/forge-std/src/Test.sol";
-import "../../expose/compound/Comptroller.sol";
+import { Comptroller, Comp, CToken } from "../../interface/compound/Comptroller.sol";
 
 /**
  * Differential fuzz testing contract to test the Compound comptroller contract
@@ -17,16 +17,21 @@ import "../../expose/compound/Comptroller.sol";
  */
 
 contract TestComptroller is Test {
-    ExposedComptroller unitroller;
-    uint256 immutable before_fork_id;
-    uint256 immutable after_fork_id;
-    Comp immutable comp;
+    Comptroller constant unitroller = Comptroller(0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B);
+    Comp constant comp = Comp(0xc00e94Cb662C3520282E6f5717214004A7f26888);
+    
+    // Change these to vary the mainnet block numbers at which to compare results
+    uint256 constant before_block = 13322796;
+    uint256 constant after_block = 13322799;
 
-    constructor(address _unitroller, string calldata _rpc, uint256 _before_block, uint256 _after_block) {
-        unitroller = ExposedComptroller(_unitroller);
-        comp = Comp(unitroller.getCompAddress());
-        before_fork_id = vm.createFork(_rpc, _before_block);
-        after_fork_id = vm.createFork(_rpc, _after_block);
+    uint256 before_fork_id;
+    uint256 after_fork_id;
+    string rpc;
+
+    function setUp() public {
+        rpc = vm.envString("RPC_URL");
+        before_fork_id = vm.createFork(rpc, before_block);
+        after_fork_id = vm.createFork(rpc, after_block);
     }
 
     /**
@@ -38,25 +43,41 @@ contract TestComptroller is Test {
      * Right now the address is what the fuzzer will mutate, but it would be better to have a
      * pre-defined list of known participant addresses to choose randomly from.
      */
-    function test_claimComp_diff_before_after(address holder) {
+    function test_claimComp_diff_before_after(address holder) public {
         vm.selectFork(before_fork_id);
 
         // Disregard test run if the given address is not a participant in any Compound markets
         CToken[] memory assetsIn = unitroller.getAssetsIn(holder);
-        assume(len(assetsIn) > 0);
+        vm.assume(assetsIn.length > 0);
 
         // Check the COMP balance of the holder before and after claiming from the old Comptroller
+        uint256 before_block = block.number;
         uint256 balance_before = comp.balanceOf(holder);
         unitroller.claimComp(holder);
         uint256 new_balance_before = comp.balanceOf(holder);
+        uint256 delta_before = new_balance_before - balance_before;
 
         // Switch to the fork from after the upgrade, then do the same
         vm.selectFork(after_fork_id);
+        uint256 after_block = block.number;
         uint256 balance_after = comp.balanceOf(holder);
         unitroller.claimComp(holder);
         uint256 new_balance_after = comp.balanceOf(holder);
+        uint256 delta_after = new_balance_after - balance_after;
 
         // Assert that the change in COMP balance is the same on both forks
-        assertEq(new_balance_before - balance_before, new_balance_after - balance_after);
+        // Flawed assertion: COMP distribution is time based, so balance delta should increase w/ block number
+        // assertEq(new_balance_before - balance_before, new_balance_after - balance_after);
+        
+        // Assert that the change in COMP balance is approximately equal on both forks (max delta of 5%)
+        assertApproxEqRel(delta_before, delta_after, 0.05e18, "COMP balance deltas vary by more than 5%");
     }
+
+    // function test_changed_impl() public {
+    //     vm.selectFork(before_fork_id);
+    //     address impl_before = unitroller.comptrollerImplementation();
+    //     vm.rollFork(after_block);
+    //     address impl_after = unitroller.comptrollerImplementation();
+    //     assertFalse(impl_before == impl_after);
+    // }
 }
