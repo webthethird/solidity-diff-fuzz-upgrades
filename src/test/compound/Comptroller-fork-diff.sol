@@ -47,8 +47,8 @@ contract TestComptroller is Test {
         vm.selectFork(before_fork_id);
 
         // Disregard test run if the given address is not a participant in any Compound markets
-        CToken[] memory assetsIn = unitroller.getAssetsIn(holder);
-        vm.assume(assetsIn.length > 0);
+        // CToken[] memory assetsIn = unitroller.getAssetsIn(holder);
+        // vm.assume(assetsIn.length > 0);
 
         // Check the COMP balance of the holder before and after claiming from the old Comptroller
         uint256 balance_before = comp.balanceOf(holder);
@@ -62,10 +62,6 @@ contract TestComptroller is Test {
         unitroller.claimComp(holder);
         uint256 new_balance_after = comp.balanceOf(holder);
         uint256 delta_after = new_balance_after - balance_after;
-
-        // Assert that the change in COMP balance is the same on both forks
-        // Flawed assertion: COMP distribution is time based, so balance delta should increase w/ block number
-        // assertEq(new_balance_before - balance_before, new_balance_after - balance_after);
         
         // Assert that the change in COMP balance is approximately equal on both forks (max delta of 5%)
         assertApproxEqRel(delta_before, delta_after, 0.05e18, "COMP balance deltas vary by more than 5%");
