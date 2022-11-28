@@ -20,7 +20,6 @@ contract SimpleComptroller {
         uint32 block;
     }
     Token constant COMP = Token(0xc00e94Cb662C3520282E6f5717214004A7f26888);
-    Token[] public allMarkets;
     uint224 public constant compInitialAccruedPerUnit = 1e36;
     mapping(address => CompMarketState) public compSupplyState;
     mapping(address => CompMarketState) public compBorrowState;
@@ -29,7 +28,7 @@ contract SimpleComptroller {
     mapping(address => uint) public compAccrued;
     mapping(address => uint) public compSpeeds;
 /*-----------------------------------snip-------------------------------------*/
-    function distributeSupplierComp(address cToken, address supplier) internal {
+    function distributeSupplierComp(address cToken, address supplier) internal {  // Matches distributeBorrowerComp()
         CompMarketState storage supplyState = compSupplyState[cToken];
         uint supplyAccruedPerUnit = supplyState.compAccruedPerUnit;
         uint supplierAccruedPerUnit = compSupplierAccruedPerUnit[cToken][supplier];
@@ -47,7 +46,7 @@ contract SimpleComptroller {
         compAccrued[supplier] = compAccrued[supplier] + supplierDelta;
     }
 /*-----------------------------------snip-------------------------------------*/
-    function updateCompSupplyAccrued(address cToken) internal {
+    function updateCompSupplyAccrued(address cToken) internal {  // Matches updateCompBorrowAccrued()
         CompMarketState storage supplyState = compSupplyState[cToken];
         uint deltaBlocks = block.number - uint(supplyState.block);
         uint compAccrued = deltaBlocks * compSpeeds[cToken];
