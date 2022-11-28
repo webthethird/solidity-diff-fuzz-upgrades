@@ -51,7 +51,6 @@ contract TestComptroller is Test {
         vm.assume(assetsIn.length > 0);
 
         // Check the COMP balance of the holder before and after claiming from the old Comptroller
-        uint256 before_block = block.number;
         uint256 balance_before = comp.balanceOf(holder);
         unitroller.claimComp(holder);
         uint256 new_balance_before = comp.balanceOf(holder);
@@ -59,7 +58,6 @@ contract TestComptroller is Test {
 
         // Switch to the fork from after the upgrade, then do the same
         vm.selectFork(after_fork_id);
-        uint256 after_block = block.number;
         uint256 balance_after = comp.balanceOf(holder);
         unitroller.claimComp(holder);
         uint256 new_balance_after = comp.balanceOf(holder);
