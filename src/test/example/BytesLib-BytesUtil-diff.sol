@@ -15,7 +15,7 @@ contract Test {
     BytesUtil immutable bytesUtil;
     constructor() {
         bytesLib = new ExposedBytesLib();
-        bytesUtil = BytesUtil(ExposedBytesUtil);
+        bytesUtil = BytesUtil(ExposedBytesUtil_ADDR);
     }
 
     function test_BytesLib_BytesUtil_diff_slice(bytes calldata input, uint256 start, uint256 length) external {
