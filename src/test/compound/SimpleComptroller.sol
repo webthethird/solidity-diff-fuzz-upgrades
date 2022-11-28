@@ -1,6 +1,7 @@
 pragma solidity ^0.5.16;
 
 contract Token {
+    uint256 public totalSupply;
     mapping (address => uint96) internal balances;
     /*-----------------------------------snip-------------------------------------*/
     function balanceOf(address account) external view returns (uint) { return balances[account]; }
@@ -26,7 +27,8 @@ contract SimpleComptroller {
     mapping(address => mapping(address => uint)) public compSupplierAccruedPerUnit;
     mapping(address => mapping(address => uint)) public compBorrowerAccruedPerUnit;
     mapping(address => uint) public compAccrued;
-    /*-----------------------------------snip-------------------------------------*/
+    mapping(address => uint) public compSpeeds;
+/*-----------------------------------snip-------------------------------------*/
     function distributeSupplierComp(address cToken, address supplier) internal {
         CompMarketState storage supplyState = compSupplyState[cToken];
         uint supplyAccruedPerUnit = supplyState.compAccruedPerUnit;
@@ -44,31 +46,39 @@ contract SimpleComptroller {
         uint supplierDelta = supplierTokens * deltaAccruedPerUnit;
         compAccrued[supplier] = compAccrued[supplier] + supplierDelta;
     }
-    /*-----------------------------------snip-------------------------------------*/
-    function claimComp(address[] memory holders, CToken[] memory cTokens) public {
+/*-----------------------------------snip-------------------------------------*/
+    function updateCompSupplyAccrued(address cToken) internal {
+        CompMarketState storage supplyState = compSupplyState[cToken];
+        uint deltaBlocks = block.number - uint(supplyState.block);
+        uint compAccrued = deltaBlocks * compSpeeds[cToken];
+        uint ratio = compAccrued / Token(cToken).totalSupply();
+        uint index = supplyState.index + ratio;
+        compSupplyState[cToken] = CompMarketState({
+            index: index,
+            block: block.number
+        });
+    }
+/*-----------------------------------snip-------------------------------------*/
+    function claimComp(Token[] memory cTokens) public {
         for (uint i = 0; i < cTokens.length; i++) {
             Token cToken = cTokens[i];
             require(markets[address(cToken)].isListed, "market must be listed");
             updateCompBorrowAccrued(address(cToken));
             updateCompSupplyAccrued(address(cToken));
-            for (uint j = 0; j < holders.length; j++) {
-                distributeBorrowerComp(address(cToken), holders[j]);
-                distributeSupplierComp(address(cToken), holders[j]);
-            }
+            distributeBorrowerComp(address(cToken), msg.sender);
+            distributeSupplierComp(address(cToken), msg.sender);
         }
-        for (uint j = 0; j < holders.length; j++) {
-            compAccrued[holders[j]] = grantCompInternal(holders[j], compAccrued[holders[j]]);
-        }
+        compAccrued[msg.sender] = grantComp(msg.sender, compAccrued[msg.sender]);
     }
-    function grantCompInternal(address user, uint amount) internal returns (uint) {
+    function grantComp(address user, uint amount) internal returns (uint) {
         if (amount > 0 && amount <= COMP.balanceOf(address(this))) {
             COMP.transfer(user, amount);
             return 0;
         }
         return amount;
     }
-    /*-----------------------------------snip-------------------------------------*/
-    /*---------------------------------new code-----------------------------------*/
+/*-----------------------------------snip-------------------------------------*/
+/*---------------------------------new code-----------------------------------*/
     function _initializeMarket(address cToken) internal {
         CompMarketState storage supplyState = compSupplyState[cToken];
         CompMarketState storage borrowState = compBorrowState[cToken];
