@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "../../../lib/forge-std/src/Test.sol";
+import "../Multicall2.sol";
 import { Comptroller, Comp, CToken } from "../../interface/compound/Comptroller.sol";
 
 /**
@@ -17,6 +18,20 @@ import { Comptroller, Comp, CToken } from "../../interface/compound/Comptroller.
  */
 
 contract TestComptroller is Test {
+    /**
+     * For use with Multicall2
+     * Address (mainnet): 0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696
+     * Deployed at block: 12336033 
+     */
+    struct Call {
+        address target;
+        bytes callData;
+    }
+    struct Result {
+        bool success;
+        bytes returnData;
+    }
+
     Comptroller constant unitroller = Comptroller(0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B);
     Comp constant comp = Comp(0xc00e94Cb662C3520282E6f5717214004A7f26888);
     
@@ -47,20 +62,31 @@ contract TestComptroller is Test {
         vm.selectFork(before_fork_id);
 
         // Disregard test run if the given address is not a participant in any Compound markets
-        // CToken[] memory assetsIn = unitroller.getAssetsIn(holder);
-        // vm.assume(assetsIn.length > 0);
+        CToken[] memory assetsIn = unitroller.getAssetsIn(holder);
+        vm.assume(assetsIn.length > 0);
 
         // Check the COMP balance of the holder before and after claiming from the old Comptroller
-        uint256 balance_before = comp.balanceOf(holder);
-        unitroller.claimComp(holder);
-        uint256 new_balance_before = comp.balanceOf(holder);
+        Multicall2.Call[] memory calls = new Multicall2.Call[](3);
+        // uint256 balance_before = comp.balanceOf(holder);
+        calls[0].target = address(comp);
+        calls[0].callData = abi.encodeWithSelector(comp.balanceOf.selector, holder);
+        // unitroller.claimComp(holder);
+        calls[1].target = address(unitroller);
+        calls[1].callData = abi.encodeWithSignature("claimComp(address)", holder);
+        // uint256 new_balance_before = comp.balanceOf(holder);
+        calls[2].target = address(comp);
+        calls[2].callData = abi.encodeWithSelector(comp.balanceOf.selector, holder);
+        
+        Multicall2.Result[] memory results_before = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(false, calls);
+        uint256 balance_before = abi.decode(results_before[0].returnData, (uint256));
+        uint256 new_balance_before = abi.decode(results_before[2].returnData, (uint256));
         uint256 delta_before = new_balance_before - balance_before;
 
-        // Switch to the fork from after the upgrade, then do the same
+        // Switch to the fork from after the upgrade, then perform the same calls
         vm.selectFork(after_fork_id);
-        uint256 balance_after = comp.balanceOf(holder);
-        unitroller.claimComp(holder);
-        uint256 new_balance_after = comp.balanceOf(holder);
+        Multicall2.Result[] memory results_after = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(false, calls);
+        uint256 balance_after = abi.decode(results_after[0].returnData, (uint256));
+        uint256 new_balance_after = abi.decode(results_after[2].returnData, (uint256));
         uint256 delta_after = new_balance_after - balance_after;
         
         // Assert that the change in COMP balance is approximately equal on both forks (max delta of 5%)
