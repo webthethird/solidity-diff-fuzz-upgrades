@@ -12,12 +12,12 @@ FETCH () {
 }
 SAVE_CONSTRUCTOR_ARGS () {
     args=("$@")
-    echo "" > /tmp/args.txt.tmp
+    echo -n "" > /tmp/args.txt.tmp
     for arg in ${args[@]}
     do
         echo "# Storing constructor arg: '$arg'"
-        echo $arg >> /tmp/args.txt.tmp
-        echo " " >> /tmp/args.txt.tmp
+        echo -n $arg >> /tmp/args.txt.tmp
+        echo -n " " >> /tmp/args.txt.tmp
     done
 }
 BUILD () {
@@ -59,7 +59,7 @@ DEPLOY_WITH_ARGS () {
 RECORD_END () {
     # Finish address constants file
     rm ./src/test/addresses.sol
-    rm /tmp/args.txt.tmp
+    # rm /tmp/args.txt.tmp
     mv /tmp/addresses.sol.tmp ./src/test/addresses.sol
     forge build
     echo "# Creating initialization file for Echidna.."
@@ -75,8 +75,8 @@ RECORD_END () {
 ## ---------------------- MAKE CHANGES HERE ----------------------- ##
 
 # Fetch implementations to fuzz
-# FETCH ./src/implementation/example/BytesLib.sol "https://raw.githubusercontent.com/GNSPS/solidity-bytes-utils/master/contracts/BytesLib.sol"
-# FETCH ./src/implementation/example/BytesUtil.sol "https://raw.githubusercontent.com/libertylocked/solidity-bytesutil/master/contracts/BytesUtil.sol"
+FETCH ./src/implementation/example/BytesLib.sol "https://raw.githubusercontent.com/GNSPS/solidity-bytes-utils/master/contracts/BytesLib.sol"
+FETCH ./src/implementation/example/BytesUtil.sol "https://raw.githubusercontent.com/libertylocked/solidity-bytesutil/master/contracts/BytesUtil.sol"
 # FETCH ./src/implementation/echidna-exercises/token.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/token.sol"
 # FETCH ./src/implementation/echidna-exercises/mintable.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/mintable.sol"
 
@@ -92,7 +92,7 @@ SAVE_CONSTRUCTOR_ARGS "${args[@]}"
 
 # Deploy contract
 DEPLOY_WITH_ARGS ./src/implementation/echidna-exercises/mintable.sol MintableToken
-# DEPLOY ./src/expose/example/BytesLib.sol ExposedBytesLib
-# DEPLOY ./src/expose/example/BytesUtil.sol ExposedBytesUtil
+DEPLOY ./src/expose/example/BytesLib.sol ExposedBytesLib
+DEPLOY ./src/expose/example/BytesUtil.sol ExposedBytesUtil
 
 RECORD_END
