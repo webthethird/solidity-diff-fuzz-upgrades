@@ -11,12 +11,13 @@ FETCH () {
     curl $SOURCE > "$DESTINATION"
 }
 SAVE_CONSTRUCTOR_ARGS () {
-    read -a args
-    echo "" > /tmp/args.txt
+    args=("$@")
+    echo "" > /tmp/args.txt.tmp
     for arg in ${args[@]}
     do
-        echo $arg >> /tmp/args.txt
-        echo " " >> /tmp/args.txt
+        echo "# Storing constructor arg: '$arg'"
+        echo $arg >> /tmp/args.txt.tmp
+        echo " " >> /tmp/args.txt.tmp
     done
 }
 BUILD () {
@@ -51,14 +52,14 @@ DEPLOY_WITH_ARGS () {
     local ETHENO_URL="http://127.0.0.1:8545/"
     echo "# Deploying '$CONTRACT' to etheno.."
     # Use foundry to deploy contracts via etheno
-    CONTRACT_ADDRESS=$(forge create --legacy --rpc-url "$ETHENO_URL" --private-key $GANACHE_KEY "$FILE:$CONTRACT" --constructor-args-path "./tmp/args.txt" | grep "Deployed to")
+    CONTRACT_ADDRESS=$(forge create --legacy --rpc-url "$ETHENO_URL" --private-key $GANACHE_KEY "$FILE:$CONTRACT" --constructor-args-path "/tmp/args.txt.tmp" | grep "Deployed to")
     CONTRACT_ADDRESS=${CONTRACT_ADDRESS#Deployed to: 0x}
-    echo "address constant $CONTRACT = address(0x00$CONTRACT_ADDRESS);" >> /tmp/addresses.sol.tmp # we don't get addresses with valid checksums from forge, workaround with 00 prefix
+    echo "address constant ${CONTRACT}_ADDR = address(0x00$CONTRACT_ADDRESS);" >> /tmp/addresses.sol.tmp # we don't get addresses with valid checksums from forge, workaround with 00 prefix
 }
 RECORD_END () {
     # Finish address constants file
     rm ./src/test/addresses.sol
-    rm ./tmp/args.txt
+    rm /tmp/args.txt.tmp
     mv /tmp/addresses.sol.tmp ./src/test/addresses.sol
     forge build
     echo "# Creating initialization file for Echidna.."
@@ -76,8 +77,8 @@ RECORD_END () {
 # Fetch implementations to fuzz
 # FETCH ./src/implementation/example/BytesLib.sol "https://raw.githubusercontent.com/GNSPS/solidity-bytes-utils/master/contracts/BytesLib.sol"
 # FETCH ./src/implementation/example/BytesUtil.sol "https://raw.githubusercontent.com/libertylocked/solidity-bytesutil/master/contracts/BytesUtil.sol"
-FETCH ./src/implementation/echidna-exercises/token.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/token.sol"
-FETCH ./src/implementation/echidna-exercises/mintable.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/mintable.sol"
+# FETCH ./src/implementation/echidna-exercises/token.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/token.sol"
+# FETCH ./src/implementation/echidna-exercises/mintable.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/mintable.sol"
 
 # Compile contracts
 BUILD
@@ -86,7 +87,8 @@ BUILD
 RECORD_START
 
 # Save constructor args to a file
-SAVE_CONSTRUCTOR_ARGS 10000
+args=("10000")
+SAVE_CONSTRUCTOR_ARGS "${args[@]}"
 
 # Deploy contract
 DEPLOY_WITH_ARGS ./src/implementation/echidna-exercises/mintable.sol MintableToken
