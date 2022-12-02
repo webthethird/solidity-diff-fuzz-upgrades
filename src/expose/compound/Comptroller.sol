@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity >=0.5.0;
 
-import { Comptroller, CToken } from "../../implementation/compound/Comptroller-before/contracts/Comptroller.sol";
+import { Comptroller, CToken } from "../../interface/compound/Comptroller.sol";
 
 contract ExposedComptroller {
     Comptroller comptroller;
@@ -82,7 +82,7 @@ contract ExposedComptroller {
      * @return 0 if the borrow is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
     function borrowAllowed(address cToken, address borrower, uint borrowAmount) external returns (uint) {
-        return comptroller.
+        return comptroller.borrowAllowed(cToken, borrower, borrowAmount);
     }
 
     /**
@@ -146,15 +146,6 @@ contract ExposedComptroller {
     }
 
     /*** Admin Functions ***/
-
-    /**
-      * @notice Sets a new price oracle for the comptroller
-      * @dev Admin function to set a new price oracle
-      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-      */
-    function _setPriceOracle(PriceOracle newOracle) public returns (uint) {
-        return comptroller._setPriceOracle(newOracle);
-    }
 
     /**
       * @notice Sets the closeFactor used when liquidating borrows
