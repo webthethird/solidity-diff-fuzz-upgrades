@@ -16,8 +16,8 @@ contract Token {
 
 contract SimpleComptroller {
     struct CompMarketState {
-        uint224 compAccruedPerUnit;
-        uint32 block;
+        uint compAccruedPerUnit;
+        uint block;
     }
     Token constant COMP = Token(0xc00e94Cb662C3520282E6f5717214004A7f26888);
     uint224 public constant compInitialAccruedPerUnit = 1e36;
@@ -58,14 +58,10 @@ contract SimpleComptroller {
             updateCompSupplyAccrued(address(cToken));
             distributeSupplierComp(address(cToken), msg.sender);
         }
-        compAccrued[msg.sender] = grantComp(msg.sender, compAccrued[msg.sender]);
-    }
-    function grantComp(address user, uint amount) internal returns (uint) {
-        if (amount > 0 && amount <= COMP.balanceOf(address(this))) {
-            COMP.transfer(user, amount);
-            return 0;
+        if (compAccrued[msg.sender] > 0 && compAccrued[msg.sender] <= COMP.balanceOf(address(this))) {
+            COMP.transfer(msg.sender, compAccrued[msg.sender]);
+            compAccrued[msg.sender] = 0;
         }
-        return amount;
     }
 /*-----------------------------------snip-------------------------------------*/
 /*---------------------------------new code-----------------------------------*/
