@@ -18,3 +18,5 @@ evm_version = 'london'                                        # the evm version 
 auto_detect_solc = true                                       # enable auto-detection of the appropriate solc version to use
 cache = true                                                  # whether to cache builds or not
 force = false                                                 # whether to ignore the cache (clean build)
+
+fs_permissions = [{ access = "read", path = "./"}]          # file system permission for reading files
