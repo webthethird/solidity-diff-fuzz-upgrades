@@ -37,7 +37,7 @@ contract TestComptroller is Test {
     
     // Change these to vary the mainnet block numbers at which to compare results
     uint256 constant before_block = 13322796;
-    uint256 constant after_block = 13322799;
+    uint256 constant after_block = 13325337;    // 13322799;
 
     uint256 before_fork_id;
     uint256 after_fork_id;
@@ -91,11 +91,11 @@ contract TestComptroller is Test {
         address holder = users[_index];
         console.log(_index, holder);
 
-        vm.selectFork(before_fork_id);
+        vm.selectFork(after_fork_id);
 
         // Disregard test run if the given address is not a participant in any Compound markets
-        // CToken[] memory assetsIn = unitroller.getAssetsIn(holder);
-        // vm.assume(assetsIn.length > 0);
+        CToken[] memory assetsIn = unitroller.getAssetsIn(holder);
+        vm.assume(assetsIn.length > 0);
 
         // Check the COMP balance of the holder before and after claiming from the old Comptroller
         Multicall2.Call[] memory calls = new Multicall2.Call[](3);
@@ -109,17 +109,20 @@ contract TestComptroller is Test {
         calls[2].target = address(comp);
         calls[2].callData = abi.encodeWithSelector(comp.balanceOf.selector, holder);
         
-        Multicall2.Result[] memory results_before = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
-        uint256 balance_before = abi.decode(results_before[0].returnData, (uint256));
-        uint256 new_balance_before = abi.decode(results_before[2].returnData, (uint256));
-        uint256 delta_before = new_balance_before - balance_before;
-
-        // Switch to the fork from after the upgrade, then perform the same calls
-        vm.selectFork(after_fork_id);
         Multicall2.Result[] memory results_after = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
         uint256 balance_after = abi.decode(results_after[0].returnData, (uint256));
         uint256 new_balance_after = abi.decode(results_after[2].returnData, (uint256));
         uint256 delta_after = new_balance_after - balance_after;
+        
+        // Discard test run if the user does not receive any COMP rewards after upgrade
+        vm.assume(new_balance_after > 0 && delta_after > 0);
+
+        // Switch to the fork from before the upgrade, then perform the same calls
+        vm.selectFork(before_fork_id);
+        Multicall2.Result[] memory results_before = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
+        uint256 balance_before = abi.decode(results_before[0].returnData, (uint256));
+        uint256 new_balance_before = abi.decode(results_before[2].returnData, (uint256));
+        uint256 delta_before = new_balance_before - balance_before;
         
         // Assert that the change in COMP balance is approximately equal on both forks (max delta of 5%)
         assertApproxEqRel(delta_before, delta_after, 0.05e18, "COMP balance deltas vary by more than 5%");
