@@ -43,7 +43,7 @@ contract TestComptroller is Test {
     uint256 after_fork_id;
     string rpc;
 
-    string constant users_file = "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/compound_accounts.txt";
+    string constant users_file = "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/compound_accounts_csushi.txt";
     uint num_users;
     address[] users;
 
@@ -87,15 +87,15 @@ contract TestComptroller is Test {
      * pre-defined list of known participant addresses to choose randomly from.
      */
     function test_claimComp_diff_before_after(uint16 _index) public {
-        vm.assume(_index < num_users);
-        address holder = users[_index];
-        console.log(_index, holder);
+        uint index = _index % num_users;
+        address holder = users[index];
+        console.log(index, holder);
 
         vm.selectFork(after_fork_id);
 
         // Disregard test run if the given address is not a participant in any Compound markets
-        CToken[] memory assetsIn = unitroller.getAssetsIn(holder);
-        vm.assume(assetsIn.length > 0);
+        // CToken[] memory assetsIn = unitroller.getAssetsIn(holder);
+        // vm.assume(assetsIn.length > 0);
 
         // Check the COMP balance of the holder before and after claiming from the old Comptroller
         Multicall2.Call[] memory calls = new Multicall2.Call[](3);
