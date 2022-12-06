@@ -11,7 +11,7 @@ ffi = true                                                    # whether to enabl
 fs_permissions = [{ access = "read", path = "./"}]            # file system permission for reading files
 
 # Other
-verbosity = 5                                                 # the verbosity of tests (3 displays traces for failed tests)
+verbosity = 4                                                 # the verbosity of tests (3 displays traces for failed tests)
 evm_version = 'london'                                        # the evm version (by hardfork name)
 auto_detect_solc = true                                       # enable auto-detection of the appropriate solc version to use
 cache = true                                                  # whether to cache builds or not
@@ -19,6 +19,6 @@ force = false                                                 # whether to ignor
 
 # Fuzz run options - adjust as needed for your fuzzing campaign
 [fuzz]
-runs = 999                                         # the number of fuzz runs for tests
+runs = 74                                         # the number of fuzz runs for tests
 max_test_rejects = 9999999                            # max number of individual inputs that may be rejected before the test aborts
 max_global_rejects = 9999999                           # max number of combined inputs that may be rejected before the test aborts
