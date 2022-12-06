@@ -87,8 +87,7 @@ contract TestComptroller is Test {
      * Ideally the gap in block numbers should be minimal to ensure any difference is not due to state
      * changes between blocks, or just more accrual over time (need to double-check how accruals work).
      * 
-     * Right now the address is what the fuzzer will mutate, but it would be better to have a
-     * pre-defined list of known participant addresses to choose randomly from.
+     * Uses a pre-defined list of known participant addresses to choose randomly from.
      */
     function test_claimComp_diff_before_after(uint8 _index) public { //, bool _double, bool _fromRear) public {
         uint index = uint(_index) % num_users;
@@ -121,7 +120,7 @@ contract TestComptroller is Test {
         // CToken[] memory assetsIn = unitroller.getAssetsIn(holder);
         // vm.assume(assetsIn.length > 0);
 
-        // Check the COMP balance of the holder before and after claiming from the old Comptroller
+        // Check the COMP balance of the holder before and after claiming from the upgraded Comptroller
         Multicall2.Call[] memory calls = new Multicall2.Call[](3);
         // uint256 balance_before = comp.balanceOf(holder);
         calls[0].target = address(COMP);
