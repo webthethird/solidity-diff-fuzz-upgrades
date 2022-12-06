@@ -33,12 +33,15 @@ contract TestComptroller is Test {
         bytes returnData;
     }
 
-    Comptroller constant unitroller = Comptroller(0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B);
-    Comp constant comp = Comp(0xc00e94Cb662C3520282E6f5717214004A7f26888);
+    Comptroller constant UNITROLLER = Comptroller(0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B);
+    Comp constant COMP = Comp(0xc00e94Cb662C3520282E6f5717214004A7f26888);
+
+    address constant OLD_IMPL = 0x75442Ac771a7243433e033F3F8EaB2631e22938f;
+    address constant NEW_IMPL = 0x374ABb8cE19A73f2c4EFAd642bda76c797f19233;
     
     // Change these to vary the mainnet block numbers at which to compare results
-    uint256 constant before_block = 13322796;
-    uint256 constant after_block = 13325337;    // 13322799;
+    uint256 constant BEFORE_BLOCK = 13322796;
+    uint256 constant AFTER_BLOCK = 13325337;    // 13322799;
 
     uint256 before_fork_id;
     uint256 after_fork_id;
@@ -51,8 +54,8 @@ contract TestComptroller is Test {
 
     function setUp() public {
         rpc = vm.envString("RPC_URL");
-        before_fork_id = vm.createFork(rpc, before_block);
-        after_fork_id = vm.createFork(rpc, after_block);
+        before_fork_id = vm.createFork(rpc, BEFORE_BLOCK);
+        after_fork_id = vm.createFork(rpc, AFTER_BLOCK);
         num_users = st2num(vm.readLine(users_file));
         users = new address[](num_users);
         console2.log("Number of addresses: %s", num_users);
@@ -121,14 +124,14 @@ contract TestComptroller is Test {
         // Check the COMP balance of the holder before and after claiming from the old Comptroller
         Multicall2.Call[] memory calls = new Multicall2.Call[](3);
         // uint256 balance_before = comp.balanceOf(holder);
-        calls[0].target = address(comp);
-        calls[0].callData = abi.encodeWithSelector(comp.balanceOf.selector, holder);
+        calls[0].target = address(COMP);
+        calls[0].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
         // unitroller.claimComp(holder);
-        calls[1].target = address(unitroller);
+        calls[1].target = address(UNITROLLER);
         calls[1].callData = abi.encodeWithSignature("claimComp(address)", holder);
         // uint256 new_balance_before = comp.balanceOf(holder);
-        calls[2].target = address(comp);
-        calls[2].callData = abi.encodeWithSelector(comp.balanceOf.selector, holder);
+        calls[2].target = address(COMP);
+        calls[2].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
         
         Multicall2.Result[] memory results_after = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
         uint256 balance_after = abi.decode(results_after[0].returnData, (uint256));
