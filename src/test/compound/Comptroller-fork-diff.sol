@@ -154,6 +154,68 @@ contract TestComptroller is Test {
         assertApproxEqRel(delta_before, delta_after, 0.01e18, "COMP balance deltas vary by more than 1%");
     }
 
+    /**
+     * Test claiming COMP on the "after" fork, with and without using the cheat code vm.store to 
+     * reset the old implementation, and assert that the amount of tokens transfered is the same.
+     * 
+     * Uses a pre-defined list of known participant addresses to choose randomly from.
+     */
+    function test_claimComp_diff_cheat_upgrade(uint8 _index) public {
+        uint index = uint(_index) % num_users;
+        address holder = users[index];
+
+        bool tested = false;
+        if (users_tested.length > 0) {
+            for(uint i = 0; i < users_tested.length; i++) {
+                if (users_tested[i] == holder) {
+                    tested = true;
+                }
+            }
+        }
+        vm.assume(!tested);
+        
+        users_tested.push(holder);
+
+        console2.log("Index %s", index);
+        console2.log("Address %s", holder);
+
+        vm.selectFork(after_fork_id);
+
+        // Check the COMP balance of the holder before and after claiming from the upgraded Comptroller
+        Multicall2.Call[] memory calls = new Multicall2.Call[](3);
+        // uint256 balance_before = comp.balanceOf(holder);
+        calls[0].target = address(COMP);
+        calls[0].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
+        // unitroller.claimComp(holder);
+        calls[1].target = address(UNITROLLER);
+        calls[1].callData = abi.encodeWithSignature("claimComp(address)", holder);
+        // uint256 new_balance_before = comp.balanceOf(holder);
+        calls[2].target = address(COMP);
+        calls[2].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
+        
+        Multicall2.Result[] memory results_after = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
+        uint256 balance_after = abi.decode(results_after[0].returnData, (uint256));
+        uint256 new_balance_after = abi.decode(results_after[2].returnData, (uint256));
+        uint256 delta_after = new_balance_after - balance_after;
+        
+        // Discard test run if the user does not receive any COMP rewards after upgrade
+        vm.assume(new_balance_after > 0 && delta_after > 0);
+
+        // Roll back the fork to the same block as before, store the old implementation address, then perform the same calls
+        vm.rollFork(AFTER_BLOCK);
+        vm.store(address(UNITROLLER), bytes32(uint256(3)), bytes32(bytes20(OLD_IMPL)));
+
+        Multicall2.Result[] memory results_before = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
+        uint256 balance_before = abi.decode(results_before[0].returnData, (uint256));
+        uint256 new_balance_before = abi.decode(results_before[2].returnData, (uint256));
+        uint256 delta_before = new_balance_before - balance_before;
+
+        console2.log("Delta before = %s", delta_before);
+        console2.log("Delta after = %s", delta_after);
+
+        assertEq(delta_before, delta_after);
+    }
+
     // function test_changed_impl() public {
     //     vm.selectFork(before_fork_id);
     //     address impl_before = unitroller.comptrollerImplementation();
