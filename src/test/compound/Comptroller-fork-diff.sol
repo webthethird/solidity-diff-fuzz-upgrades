@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "../../../lib/forge-std/src/Test.sol";
+import "../../../lib/forge-std/src/console2.sol";
 import "../Multicall2.sol";
 import { Comptroller, Comp, CToken } from "../../interface/compound/Comptroller.sol";
 
@@ -43,9 +44,10 @@ contract TestComptroller is Test {
     uint256 after_fork_id;
     string rpc;
 
-    string constant users_file = "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/compound_accounts_csushi.txt";
+    string constant users_file = "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/compound_accounts_exploit.txt";
     uint num_users;
     address[] users;
+    address[] users_tested;
 
     function setUp() public {
         rpc = vm.envString("RPC_URL");
@@ -53,8 +55,7 @@ contract TestComptroller is Test {
         after_fork_id = vm.createFork(rpc, after_block);
         num_users = st2num(vm.readLine(users_file));
         users = new address[](num_users);
-        console.logString("Number of addresses:");
-        console.logUint(num_users);
+        console2.log("Number of addresses: %s", num_users);
         for(uint i = 0; i < num_users; i++) {
             address user_addr = address(uint160(st2num(vm.readLine(users_file))));
             // console.log(i, user_addr);
@@ -86,10 +87,30 @@ contract TestComptroller is Test {
      * Right now the address is what the fuzzer will mutate, but it would be better to have a
      * pre-defined list of known participant addresses to choose randomly from.
      */
-    function test_claimComp_diff_before_after(uint16 _index) public {
-        uint index = _index % num_users;
+    function test_claimComp_diff_before_after(uint8 _index) public { //, bool _double, bool _fromRear) public {
+        uint index = uint(_index) % num_users;
+        // if(_double) {
+        //     index = (2 * index) % num_users;
+        // }
+        // if(_fromRear && index > 0) {
+        //     index = num_users - index;
+        // }
         address holder = users[index];
-        console.log(index, holder);
+
+        bool tested = false;
+        if (users_tested.length > 0) {
+            for(uint i = 0; i < users_tested.length; i++) {
+                if (users_tested[i] == holder) {
+                    tested = true;
+                }
+            }
+        }
+        vm.assume(!tested);
+        
+        users_tested.push(holder);
+
+        console2.log("Index %s", index);
+        console2.log("Address %s", holder);
 
         vm.selectFork(after_fork_id);
 
@@ -123,9 +144,12 @@ contract TestComptroller is Test {
         uint256 balance_before = abi.decode(results_before[0].returnData, (uint256));
         uint256 new_balance_before = abi.decode(results_before[2].returnData, (uint256));
         uint256 delta_before = new_balance_before - balance_before;
+
+        console2.log("Delta before = %s", delta_before);
+        console2.log("Delta after = %s", delta_after);
         
         // Assert that the change in COMP balance is approximately equal on both forks (max delta of 5%)
-        assertApproxEqRel(delta_before, delta_after, 0.05e18, "COMP balance deltas vary by more than 5%");
+        assertApproxEqRel(delta_before, delta_after, 0.01e18, "COMP balance deltas vary by more than 1%");
     }
 
     // function test_changed_impl() public {
