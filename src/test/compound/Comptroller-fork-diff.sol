@@ -147,7 +147,7 @@ contract TestComptroller is Test {
         vm.writeLine(LOG_FILE, "");
         
         // Assert that the change in COMP balance is approximately equal on both forks (max delta of 5%)
-        assertApproxEqRel(delta_before, delta_after, 0.01e18, "COMP balance deltas vary by more than 1%");
+        assertApproxEqRel(delta_before, delta_after, 5e16, "COMP balance deltas vary by more than 5%");
     }
 
     /**
