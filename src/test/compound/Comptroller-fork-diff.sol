@@ -95,17 +95,8 @@ contract TestComptroller is Test {
         // }
         address holder = users[index];
 
-        bool tested = false;
-        if (users_tested.length > 0) {
-            for(uint i = 0; i < users_tested.length; i++) {
-                if (users_tested[i] == holder) {
-                    tested = true;
-                }
-            }
-        }
-        vm.assume(!tested);
-        
-        users_tested.push(holder);
+        vm.assume(users_tested[index] == address(0));
+        users_tested[index] = holder;
 
         console2.log("Index %s", index);
         console2.log("Address %s", holder);
@@ -169,17 +160,8 @@ contract TestComptroller is Test {
         uint index = uint(_index) % num_users;
         address holder = users[index];
 
-        bool tested = false;
-        if (users_tested.length > 0) {
-            for(uint i = 0; i < users_tested.length; i++) {
-                if (users_tested[i] == holder) {
-                    tested = true;
-                }
-            }
-        }
-        vm.assume(!tested);
-        
-        users_tested.push(holder);
+        vm.assume(users_tested[index] == address(0));
+        users_tested[index] = holder;
 
         console2.log("Index %s", index);
         console2.log("Address %s", holder);
