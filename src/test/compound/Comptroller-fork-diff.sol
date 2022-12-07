@@ -47,7 +47,8 @@ contract TestComptroller is Test {
     uint256 after_fork_id;
     string rpc;
 
-    string constant users_file = "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/compound_accounts_exploit.txt";
+    string constant USERS_FILE = "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/compound_accounts_csushi.txt";
+    string constant LOG_FILE = "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log";
     uint num_users;
     address[] users;
     address[] users_tested;
@@ -55,19 +56,19 @@ contract TestComptroller is Test {
     constructor() {
         // Since console logs are not printed until after fuzzing is complete, output logs to a file
         // Here, clear any logs from previous fuzzing campaigns or create the log file if it doesn't exist
-        vm.writeFile("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "");
+        vm.writeFile(LOG_FILE, "");
 
         // Read pre-defined list of known Compound users from file (first line is the number of addresses)
-        num_users = vm.parseUint(vm.readLine(users_file));
+        num_users = vm.parseUint(vm.readLine(USERS_FILE));
         users = new address[](num_users);
         users_tested = new address[](num_users);
         console2.log("Number of addresses: %s", num_users);
         for(uint i = 0; i < num_users; i++) {
-            address user_addr = vm.parseAddress(vm.readLine(users_file));
+            address user_addr = vm.parseAddress(vm.readLine(USERS_FILE));
             // console.log(i, user_addr);
             users[i] = user_addr;
         }
-        vm.closeFile(users_file);
+        vm.closeFile(USERS_FILE);
     }
 
     function setUp() public {
@@ -109,8 +110,8 @@ contract TestComptroller is Test {
         console2.log("Index %s", index);
         console2.log("Address %s", holder);
 
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(index));
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(holder));
+        vm.writeLine(LOG_FILE, vm.toString(index));
+        vm.writeLine(LOG_FILE, vm.toString(holder));
 
         vm.selectFork(after_fork_id);
 
@@ -148,11 +149,11 @@ contract TestComptroller is Test {
         console2.log("Delta before = %s", delta_before);
         console2.log("Delta after = %s", delta_after);
 
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "Delta before:");
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(delta_before));
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "Delta after:");
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(delta_after));
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "");
+        vm.writeLine(LOG_FILE, "Delta before:");
+        vm.writeLine(LOG_FILE, vm.toString(delta_before));
+        vm.writeLine(LOG_FILE, "Delta after:");
+        vm.writeLine(LOG_FILE, vm.toString(delta_after));
+        vm.writeLine(LOG_FILE, "");
         
         // Assert that the change in COMP balance is approximately equal on both forks (max delta of 5%)
         assertApproxEqRel(delta_before, delta_after, 0.01e18, "COMP balance deltas vary by more than 1%");
@@ -183,8 +184,8 @@ contract TestComptroller is Test {
         console2.log("Index %s", index);
         console2.log("Address %s", holder);
 
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(index));
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(holder));
+        vm.writeLine(LOG_FILE, vm.toString(index));
+        vm.writeLine(LOG_FILE, vm.toString(holder));
 
         vm.selectFork(after_fork_id);
 
@@ -220,11 +221,11 @@ contract TestComptroller is Test {
         console2.log("Delta before = %s", delta_before);
         console2.log("Delta after = %s", delta_after);
 
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "Delta before:");
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(delta_before));
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "Delta after:");
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(delta_after));
-        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "");
+        vm.writeLine(LOG_FILE, "Delta before:");
+        vm.writeLine(LOG_FILE, vm.toString(delta_before));
+        vm.writeLine(LOG_FILE, "Delta after:");
+        vm.writeLine(LOG_FILE, vm.toString(delta_after));
+        vm.writeLine(LOG_FILE, "");
 
         assertEq(delta_before, delta_after);
     }
