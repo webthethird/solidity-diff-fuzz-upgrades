@@ -70,18 +70,10 @@ contract TestComptroller is Test {
         vm.closeFile(users_file);
     }
 
-    function st2num(string memory numString) internal pure returns(uint) {
-        uint  val=0;
-        bytes memory stringBytes = bytes(numString);
-        for (uint  i =  0; i<stringBytes.length; i++) {
-            uint exp = stringBytes.length - i;
-            bytes1 ival = stringBytes[i];
-            uint8 uval = uint8(ival);
-            uint jval = uval - uint(0x30);
-   
-            val +=  (uint(jval) * (10**(exp-1))); 
-        }
-        return val;
+    function setUp() public {
+        rpc = vm.envString("RPC_URL");
+        before_fork_id = vm.createFork(rpc, BEFORE_BLOCK);
+        after_fork_id = vm.createFork(rpc, AFTER_BLOCK); 
     }
 
     /**
