@@ -109,6 +109,9 @@ contract TestComptroller is Test {
         console2.log("Index %s", index);
         console2.log("Address %s", holder);
 
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(index));
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(holder));
+
         vm.selectFork(after_fork_id);
 
         // Disregard test run if the given address is not a participant in any Compound markets
@@ -144,6 +147,12 @@ contract TestComptroller is Test {
 
         console2.log("Delta before = %s", delta_before);
         console2.log("Delta after = %s", delta_after);
+
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "Delta before:");
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(delta_before));
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "Delta after:");
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(delta_after));
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "");
         
         // Assert that the change in COMP balance is approximately equal on both forks (max delta of 5%)
         assertApproxEqRel(delta_before, delta_after, 0.01e18, "COMP balance deltas vary by more than 1%");
@@ -173,6 +182,9 @@ contract TestComptroller is Test {
 
         console2.log("Index %s", index);
         console2.log("Address %s", holder);
+
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(index));
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(holder));
 
         vm.selectFork(after_fork_id);
 
@@ -207,6 +219,12 @@ contract TestComptroller is Test {
 
         console2.log("Delta before = %s", delta_before);
         console2.log("Delta after = %s", delta_after);
+
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "Delta before:");
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(delta_before));
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "Delta after:");
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", vm.toString(delta_after));
+        vm.writeLine("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "");
 
         assertEq(delta_before, delta_after);
     }
