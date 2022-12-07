@@ -188,6 +188,9 @@ contract TestComptroller is Test {
         uint256 balance_after = abi.decode(results_after[0].returnData, (uint256));
         uint256 new_balance_after = abi.decode(results_after[2].returnData, (uint256));
         uint256 delta_after = new_balance_after - balance_after;
+
+        // Discard test if any of the calls reverted
+        vm.assume(results_after[0].success && results_after[1].success && results_after[2].success);
         
         // Discard test run if the user does not receive any COMP rewards after upgrade
         vm.assume(new_balance_after > 0 && delta_after > 0);
@@ -204,6 +207,9 @@ contract TestComptroller is Test {
         uint256 balance_before = abi.decode(results_before[0].returnData, (uint256));
         uint256 new_balance_before = abi.decode(results_before[2].returnData, (uint256));
         uint256 delta_before = new_balance_before - balance_before;
+
+        // Discard test if any of the calls reverted
+        vm.assume(results_before[0].success && results_before[1].success && results_before[2].success);
 
         console2.log("Delta before = %s", delta_before);
         console2.log("Delta after = %s", delta_after);
