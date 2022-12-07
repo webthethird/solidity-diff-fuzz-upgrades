@@ -41,7 +41,7 @@ contract TestComptroller is Test {
     
     // Change these to vary the mainnet block numbers at which to compare results
     uint256 constant BEFORE_BLOCK = 13322796;
-    uint256 constant AFTER_BLOCK = 13325337;    // 13322799;
+    uint256 constant AFTER_BLOCK = 13324197;    // 13322799;
 
     uint256 before_fork_id;
     uint256 after_fork_id;
