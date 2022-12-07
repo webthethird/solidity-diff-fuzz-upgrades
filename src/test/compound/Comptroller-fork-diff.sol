@@ -48,8 +48,8 @@ contract TestComptroller is Test {
     uint256 after_fork_id;
     string rpc;
 
-    string constant USERS_FILE = "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/compound_accounts_exploit.txt";
-    string constant LOG_FILE = "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log";
+    string constant USERS_FILE = "./compound_accounts_exploit.txt";
+    string constant LOG_FILE = "./.log";
     uint num_users;
     address[] users;
     address[] users_tested;
