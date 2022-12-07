@@ -38,6 +38,7 @@ contract TestComptroller is Test {
 
     address constant OLD_IMPL = 0x75442Ac771a7243433e033F3F8EaB2631e22938f;
     address constant NEW_IMPL = 0x374ABb8cE19A73f2c4EFAd642bda76c797f19233;
+    bytes32 constant OLD_IMPL_BYTES = 0x00000000000000000000000075442Ac771a7243433e033F3F8EaB2631e22938f;
     
     // Change these to vary the mainnet block numbers at which to compare results
     uint256 constant BEFORE_BLOCK = 13322796;
@@ -193,7 +194,11 @@ contract TestComptroller is Test {
 
         // Roll back the fork to the same block as before, store the old implementation address, then perform the same calls
         vm.rollFork(AFTER_BLOCK);
-        vm.store(address(UNITROLLER), bytes32(uint256(2)), bytes32(bytes20(OLD_IMPL)));
+        vm.store(address(UNITROLLER), bytes32(uint256(2)), OLD_IMPL_BYTES);
+        assertEq(UNITROLLER.comptrollerImplementation(), OLD_IMPL);
+
+        vm.writeLine(LOG_FILE, "comptrollerImplementation:");
+        vm.writeLine(LOG_FILE, vm.toString(UNITROLLER.comptrollerImplementation()));
 
         Multicall2.Result[] memory results_before = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
         uint256 balance_before = abi.decode(results_before[0].returnData, (uint256));
