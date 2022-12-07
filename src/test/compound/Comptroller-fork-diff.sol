@@ -52,15 +52,18 @@ contract TestComptroller is Test {
     address[] users;
     address[] users_tested;
 
-    function setUp() public {
-        rpc = vm.envString("RPC_URL");
-        before_fork_id = vm.createFork(rpc, BEFORE_BLOCK);
-        after_fork_id = vm.createFork(rpc, AFTER_BLOCK);
-        num_users = st2num(vm.readLine(users_file));
+    constructor() {
+        // Since console logs are not printed until after fuzzing is complete, output logs to a file
+        // Here, clear any logs from previous fuzzing campaigns or create the log file if it doesn't exist
+        vm.writeFile("/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log", "");
+
+        // Read pre-defined list of known Compound users from file (first line is the number of addresses)
+        num_users = vm.parseUint(vm.readLine(users_file));
         users = new address[](num_users);
+        users_tested = new address[](num_users);
         console2.log("Number of addresses: %s", num_users);
         for(uint i = 0; i < num_users; i++) {
-            address user_addr = address(uint160(st2num(vm.readLine(users_file))));
+            address user_addr = vm.parseAddress(vm.readLine(users_file));
             // console.log(i, user_addr);
             users[i] = user_addr;
         }
