@@ -5,7 +5,7 @@ import "../../lib/forge-std/src/Test.sol";
 import "../../lib/forge-std/src/console2.sol";
 
 contract TestAssert is Test {
-    string constant LOG_FILE = "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/.log";
+    string constant LOG_FILE = "./.log";
 
     constructor() {
         // Since console logs are not printed until after fuzzing is complete, output logs to a file
