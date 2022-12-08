@@ -47,7 +47,7 @@ contract TestComptroller is Test {
     uint256 after_fork_id;
     string rpc;
 
-    string constant USERS_FILE = "./compound_accounts_exploit.txt";
+    string constant USERS_FILE = "./compound_accounts.txt";
     string constant LOG_FILE = "./.log";
     uint num_users;
     address[] users;
@@ -85,7 +85,7 @@ contract TestComptroller is Test {
      * 
      * Uses a pre-defined list of known participant addresses to choose randomly from.
      */
-    function test_claimComp_diff_before_after(uint8 _index) public { //, bool _double, bool _fromRear) public {
+    function test_claimComp_diff_before_after(uint16 _index) public { //, bool _double, bool _fromRear) public {
         uint index = uint(_index) % num_users;
         // if(_double) {
         //     index = (2 * index) % num_users;
@@ -156,7 +156,7 @@ contract TestComptroller is Test {
      * 
      * Uses a pre-defined list of known participant addresses to choose randomly from.
      */
-    function test_claimComp_diff_cheat_upgrade(uint8 _index) public {
+    function test_claimComp_diff_cheat_upgrade(uint16 _index) public {
         uint index = uint(_index) % num_users;
         address holder = users[index];
 
