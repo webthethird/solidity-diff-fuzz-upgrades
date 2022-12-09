@@ -85,12 +85,6 @@ contract TestComptroller is Test {
      */
     function test_claimComp_diff_before_after(uint16 _index) public { //, bool _double, bool _fromRear) public {
         uint index = uint(_index) % num_users;
-        // if(_double) {
-        //     index = (2 * index) % num_users;
-        // }
-        // if(_fromRear && index > 0) {
-        //     index = num_users - index;
-        // }
         address holder = users[index];
 
         vm.assume(users_tested[index] == address(0));
