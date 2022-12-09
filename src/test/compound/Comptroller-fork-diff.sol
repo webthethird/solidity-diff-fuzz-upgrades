@@ -53,7 +53,7 @@ contract TestComptroller is Test {
     address[] users;
     address[] users_tested;
 
-    constructor() {
+    function setUp() public {
         // Since console logs are not printed until after fuzzing is complete, output logs to a file
         // Here, clear any logs from previous fuzzing campaigns or create the log file if it doesn't exist
         vm.writeFile(LOG_FILE, "");
@@ -69,9 +69,7 @@ contract TestComptroller is Test {
             users[i] = user_addr;
         }
         vm.closeFile(USERS_FILE);
-    }
 
-    function setUp() public {
         rpc = vm.envString("RPC_URL");
         before_fork_id = vm.createFork(rpc, BEFORE_BLOCK);
         after_fork_id = vm.createFork(rpc, AFTER_BLOCK); 
