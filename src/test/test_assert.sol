@@ -7,35 +7,20 @@ import "../../lib/forge-std/src/console2.sol";
 contract TestAssert is Test {
     string constant LOG_FILE = "./.log";
 
-    constructor() {
-        // Since console logs are not printed until after fuzzing is complete, output logs to a file
-        // Here, clear any logs from previous fuzzing campaigns or create the log file if it doesn't exist
+    function setUp() public {
         vm.writeFile(LOG_FILE, "");
     }
 
-    function test_assert_eq(uint8 test) public {
-        uint i = uint(uint128(test));
-        uint j = i * 2000;
-
-        vm.writeLine(LOG_FILE, "i:");
-        vm.writeLine(LOG_FILE, vm.toString(i));
-        vm.writeLine(LOG_FILE, "j:");
-        vm.writeLine(LOG_FILE, vm.toString(j));
-        vm.writeLine(LOG_FILE, "");
-
-        assertEq(i, j, "assert failed!");
+    function test_assert_eq(uint256 i) public {
+        // vm.assume(i > 0);
+        vm.writeLine(LOG_FILE, string.concat("i:", vm.toString(i)));
+        assertEq(0, i, "assert failed!"); // should always fail on first run due to `vm.assume`
     }
 
-    function test_assert_approx(uint8 test) public {
-        uint i = uint(uint128(test));
-        uint j = i * 2000;
+    function test_assert_approx(uint256 i) public {
+        vm.assume(i > 0);
+        vm.writeLine(LOG_FILE, string.concat("i:", vm.toString(i)));
 
-        vm.writeLine(LOG_FILE, "i:");
-        vm.writeLine(LOG_FILE, vm.toString(i));
-        vm.writeLine(LOG_FILE, "j:");
-        vm.writeLine(LOG_FILE, vm.toString(j));
-        vm.writeLine(LOG_FILE, "");
-
-        assertApproxEqRel(i, j, 1e17, "assert approx failed!");
+        assertApproxEqRel(i, 0, 1e17, "assert approx failed!");
     }
 }
