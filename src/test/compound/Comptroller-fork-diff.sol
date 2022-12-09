@@ -101,8 +101,8 @@ contract TestComptroller is Test {
         console2.log("Index %s", index);
         console2.log("Address %s", holder);
 
-        vm.writeLine(LOG_FILE, vm.toString(index));
-        vm.writeLine(LOG_FILE, vm.toString(holder));
+        vm.writeLine(LOG_FILE, string.concat("index:  ", vm.toString(index)));
+        vm.writeLine(LOG_FILE, string.concat("holder: ", vm.toString(holder)));
 
         vm.selectFork(after_fork_id);
 
@@ -140,10 +140,8 @@ contract TestComptroller is Test {
         console2.log("Delta before = %s", delta_before);
         console2.log("Delta after = %s", delta_after);
 
-        vm.writeLine(LOG_FILE, "Delta before:");
-        vm.writeLine(LOG_FILE, vm.toString(delta_before));
-        vm.writeLine(LOG_FILE, "Delta after:");
-        vm.writeLine(LOG_FILE, vm.toString(delta_after));
+        vm.writeLine(LOG_FILE, string.concat("Delta before: ", vm.toString(delta_before)));
+        vm.writeLine(LOG_FILE, string.concat("Delta after:  ", vm.toString(delta_after)));
         vm.writeLine(LOG_FILE, "");
         
         // Assert that the change in COMP balance is approximately equal on both forks (max delta of 5%)
@@ -166,8 +164,8 @@ contract TestComptroller is Test {
         console2.log("Index %s", index);
         console2.log("Address %s", holder);
 
-        vm.writeLine(LOG_FILE, vm.toString(index));
-        vm.writeLine(LOG_FILE, vm.toString(holder));
+        vm.writeLine(LOG_FILE, string.concat("index:  ", vm.toString(index)));
+        vm.writeLine(LOG_FILE, string.concat("holder: ", vm.toString(holder)));
 
         vm.selectFork(after_fork_id);
 
@@ -209,10 +207,8 @@ contract TestComptroller is Test {
         console2.log("Delta before = %s", delta_before);
         console2.log("Delta after = %s", delta_after);
 
-        vm.writeLine(LOG_FILE, "Delta before:");
-        vm.writeLine(LOG_FILE, vm.toString(delta_before));
-        vm.writeLine(LOG_FILE, "Delta after:");
-        vm.writeLine(LOG_FILE, vm.toString(delta_after));
+        vm.writeLine(LOG_FILE, string.concat("Delta before: ", vm.toString(delta_before)));
+        vm.writeLine(LOG_FILE, string.concat("Delta after:  ", vm.toString(delta_after)));
         vm.writeLine(LOG_FILE, "");
 
         assertEq(delta_before, delta_after);
