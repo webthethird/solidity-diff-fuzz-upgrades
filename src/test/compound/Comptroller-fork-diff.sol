@@ -51,7 +51,7 @@ contract TestComptroller is Test {
     string constant LOG_FILE = "./.log";
     uint num_users;
     address[] users;
-    address[] users_tested;
+    mapping(address => bool) users_tested;
 
     function setUp() public {
         // Since console logs are not printed until after fuzzing is complete, output logs to a file
@@ -61,7 +61,7 @@ contract TestComptroller is Test {
         // Read pre-defined list of known Compound users from file (first line is the number of addresses)
         num_users = vm.parseUint(vm.readLine(USERS_FILE));
         users = new address[](num_users);
-        users_tested = new address[](num_users);
+        // users_tested = new address[](num_users);
         console2.log("Number of addresses: %s", num_users);
         for(uint i = 0; i < num_users; i++) {
             address user_addr = vm.parseAddress(vm.readLine(USERS_FILE));
@@ -87,8 +87,8 @@ contract TestComptroller is Test {
         uint index = uint(_index) % num_users;
         address holder = users[index];
 
-        vm.assume(users_tested[index] == address(0));
-        users_tested[index] = holder;
+        vm.assume(users_tested[holder] == false);
+        users_tested[holder] = true;
 
         console2.log("Index %s", index);
         console2.log("Address %s", holder);
@@ -150,8 +150,8 @@ contract TestComptroller is Test {
         uint index = uint(_index) % num_users;
         address holder = users[index];
 
-        vm.assume(users_tested[index] == address(0));
-        users_tested[index] = holder;
+        vm.assume(users_tested[holder] == false);
+        users_tested[holder] = true;
 
         console2.log("Index %s", index);
         console2.log("Address %s", holder);
