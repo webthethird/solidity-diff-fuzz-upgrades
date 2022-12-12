@@ -17,6 +17,21 @@ contract TestAssert is Test {
         assertEq(0, i, "assert failed!"); // should always fail on first run due to `vm.assume`
     }
 
+    function test_assert_addr_eq_zero(address i) public {
+        vm.assume(i != address(0));
+        vm.writeLine(LOG_FILE, string.concat("i:", vm.toString(i)));
+        assertEq(address(0), i, "assert failed!"); // should always fail on first run due to `vm.assume`
+    }
+
+    function test_assert_addrs_eq(address i, address j) public {
+        vm.assume(i != address(0));
+        vm.assume(j != address(0));
+        vm.writeLine(LOG_FILE, string.concat("i:", vm.toString(i)));
+        vm.writeLine(LOG_FILE, string.concat("j:", vm.toString(j)));
+        assertEq(j, i, "assert failed!"); // should always fail on first run due to `vm.assume`
+    }
+
+
     function test_assert_approx(uint256 i) public {
         vm.assume(i > 0);
         vm.writeLine(LOG_FILE, string.concat("i:", vm.toString(i)));
