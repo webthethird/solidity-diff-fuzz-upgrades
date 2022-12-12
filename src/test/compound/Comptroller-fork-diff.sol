@@ -216,6 +216,8 @@ contract TestComptroller is Test {
         vm.assume(users_tested[holder] == false);
         users_tested[holder] = true;
 
+        vm.selectFork(after_fork_id);
+
         // Disregard test run if the given address is not a participant in any Compound markets
         CToken[] memory assetsIn = UNITROLLER.getAssetsIn(holder);
         vm.assume(assetsIn.length > 0);
@@ -223,8 +225,6 @@ contract TestComptroller is Test {
         console2.log("Address %s", holder);
 
         vm.writeLine(LOG_FILE, string.concat("holder: ", vm.toString(holder)));
-
-        vm.selectFork(after_fork_id);
 
         // Check the COMP balance of the holder before and after claiming from the upgraded Comptroller
         Multicall2.Call[] memory calls = new Multicall2.Call[](3);
