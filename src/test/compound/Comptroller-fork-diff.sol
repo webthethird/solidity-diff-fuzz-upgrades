@@ -38,6 +38,8 @@ contract TestComptroller is Test {
 
     address constant OLD_IMPL = 0x75442Ac771a7243433e033F3F8EaB2631e22938f;
     address constant NEW_IMPL = 0x374ABb8cE19A73f2c4EFAd642bda76c797f19233;
+
+    Multicall2 constant MULTI = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696);
     
     // Change these to vary the mainnet block numbers at which to compare results
     uint256 constant BEFORE_BLOCK = 13322796;
@@ -114,7 +116,7 @@ contract TestComptroller is Test {
         calls[2].target = address(COMP);
         calls[2].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
         
-        Multicall2.Result[] memory results_after = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
+        Multicall2.Result[] memory results_after = MULTI.tryAggregate(true, calls);
         uint256 balance_after = abi.decode(results_after[0].returnData, (uint256));
         uint256 new_balance_after = abi.decode(results_after[2].returnData, (uint256));
         uint256 delta_after = new_balance_after - balance_after;
@@ -124,7 +126,7 @@ contract TestComptroller is Test {
 
         // Switch to the fork from before the upgrade, then perform the same calls
         vm.selectFork(before_fork_id);
-        Multicall2.Result[] memory results_before = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
+        Multicall2.Result[] memory results_before = MULTI.tryAggregate(true, calls);
         uint256 balance_before = abi.decode(results_before[0].returnData, (uint256));
         uint256 new_balance_before = abi.decode(results_before[2].returnData, (uint256));
         uint256 delta_before = new_balance_before - balance_before;
@@ -173,7 +175,7 @@ contract TestComptroller is Test {
         calls[2].target = address(COMP);
         calls[2].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
         
-        Multicall2.Result[] memory results_after = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
+        Multicall2.Result[] memory results_after = MULTI.tryAggregate(true, calls);
         uint256 balance_after = abi.decode(results_after[0].returnData, (uint256));
         uint256 new_balance_after = abi.decode(results_after[2].returnData, (uint256));
         uint256 delta_after = new_balance_after - balance_after;
@@ -188,7 +190,7 @@ contract TestComptroller is Test {
         vm.rollFork(AFTER_BLOCK);
         vm.store(address(UNITROLLER), bytes32(uint256(2)), bytes32(abi.encode(OLD_IMPL)));
 
-        Multicall2.Result[] memory results_before = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
+        Multicall2.Result[] memory results_before = MULTI.tryAggregate(true, calls);
         uint256 balance_before = abi.decode(results_before[0].returnData, (uint256));
         uint256 new_balance_before = abi.decode(results_before[2].returnData, (uint256));
         uint256 delta_before = new_balance_before - balance_before;
@@ -238,7 +240,7 @@ contract TestComptroller is Test {
         calls[2].target = address(COMP);
         calls[2].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
         
-        Multicall2.Result[] memory results_after = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
+        Multicall2.Result[] memory results_after = MULTI.tryAggregate(true, calls);
         uint256 balance_after = abi.decode(results_after[0].returnData, (uint256));
         uint256 new_balance_after = abi.decode(results_after[2].returnData, (uint256));
         uint256 delta_after = new_balance_after - balance_after;
@@ -253,7 +255,7 @@ contract TestComptroller is Test {
         vm.rollFork(AFTER_BLOCK);
         vm.store(address(UNITROLLER), bytes32(uint256(2)), bytes32(abi.encode(OLD_IMPL)));
 
-        Multicall2.Result[] memory results_before = Multicall2(0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696).tryAggregate(true, calls);
+        Multicall2.Result[] memory results_before = MULTI.tryAggregate(true, calls);
         uint256 balance_before = abi.decode(results_before[0].returnData, (uint256));
         uint256 new_balance_before = abi.decode(results_before[2].returnData, (uint256));
         uint256 delta_before = new_balance_before - balance_before;
