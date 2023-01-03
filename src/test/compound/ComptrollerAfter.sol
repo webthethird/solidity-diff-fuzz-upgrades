@@ -3,6 +3,21 @@ pragma solidity ^0.5.16;
 import "../../implementation/compound/Comptroller-after/contracts/Comptroller.sol";
 
 contract ComptrollerAfter is Comptroller {
+    /**
+     * Since the COMP token has not been deployed on our test EVM,
+     * we need to create it in our testing contract, store its
+     * address in the constructor for this contract, and override
+     * the getCompAddress function.
+     */
+    address internal comp;
+
+    constructor(address _comp) Comptroller() public {
+        comp = _comp;
+    }
+
+    function getCompAddress() public view returns (address) {
+        return comp;
+    }
 
     /**
      * Since msg.sender is not maintained in external testing,
