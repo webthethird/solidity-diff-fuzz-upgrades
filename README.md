@@ -1,6 +1,10 @@
-# Fuzzing of PROJECT_NAME_HERE
+# Differential Fuzzing of Upgradeable Contract Implementations
 
-DESCRIPTION_HERE
+Starting with a POC for differential fuzzing on the Compound Comptroller, in order to trigger the [COMP token distribution bug](https://twitter.com/Mudit__Gupta/status/1443454940165263360) introduced in an upgrade following [governance proposal 62](https://compound.finance/governance/proposals/62) in September 2021.
+
+The goal is to generalize this approach to detect unexpected discrepancies between any two implementation contracts, so as to prevent the introduction of bugs and vulnerabilities during a smart contract upgrade.
+
+A lot of this (including most of this readme) is from the [solidity-fuzzing-boilerplate](https://github.com/patrickd-/solidity-fuzzing-boilerplate) template by [@patrickd](https://github.com/patrickd-).
 
 ```
 src
@@ -21,6 +25,8 @@ src
 ```
 
 ## Setup
+
+(Ignore this when using the `Comptroller-fork-diff.sol` test contract, which must be used with Foundry/Forge, and requires an RPC node provider URL which should be stored in a `.env` file, i.e., `RPC_URL="https://mainnet.infura.io/v3/[YOUR-API-KEY-HERE]"`
 
 Before any fuzzing can be run, `build.sh` needs to be executed, which has the following dependencies:
 
