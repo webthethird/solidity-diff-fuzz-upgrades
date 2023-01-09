@@ -56,6 +56,42 @@ DEPLOY_WITH_ARGS () {
     CONTRACT_ADDRESS=${CONTRACT_ADDRESS#Deployed to: 0x}
     echo "address constant ${CONTRACT}_ADDR = address(0x00$CONTRACT_ADDRESS);" >> /tmp/addresses.sol.tmp # we don't get addresses with valid checksums from forge, workaround with 00 prefix
 }
+DEPLOY_WITH_SUFFIX () {
+    local FILE=$1
+    local CONTRACT=$2
+    local SUFFIX=$3
+    local GANACHE_KEY="0xf2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d"
+    local ETHENO_URL="http://127.0.0.1:8545/"
+    echo "# Deploying '$CONTRACT' to etheno.."
+    # Use foundry to deploy contracts via etheno
+    CONTRACT_ADDRESS=$(forge create --legacy --rpc-url "$ETHENO_URL" --private-key $GANACHE_KEY "$FILE:$CONTRACT" | grep "Deployed to")
+    CONTRACT_ADDRESS=${CONTRACT_ADDRESS#Deployed to: 0x}
+    echo "address constant ${CONTRACT}${SUFFIX}_ADDR = address(0x00$CONTRACT_ADDRESS);" >> /tmp/addresses.sol.tmp # we don't get addresses with valid checksums from forge, workaround with 00 prefix
+}
+DEPLOY_COMPOUND_WITH_SUFFIX () {
+    local SUFFIX=$1
+    local CONTRACT="UNITROLLER"
+    local GANACHE_KEY="0xf2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d"
+    echo "# Deploying Compound Protocol to etheno.."
+    cd ./compound-eureka
+    # Use foundry to deploy contracts via etheno
+    CONTRACT_ADDRESS=$(echo "y" | yarn eureka apply -n development -b ./.build -c config/*.js -e eureka/{compound,testnet,testnet-gov,ropsten}.eureka | grep "Contract Unitroller deployed to")
+    CONTRACT_ADDRESS=${CONTRACT_ADDRESS#Contract Unitroller deployed to 0x}
+    mv ./state/development-state.json ./state/development-state-${SUFFIX}.json
+    mv ./networks/development.json ./networks/development-${SUFFIX}.json
+    cd ..
+    echo "address constant ${CONTRACT}_${SUFFIX}_ADDR = address(0x00$CONTRACT_ADDRESS);" >> /tmp/addresses.sol.tmp # we don't get addresses with valid checksums from forge, workaround with 00 prefix
+}
+UPGRADE_COMPOUND_WITH_VERSION_KEY () {
+    local NETWORK_FILE=$1
+    local VERSION_KEY=$2
+    local GANACHE_KEY="0xf2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d"
+    UNITROLLER_ADDRESS=$(cat $NETWORK_FILE | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['Contracts']['Unitroller'])")
+    VERSION_ADDRESS=$(cat $NETWORK_FILE | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['Contracts']['${VERSION_KEY}'])")
+    echo "# Upgrading Unitroller at $UNITROLLER_ADDRESS to implementation at $VERSION_ADDRESS..."
+    cast send --legacy --private-key $GANACHE_KEY $UNITROLLER_ADDRESS "_setPendingImplementation(address)(uint256)" $VERSION_ADDRESS
+    cast send --legacy --private-key $GANACHE_KEY $VERSION_ADDRESS "_become(address)" $UNITROLLER_ADDRESS
+}
 RECORD_END () {
     # Finish address constants file
     rm ./src/test/addresses.sol
@@ -75,24 +111,28 @@ RECORD_END () {
 ## ---------------------- MAKE CHANGES HERE ----------------------- ##
 
 # Fetch implementations to fuzz
-FETCH ./src/implementation/example/BytesLib.sol "https://raw.githubusercontent.com/GNSPS/solidity-bytes-utils/master/contracts/BytesLib.sol"
-FETCH ./src/implementation/example/BytesUtil.sol "https://raw.githubusercontent.com/libertylocked/solidity-bytesutil/master/contracts/BytesUtil.sol"
+# FETCH ./src/implementation/example/BytesLib.sol "https://raw.githubusercontent.com/GNSPS/solidity-bytes-utils/master/contracts/BytesLib.sol"
+# FETCH ./src/implementation/example/BytesUtil.sol "https://raw.githubusercontent.com/libertylocked/solidity-bytesutil/master/contracts/BytesUtil.sol"
 # FETCH ./src/implementation/echidna-exercises/token.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/token.sol"
 # FETCH ./src/implementation/echidna-exercises/mintable.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/mintable.sol"
 
 # Compile contracts
-BUILD
+# BUILD
 
 # Record deployment of contracts
 RECORD_START
 
 # Save constructor args to a file
-args=("10000")
-SAVE_CONSTRUCTOR_ARGS "${args[@]}"
+# args=("10000")
+# SAVE_CONSTRUCTOR_ARGS "${args[@]}"
 
 # Deploy contract
-DEPLOY_WITH_ARGS ./src/implementation/echidna-exercises/mintable.sol MintableToken
-DEPLOY ./src/expose/example/BytesLib.sol ExposedBytesLib
-DEPLOY ./src/expose/example/BytesUtil.sol ExposedBytesUtil
+# DEPLOY_WITH_ARGS ./src/implementation/echidna-exercises/mintable.sol MintableToken
+# DEPLOY ./src/expose/example/BytesLib.sol ExposedBytesLib
+# DEPLOY ./src/expose/example/BytesUtil.sol ExposedBytesUtil
+DEPLOY_COMPOUND_WITH_SUFFIX BEFORE
+UPGRADE_COMPOUND_WITH_VERSION_KEY ./compound-eureka/networks/development-BEFORE.json ComptrollerBefore
+DEPLOY_COMPOUND_WITH_SUFFIX AFTER
+UPGRADE_COMPOUND_WITH_VERSION_KEY ./compound-eureka/networks/development-AFTER.json ComptrollerAfter
 
 RECORD_END
