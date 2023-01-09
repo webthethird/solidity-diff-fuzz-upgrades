@@ -4,4 +4,4 @@
 	branch = v1.1.1
 [submodule "compound-eureka"]
 	path = compound-eureka
-	url = https://github.com/compound-finance/compound-eureka
+	url = https://github.com/webthethird/compound-eureka
