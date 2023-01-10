@@ -152,7 +152,9 @@ interface Comptroller is ComptrollerV5Storage {
      * @param cTokens The list of addresses of the cToken markets to be enabled
      * @return Success indicator for whether each corresponding market was entered
      */
-    function enterMarkets(address[] memory cTokens) external returns (uint[] memory);
+    function enterMarkets(address[] calldata cTokens) external returns (uint[] memory);
+
+    function enterMarkets(address[] calldata cTokens, address sender) external returns (uint[] memory);
 
     /**
      * @notice Removes asset from sender's account liquidity calculation
@@ -162,6 +164,8 @@ interface Comptroller is ComptrollerV5Storage {
      * @return Whether or not the account successfully exited the market
      */
     function exitMarket(address cTokenAddress) external returns (uint);
+
+    function exitMarket(address cTokenAddress, address sender) external returns (uint);
 
     /*** Policy Hooks ***/
 
@@ -290,7 +294,7 @@ interface Comptroller is ComptrollerV5Storage {
      * @param holder The address to claim COMP for
      * @param cTokens The list of markets to claim COMP in
      */
-    function claimComp(address holder, CToken[] memory cTokens) external;
+    function claimComp(address holder, CToken[] calldata cTokens) external;
 
     /**
      * @notice Return all of the markets
