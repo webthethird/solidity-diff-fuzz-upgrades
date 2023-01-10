@@ -6,7 +6,7 @@ testLimit: 999999                                             # Number of test s
 
 # Fuzzing stateless contracts / libraries
 seqLen: 10                                                     # Increase when fuzzing non-libraries (contracts with state)
-# testMode: assertion                                         
+testMode: assertion                                         
 # testMode: property
 # testMode: dapptest                                            # Allows fuzzing behavior similar to foundry (no properties but test functions)
 maxTimeDelay: 0
@@ -22,3 +22,4 @@ initialize: echidna-init.json                                 # Don't disable si
 stopOnFail: true
 
 coverage: true                                                # coverage guided testing
+corpusDir: corpus
