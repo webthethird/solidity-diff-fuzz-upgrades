@@ -1,14 +1,8 @@
-pragma solidity ^0.5.16;
+pragma solidity ^0.8.9;
 
-import "../../implementation/compound/Comptroller-before/contracts/CToken.sol";
-import "../../implementation/compound/Comptroller-before/contracts/ErrorReporter.sol";
-import "../../implementation/compound/Comptroller-before/contracts/PriceOracle.sol";
-import "../../implementation/compound/Comptroller-before/contracts/ComptrollerInterface.sol";
-import "../../implementation/compound/Comptroller-before/contracts/ComptrollerStorage.sol";
-import "../../implementation/compound/Comptroller-before/contracts/Unitroller.sol";
-import "../../implementation/compound/Comptroller-before/contracts/Governance/Comp.sol";
-import {ComptrollerBefore} from "./ComptrollerBefore.sol";
-import {ComptrollerAfter} from "./ComptrollerAfter.sol";
+import "../../interface/compound/Comptroller.sol";
+import {UNITROLLER_BEFORE_ADDR, UNITROLLER_AFTER_ADDR} from "../addresses.sol";
+import "../helpers.sol";
 
 contract Users {
     function proxy(address target, bytes memory data) public returns (bool success, bytes memory retData) {
@@ -17,14 +11,28 @@ contract Users {
 }
 
 contract Setup {
-    Comp compToken;
-    ComptrollerBefore comptrollerBefore;
-    ComptrollerAfter comptrollerAfter;
+    Comp compTokenBefore;
+    Comp compTokenAfter;
+    CToken[] marketsBefore;
+    CToken[] marketsAfter;
+    Comptroller comptrollerBefore;
+    Comptroller comptrollerAfter;
     Users user;
 
+    /**
+     * Must run build.sh first to create both Compound protocol deployments
+     * and populate addresses.sol with the addresses of the Unitrollers once
+     * they have been deployed and upgraded to the before/after implementations
+     */
     constructor() public {
-        compToken = new Comp(address(this));
-        comptrollerBefore = new ComptrollerBefore(address(compToken));
-        comptrollerAfter = new ComptrollerAfter(address(compToken));
+        comptrollerBefore = Comptroller(address(UNITROLLER_BEFORE_ADDR));
+        comptrollerAfter = Comptroller(address(UNITROLLER_AFTER_ADDR));
+        compTokenBefore = Comp(comptrollerBefore.getCompAddress());
+        compTokenAfter = Comp(comptrollerAfter.getCompAddress());
+        marketsBefore = comptrollerBefore.getAllMarkets();
+        marketsAfter = comptrollerAfter.getAllMarkets();
+        // Set this contract as the Unitrollers' admin using the store cheat code
+        CheatCodes(HEVM_ADDRESS).store(UNITROLLER_BEFORE_ADDR, 0, bytes32(bytes20(address(this))));
+        CheatCodes(HEVM_ADDRESS).store(UNITROLLER_AFTER_ADDR, 0, bytes32(bytes20(address(this))));
     }
 }
