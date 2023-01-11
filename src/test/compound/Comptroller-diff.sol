@@ -19,21 +19,23 @@ contract ComptrollerDiffFuzz is Setup {
     }
 
     function testAddNewMarket() public {
+        require(!marketAdded);
         uint numMarketsBefore = comptrollerBefore.getAllMarkets().length;
         uint numMarketsAfter = comptrollerAfter.getAllMarkets().length;
         require(numMarketsAfter == numMarketsBefore);
-        CheatCodes(HEVM_ADDRESS).store(UNITROLLER_BEFORE_ADDR, bytes32(0), bytes32(bytes20(address(this))));
-        CheatCodes(HEVM_ADDRESS).store(UNITROLLER_AFTER_ADDR, bytes32(0), bytes32(bytes20(address(this))));
-        require(address(bytes20(CheatCodes(HEVM_ADDRESS).load(UNITROLLER_BEFORE_ADDR, bytes32(0)))) == address(this));
-        require(address(bytes20(CheatCodes(HEVM_ADDRESS).load(UNITROLLER_AFTER_ADDR, bytes32(0)))) == address(this));
         
         CToken cErc20Before = CToken(CErc20Immutable_BEFORE_ADDR);
         CToken cErc20After = CToken(CErc20Immutable_AFTER_ADDR);
 
+        assert(cErc20Before.isCToken());
+        assert(cErc20After.isCToken());
+
         comptrollerBefore._supportMarket(cErc20Before);
         comptrollerAfter._supportMarket(cErc20After);
 
-        assert(comptrollerAfter.getAllMarkets().length == numMarketsAfter + 1);
         assert(comptrollerBefore.getAllMarkets().length == numMarketsBefore + 1);
+        assert(comptrollerAfter.getAllMarkets().length == numMarketsAfter + 1);
+
+        marketAdded = true;
     }
 }
