@@ -18,7 +18,7 @@ contract ComptrollerDiffFuzz is Setup {
         assert(balanceBefore == balanceAfter);
     }
 
-    function testAddNewMarket() public {
+    function testAddNewMarket(uint8 marketIndex) public {
         require(!marketAdded);
         uint numMarketsBefore = comptrollerBefore.getAllMarkets().length;
         uint numMarketsAfter = comptrollerAfter.getAllMarkets().length;
@@ -30,8 +30,30 @@ contract ComptrollerDiffFuzz is Setup {
         assert(cErc20Before.isCToken());
         assert(cErc20After.isCToken());
 
+        uint index = marketIndex % numMarketsBefore;
+        CToken example = marketsBefore[index];
+        uint exampleUnderlyingPrice = SimplePriceOracle(comptrollerBefore.oracle()).getUnderlyingPrice(example);
+        uint exampleDirectPrice = SimplePriceOracle(comptrollerBefore.oracle()).assetPrices(address(example));
+        uint exampleReserveFactor = example.reserveFactorMantissa();
+        uint exampleCollateralFactor = comptrollerBefore.markets(address(example)).collateralFactorMantissa;
+
+        address adminBefore = cErc20Before.admin();
+        CheatCodes(HEVM_ADDRESS).prank(adminBefore);
+        cErc20Before._setReserveFactor(exampleReserveFactor);
+        address adminAfter = cErc20After.admin();
+        CheatCodes(HEVM_ADDRESS).prank(adminAfter);
+        cErc20After._setReserveFactor(exampleReserveFactor);
+
+        SimplePriceOracle(comptrollerBefore.oracle()).setUnderlyingPrice(cErc20Before, exampleUnderlyingPrice);
+        SimplePriceOracle(comptrollerAfter.oracle()).setUnderlyingPrice(cErc20After, exampleUnderlyingPrice);
+        SimplePriceOracle(comptrollerBefore.oracle()).setDirectPrice(address(cErc20Before), exampleDirectPrice);
+        SimplePriceOracle(comptrollerAfter.oracle()).setDirectPrice(address(cErc20After), exampleDirectPrice);
+
         comptrollerBefore._supportMarket(cErc20Before);
         comptrollerAfter._supportMarket(cErc20After);
+
+        comptrollerBefore._setCollateralFactor(cErc20Before, exampleCollateralFactor);
+        comptrollerAfter._setCollateralFactor(cErc20After, exampleCollateralFactor);
 
         assert(comptrollerBefore.getAllMarkets().length == numMarketsBefore + 1);
         assert(comptrollerAfter.getAllMarkets().length == numMarketsAfter + 1);
