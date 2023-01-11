@@ -46,6 +46,10 @@ interface CToken {
 
     /*** User Interface ***/
 
+    function admin() external returns (address);
+    function isCToken() external returns (bool);
+    function reserveFactorMantissa() external view returns (uint);
+    function collateralFactorMantissa() external view returns (uint);
     function transfer(address dst, uint amount) external returns (bool);
     function transferFrom(address src, address dst, uint amount) external returns (bool);
     function approve(address spender, uint amount) external returns (bool);
@@ -73,6 +77,18 @@ interface CToken {
     function _reduceReserves(uint reduceAmount) external returns (uint);
 }
 
+interface PriceOracle {
+    function getUnderlyingPrice(CToken cToken) external view returns (uint);
+}
+
+interface SimplePriceOracle is PriceOracle {
+    event PricePosted(address asset, uint previousPriceMantissa, uint requestedPriceMantissa, uint newPriceMantissa);
+    function getUnderlyingPrice(CToken cToken) external view returns (uint);
+    function setUnderlyingPrice(CToken cToken, uint underlyingPriceMantissa) external;
+    function setDirectPrice(address asset, uint price) external;
+    function assetPrices(address asset) external view returns (uint);
+}
+
 interface UnitrollerAdminStorage {
     function admin() external returns (address);
     function pendingAdmin() external returns (address);
@@ -92,7 +108,7 @@ interface ComptrollerV2Storage is ComptrollerV1Storage {
     struct Market {
         bool isListed;
         uint collateralFactorMantissa;
-        mapping(address => bool) accountMembership;
+        // mapping(address => bool) accountMembership;
         bool isComped;
     }
 
@@ -132,6 +148,8 @@ interface ComptrollerV5Storage is ComptrollerV4Storage {
 }
 
 interface Comptroller is ComptrollerV5Storage {
+    function oracle() external view returns (address oracle);
+    function markets(address asset) external view returns (Market memory market);
     /**
      * @notice Returns the assets an account has entered
      * @param account The address of the account to pull assets for
