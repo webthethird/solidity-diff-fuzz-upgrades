@@ -1,9 +1,11 @@
 pragma solidity >=0.5.16;
 
-import "./PriceOracle.sol";
 import "./CErc20.sol";
 
-contract SimplePriceOracle is PriceOracle {
+contract SimplePriceOracle {
+    /// @notice Indicator that this is a PriceOracle contract (for inspection)
+    bool public constant isPriceOracle = true;
+
     mapping(address => uint) prices;
     event PricePosted(address asset, uint previousPriceMantissa, uint requestedPriceMantissa, uint newPriceMantissa);
 

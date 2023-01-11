@@ -1,4 +1,4 @@
-pragma solidity >=0.5.16;
+pragma solidity ^0.5.16;
 
 import "./CTokenInterfaces.sol";
 
@@ -421,7 +421,7 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
         (bool success, bytes memory returnData) = callee.delegatecall(data);
         assembly {
             if eq(success, 0) {
-                revert(add(returnData, 0x20), returndatasize())
+                revert(add(returnData, 0x20), returndatasize)
             }
         }
         return returnData;
@@ -448,7 +448,7 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
         (bool success, bytes memory returnData) = address(this).staticcall(abi.encodeWithSignature("delegateToImplementation(bytes)", data));
         assembly {
             if eq(success, 0) {
-                revert(add(returnData, 0x20), returndatasize())
+                revert(add(returnData, 0x20), returndatasize)
             }
         }
         return abi.decode(returnData, (bytes));
@@ -458,7 +458,7 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
      * @notice Delegates execution to an implementation contract
      * @dev It returns to the external caller whatever the implementation returns or forwards reverts
      */
-    fallback () external payable {
+    function () external payable {
         require(msg.value == 0,"CErc20Delegator:fallback: cannot send value to fallback");
 
         // delegate all other functions to current implementation
@@ -466,11 +466,11 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
 
         assembly {
             let free_mem_ptr := mload(0x40)
-            returndatacopy(free_mem_ptr, 0, returndatasize())
+            returndatacopy(free_mem_ptr, 0, returndatasize)
 
             switch success
-            case 0 { revert(free_mem_ptr, returndatasize()) }
-            default { return(free_mem_ptr, returndatasize()) }
+            case 0 { revert(free_mem_ptr, returndatasize) }
+            default { return(free_mem_ptr, returndatasize) }
         }
     }
 }
