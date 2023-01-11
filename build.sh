@@ -66,7 +66,19 @@ DEPLOY_WITH_SUFFIX () {
     # Use foundry to deploy contracts via etheno
     CONTRACT_ADDRESS=$(forge create --legacy --rpc-url "$ETHENO_URL" --private-key $GANACHE_KEY "$FILE:$CONTRACT" | grep "Deployed to")
     CONTRACT_ADDRESS=${CONTRACT_ADDRESS#Deployed to: 0x}
-    echo "address constant ${CONTRACT}${SUFFIX}_ADDR = address(0x00$CONTRACT_ADDRESS);" >> /tmp/addresses.sol.tmp # we don't get addresses with valid checksums from forge, workaround with 00 prefix
+    echo "address constant ${CONTRACT}_${SUFFIX}_ADDR = address(0x00$CONTRACT_ADDRESS);" >> /tmp/addresses.sol.tmp # we don't get addresses with valid checksums from forge, workaround with 00 prefix
+}
+DEPLOY_WITH_SUFFIX_AND_ARGS () {
+    local FILE=$1
+    local CONTRACT=$2
+    local SUFFIX=$3
+    local GANACHE_KEY="0xf2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d"
+    local ETHENO_URL="http://127.0.0.1:8545/"
+    echo "# Deploying '$CONTRACT' to etheno.."
+    # Use foundry to deploy contracts via etheno
+    CONTRACT_ADDRESS=$(forge create --legacy --rpc-url "$ETHENO_URL" --private-key $GANACHE_KEY "$FILE:$CONTRACT" --constructor-args-path "/tmp/args.txt.tmp" | grep "Deployed to")
+    CONTRACT_ADDRESS=${CONTRACT_ADDRESS#Deployed to: 0x}
+    echo "address constant ${CONTRACT}_${SUFFIX}_ADDR = address(0x00$CONTRACT_ADDRESS);" >> /tmp/addresses.sol.tmp # we don't get addresses with valid checksums from forge, workaround with 00 prefix
 }
 DEPLOY_COMPOUND_WITH_SUFFIX () {
     local SUFFIX=$1
@@ -92,6 +104,36 @@ UPGRADE_COMPOUND_WITH_VERSION_KEY () {
     cast send --legacy --private-key $GANACHE_KEY $UNITROLLER_ADDRESS "_setPendingImplementation(address)(uint256)" $VERSION_ADDRESS
     cast send --legacy --private-key $GANACHE_KEY $VERSION_ADDRESS "_become(address)" $UNITROLLER_ADDRESS
 }
+DEPLOY_CTOKEN_WITH_UNDERLYING() {
+    local ERC20_FILE="./src/implementation/@openzeppelin/contracts/token/ERC20/ERC20.sol"
+    local ERC20_CONTRACT="ERC20"
+    local ERC20_NAME=$1
+    local ERC20_SYMBOL=$2
+    local SUFFIX=$3
+    local NETWORK_FILE=$4
+    local INTEREST_RATE_MODEL=$5
+    local GANACHE_KEY="0xf2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d"
+    local ETHENO_URL="http://127.0.0.1:8545/"
+    args=("$ERC20_NAME" "$ERC20_SYMBOL")
+    SAVE_CONSTRUCTOR_ARGS "${args[@]}"
+    echo "# Deploying '$ERC20_CONTRACT' to etheno.."
+    # Use foundry to deploy contracts via etheno
+    ERC20_CONTRACT_ADDRESS=$(forge create --legacy --rpc-url "$ETHENO_URL" --private-key $GANACHE_KEY "$ERC20_FILE:$ERC20_CONTRACT" --constructor-args-path "/tmp/args.txt.tmp" | grep "Deployed to")
+    ERC20_CONTRACT_ADDRESS=${ERC20_CONTRACT_ADDRESS#Deployed to: 0x}
+    echo "address constant ${ERC20_CONTRACT}_${SUFFIX}_ADDR = address(0x00$ERC20_CONTRACT_ADDRESS);" >> /tmp/addresses.sol.tmp
+    local CERC20_FILE="./src/implementation/compound/Comptroller-before/contracts/CErc20Immutable.sol"
+    local CERC20_CONTRACT="CErc20Immutable"
+    local UNITROLLER_ADDRESS=$(cat $NETWORK_FILE | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['Contracts']['Unitroller'])")
+    local INTEREST_RATE_ADDRESS=$(cat $NETWORK_FILE | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['Contracts']['${INTEREST_RATE_MODEL}'])")
+    local ADMIN_ADDRESS=$(cast wallet address ${GANACHE_KEY})
+    args=("0x$ERC20_CONTRACT_ADDRESS" "$UNITROLLER_ADDRESS" "$INTEREST_RATE_ADDRESS" "200000000000000000000000000" "Compound$ERC20_NAME" "c$ERC20_SYMBOL" "8" "$ADMIN_ADDRESS")
+    SAVE_CONSTRUCTOR_ARGS "${args[@]}"
+    echo "# Deploying '$CERC20_CONTRACT' to etheno.."
+    # Use foundry to deploy contracts via etheno
+    CERC20_CONTRACT_ADDRESS=$(forge create --legacy --rpc-url "$ETHENO_URL" --private-key $GANACHE_KEY "$CERC20_FILE:$CERC20_CONTRACT" --constructor-args-path "/tmp/args.txt.tmp" | grep "Deployed to")
+    CERC20_CONTRACT_ADDRESS=${CERC20_CONTRACT_ADDRESS#Deployed to: 0x}
+    echo "address constant ${CERC20_CONTRACT}_${SUFFIX}_ADDR = address(0x00$CERC20_CONTRACT_ADDRESS);" >> /tmp/addresses.sol.tmp
+}
 RECORD_END () {
     # Finish address constants file
     rm ./src/test/addresses.sol
@@ -111,13 +153,13 @@ RECORD_END () {
 ## ---------------------- MAKE CHANGES HERE ----------------------- ##
 
 # Fetch implementations to fuzz
-# FETCH ./src/implementation/example/BytesLib.sol "https://raw.githubusercontent.com/GNSPS/solidity-bytes-utils/master/contracts/BytesLib.sol"
-# FETCH ./src/implementation/example/BytesUtil.sol "https://raw.githubusercontent.com/libertylocked/solidity-bytesutil/master/contracts/BytesUtil.sol"
+FETCH ./src/implementation/example/BytesLib.sol "https://raw.githubusercontent.com/GNSPS/solidity-bytes-utils/master/contracts/BytesLib.sol"
+FETCH ./src/implementation/example/BytesUtil.sol "https://raw.githubusercontent.com/libertylocked/solidity-bytesutil/master/contracts/BytesUtil.sol"
 # FETCH ./src/implementation/echidna-exercises/token.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/token.sol"
 # FETCH ./src/implementation/echidna-exercises/mintable.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/mintable.sol"
 
 # Compile contracts
-# BUILD
+BUILD
 
 # Record deployment of contracts
 RECORD_START
@@ -128,11 +170,13 @@ RECORD_START
 
 # Deploy contract
 # DEPLOY_WITH_ARGS ./src/implementation/echidna-exercises/mintable.sol MintableToken
-# DEPLOY ./src/expose/example/BytesLib.sol ExposedBytesLib
-# DEPLOY ./src/expose/example/BytesUtil.sol ExposedBytesUtil
+DEPLOY ./src/expose/example/BytesLib.sol ExposedBytesLib
+DEPLOY ./src/expose/example/BytesUtil.sol ExposedBytesUtil
 DEPLOY_COMPOUND_WITH_SUFFIX BEFORE
 UPGRADE_COMPOUND_WITH_VERSION_KEY ./compound-eureka/networks/development-BEFORE.json ComptrollerBefore
 DEPLOY_COMPOUND_WITH_SUFFIX AFTER
 UPGRADE_COMPOUND_WITH_VERSION_KEY ./compound-eureka/networks/development-AFTER.json ComptrollerAfter
+DEPLOY_CTOKEN_WITH_UNDERLYING TestBefore BFOR BEFORE ./compound-eureka/networks/development-BEFORE.json Base200bps_Slope1000bps
+DEPLOY_CTOKEN_WITH_UNDERLYING TestAfter AFTR AFTER ./compound-eureka/networks/development-AFTER.json Base200bps_Slope1000bps
 
 RECORD_END
