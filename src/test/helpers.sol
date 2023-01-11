@@ -20,6 +20,8 @@ interface CheatCodes {
     // Derives an ethereum address from the private key sk. 
     // Note that hevm.addr(0) will fail with BadCheatCode as 0 is an invalid ECDSA private key
     function addr(uint sk) external returns (address addr);
+    // Sets the msg.sender to sender for the following call
+    function prank(address sender) external;
 }
 
 /**
