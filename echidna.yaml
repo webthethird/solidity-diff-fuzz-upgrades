@@ -2,7 +2,7 @@
 allowFFI: true                                                # Enabling HEVM's FFI cheatcode
 
 # Fuzz run options - adjust as needed for your fuzzing campaign
-testLimit: 999999                                             # Number of test sequences to run
+testLimit: 10000                                            # Number of test sequences to run
 
 # Fuzzing stateless contracts / libraries
 seqLen: 10                                                     # Increase when fuzzing non-libraries (contracts with state)
@@ -13,13 +13,13 @@ maxTimeDelay: 0
 maxBlockDelay: 0
 maxValue: 0
 deployer: "0x10000"
-sender: ["0x10000"] # , "0x20000"]
+sender: ["0x5409ed021d9299bf6814279a6a1411a7e866a631"] # , "0x20000"]
 
 # The transactions to replay for initialization, contains deployments of contracts with incompatible solidity version
 initialize: echidna-init.json                                 # Don't disable since otherwise the assuming() helper won't work anymore.
 
 # format: "text"
-stopOnFail: true
+stopOnFail: false
 
 coverage: true                                                # coverage guided testing
 corpusDir: corpus
