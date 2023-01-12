@@ -2,6 +2,8 @@
 pragma solidity >=0.5.16;
 
 interface Comp {
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
     function decimals() external returns (uint8);
     function totalSupply() external returns (uint); // 10 million Comp
 
@@ -89,73 +91,232 @@ interface SimplePriceOracle is PriceOracle {
     function assetPrices(address asset) external view returns (uint);
 }
 
-interface UnitrollerAdminStorage {
-    function admin() external returns (address);
-    function pendingAdmin() external returns (address);
-    function comptrollerImplementation() external returns (address);
-    function pendingComptrollerImplementation() external returns (address);
+contract UnitrollerAdminStorage {
+    /**
+    * @notice Administrator for this contract
+    */
+    address public admin;
+
+    /**
+    * @notice Pending administrator for this contract
+    */
+    address public pendingAdmin;
+
+    /**
+    * @notice Active brains of Unitroller
+    */
+    address public comptrollerImplementation;
+
+    /**
+    * @notice Pending brains of Unitroller
+    */
+    address public pendingComptrollerImplementation;
 }
 
-interface ComptrollerV1Storage is UnitrollerAdminStorage {
-    function closeFactorMantissa() external returns (uint);
-    function liquidationIncentiveMantissa() external returns (uint);
-    function maxAssets() external returns (uint);
-    function accountAssets(address addr) external returns(CToken[] memory);
+contract ComptrollerV1Storage is UnitrollerAdminStorage {
+
+    /**
+     * @notice Oracle which gives the price of any given asset
+     */
+    PriceOracle public oracle;
+
+    /**
+     * @notice Multiplier used to calculate the maximum repayAmount when liquidating a borrow
+     */
+    uint public closeFactorMantissa;
+
+    /**
+     * @notice Multiplier representing the discount on collateral that a liquidator receives
+     */
+    uint public liquidationIncentiveMantissa;
+
+    /**
+     * @notice Max number of assets a single account can participate in (borrow or use as collateral)
+     */
+    uint public maxAssets;
+
+    /**
+     * @notice Per-account mapping of "assets you are in", capped by maxAssets
+     */
+    mapping(address => CToken[]) public accountAssets;
 
 }
 
-interface ComptrollerV2Storage is ComptrollerV1Storage {
+contract ComptrollerV2Storage is ComptrollerV1Storage {
     struct Market {
+        /// @notice Whether or not this market is listed
         bool isListed;
+
+        /**
+         * @notice Multiplier representing the most one can borrow against their collateral in this market.
+         *  For instance, 0.9 to allow borrowing 90% of collateral value.
+         *  Must be between 0 and 1, and stored as a mantissa.
+         */
         uint collateralFactorMantissa;
-        // mapping(address => bool) accountMembership;
+
+        /// @notice Per-market mapping of "accounts in this asset"
+        mapping(address => bool) accountMembership;
+
+        /// @notice Whether or not this market receives COMP
         bool isComped;
     }
 
-    function pauseGuardian() external returns (address);
-    function _mintGuardianPaused() external returns (bool);
-    function _borrowGuardianPaused() external returns (bool);
-    function transferGuardianPaused() external returns (bool);
-    function seizeGuardianPaused() external returns (bool);
-    function mintGuardianPaused(address addr) external returns (bool);
-    function borrowGuardianPaused(address addr) external returns (bool);
+    /**
+     * @notice Official mapping of cTokens -> Market metadata
+     * @dev Used e.g. to determine if a market is supported
+     */
+    mapping(address => Market) public markets;
+
+
+    /**
+     * @notice The Pause Guardian can pause certain actions as a safety mechanism.
+     *  Actions which allow users to remove their own assets cannot be paused.
+     *  Liquidation / seizing / transfer can only be paused globally, not by market.
+     */
+    address public pauseGuardian;
+    bool public _mintGuardianPaused;
+    bool public _borrowGuardianPaused;
+    bool public transferGuardianPaused;
+    bool public seizeGuardianPaused;
+    mapping(address => bool) public mintGuardianPaused;
+    mapping(address => bool) public borrowGuardianPaused;
 }
 
-interface ComptrollerV3Storage is ComptrollerV2Storage {
+contract ComptrollerV3Storage is ComptrollerV2Storage {
     struct CompMarketState {
+        /// @notice The market's last updated compBorrowIndex or compSupplyIndex
         uint224 index;
+
+        /// @notice The block number the index was last updated at
         uint32 block;
     }
 
-    function allMarkets() external returns (CToken[] memory);
-    function compRate() external returns (uint);
-    function compSpeeds(address addr) external returns (uint);
-    function compSupplyState(address addr) external returns (CompMarketState memory);
-    function compBorrowState(address addr) external returns (CompMarketState memory);
-    function compSupplierIndex(address addr) external returns (uint);
-    function compBorrowerIndex(address addr) external returns (uint);
-    function compAccrued(address addr) external returns (uint);
+    /// @notice A list of all markets
+    CToken[] public allMarkets;
+
+    /// @notice The rate at which the flywheel distributes COMP, per block
+    uint public compRate;
+
+    /// @notice The portion of compRate that each market currently receives
+    mapping(address => uint) public compSpeeds;
+
+    /// @notice The COMP market supply state for each market
+    mapping(address => CompMarketState) public compSupplyState;
+
+    /// @notice The COMP market borrow state for each market
+    mapping(address => CompMarketState) public compBorrowState;
+
+    /// @notice The COMP borrow index for each market for each supplier as of the last time they accrued COMP
+    mapping(address => mapping(address => uint)) public compSupplierIndex;
+
+    /// @notice The COMP borrow index for each market for each borrower as of the last time they accrued COMP
+    mapping(address => mapping(address => uint)) public compBorrowerIndex;
+
+    /// @notice The COMP accrued but not yet transferred to each user
+    mapping(address => uint) public compAccrued;
 }
 
-interface ComptrollerV4Storage is ComptrollerV3Storage {
-    function borrowCapGuardian() external returns (address);
-    function borrowCaps(address addr) external returns (uint);
+contract ComptrollerV4Storage is ComptrollerV3Storage {
+    // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
+    address public borrowCapGuardian;
+
+    // @notice Borrow caps enforced by borrowAllowed for each cToken address. Defaults to zero which corresponds to unlimited borrowing.
+    mapping(address => uint) public borrowCaps;
 }
 
-interface ComptrollerV5Storage is ComptrollerV4Storage {
-    function compContributorSpeeds(address addr) external returns (uint);
-    function lastContributorBlock(address addr) external returns (uint);
+contract ComptrollerV5Storage is ComptrollerV4Storage {
+    /// @notice The portion of COMP that each contributor receives per block
+    mapping(address => uint) public compContributorSpeeds;
+
+    /// @notice Last block at which a contributor's COMP rewards have been allocated
+    mapping(address => uint) public lastContributorBlock;
 }
 
-interface Comptroller is ComptrollerV5Storage {
-    function oracle() external view returns (address oracle);
-    function markets(address asset) external view returns (Market memory market);
+contract ComptrollerV6Storage is ComptrollerV5Storage {
+    /// @notice The rate at which comp is distributed to the corresponding borrow market (per block)
+    mapping(address => uint) public compBorrowSpeeds;
+
+    /// @notice The rate at which comp is distributed to the corresponding supply market (per block)
+    mapping(address => uint) public compSupplySpeeds;
+}
+
+abstract contract ComptrollerInterface {
+    /// @notice Indicator that this is a Comptroller contract (for inspection)
+    bool public constant isComptroller = true;
+
+    /*** Assets You Are In ***/
+
+    function enterMarkets(address[] calldata cTokens) external virtual returns (uint[] memory);
+    function exitMarket(address cToken) external virtual returns (uint);
+
+    /*** Policy Hooks ***/
+
+    function mintAllowed(address cToken, address minter, uint mintAmount) external virtual returns (uint);
+    function mintVerify(address cToken, address minter, uint mintAmount, uint mintTokens) external virtual;
+
+    function redeemAllowed(address cToken, address redeemer, uint redeemTokens) external virtual returns (uint);
+    function redeemVerify(address cToken, address redeemer, uint redeemAmount, uint redeemTokens) external virtual;
+
+    function borrowAllowed(address cToken, address borrower, uint borrowAmount) external virtual returns (uint);
+    function borrowVerify(address cToken, address borrower, uint borrowAmount) external virtual;
+
+    function repayBorrowAllowed(
+        address cToken,
+        address payer,
+        address borrower,
+        uint repayAmount) external virtual returns (uint);
+    function repayBorrowVerify(
+        address cToken,
+        address payer,
+        address borrower,
+        uint repayAmount,
+        uint borrowerIndex) external virtual;
+
+    function liquidateBorrowAllowed(
+        address cTokenBorrowed,
+        address cTokenCollateral,
+        address liquidator,
+        address borrower,
+        uint repayAmount) external virtual returns (uint);
+    function liquidateBorrowVerify(
+        address cTokenBorrowed,
+        address cTokenCollateral,
+        address liquidator,
+        address borrower,
+        uint repayAmount,
+        uint seizeTokens) external virtual;
+
+    function seizeAllowed(
+        address cTokenCollateral,
+        address cTokenBorrowed,
+        address liquidator,
+        address borrower,
+        uint seizeTokens) external virtual returns (uint);
+    function seizeVerify(
+        address cTokenCollateral,
+        address cTokenBorrowed,
+        address liquidator,
+        address borrower,
+        uint seizeTokens) external virtual;
+
+    function transferAllowed(address cToken, address src, address dst, uint transferTokens) external virtual returns (uint);
+    function transferVerify(address cToken, address src, address dst, uint transferTokens) external virtual;
+
+    /*** Liquidity/Liquidation Calculations ***/
+
+    function liquidateCalculateSeizeTokens(
+        address cTokenBorrowed,
+        address cTokenCollateral,
+        uint repayAmount) external virtual view returns (uint, uint);
+}
+
+abstract contract Comptroller is ComptrollerV5Storage, ComptrollerInterface {
     /**
      * @notice Returns the assets an account has entered
      * @param account The address of the account to pull assets for
      * @return A dynamic list with the assets the account has entered
      */
-    function getAssetsIn(address account) external view returns (CToken[] memory);
+    function getAssetsIn(address account) external virtual view returns (CToken[] memory);
 
     /**
      * @notice Returns whether the given account is entered in the given asset
@@ -163,16 +324,16 @@ interface Comptroller is ComptrollerV5Storage {
      * @param cToken The cToken to check
      * @return True if the account is in the asset, otherwise false.
      */
-    function checkMembership(address account, CToken cToken) external view returns (bool);
+    function checkMembership(address account, CToken cToken) external virtual view returns (bool);
 
     /**
      * @notice Add assets to be included in account liquidity calculation
      * @param cTokens The list of addresses of the cToken markets to be enabled
      * @return Success indicator for whether each corresponding market was entered
      */
-    function enterMarkets(address[] calldata cTokens) external returns (uint[] memory);
+    function enterMarkets(address[] calldata cTokens) external virtual override returns (uint[] memory);
 
-    function enterMarkets(address[] calldata cTokens, address sender) external returns (uint[] memory);
+    function enterMarkets(address[] calldata cTokens, address sender) external virtual returns (uint[] memory);
 
     /**
      * @notice Removes asset from sender's account liquidity calculation
@@ -181,9 +342,9 @@ interface Comptroller is ComptrollerV5Storage {
      * @param cTokenAddress The address of the asset to be removed
      * @return Whether or not the account successfully exited the market
      */
-    function exitMarket(address cTokenAddress) external returns (uint);
+    function exitMarket(address cTokenAddress) external virtual override returns (uint);
 
-    function exitMarket(address cTokenAddress, address sender) external returns (uint);
+    function exitMarket(address cTokenAddress, address sender) external virtual returns (uint);
 
     /*** Policy Hooks ***/
 
@@ -194,7 +355,7 @@ interface Comptroller is ComptrollerV5Storage {
      * @param mintAmount The amount of underlying being supplied to the market in exchange for tokens
      * @return 0 if the mint is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
-    function mintAllowed(address cToken, address minter, uint mintAmount) external returns (uint);
+    function mintAllowed(address cToken, address minter, uint mintAmount) external virtual override returns (uint);
 
     /**
      * @notice Checks if the account should be allowed to redeem tokens in the given market
@@ -203,7 +364,7 @@ interface Comptroller is ComptrollerV5Storage {
      * @param redeemTokens The number of cTokens to exchange for the underlying asset in the market
      * @return 0 if the redeem is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
-    function redeemAllowed(address cToken, address redeemer, uint redeemTokens) external returns (uint);
+    function redeemAllowed(address cToken, address redeemer, uint redeemTokens) external virtual override returns (uint);
 
     /**
      * @notice Checks if the account should be allowed to borrow the underlying asset of the given market
@@ -212,7 +373,7 @@ interface Comptroller is ComptrollerV5Storage {
      * @param borrowAmount The amount of underlying the account would borrow
      * @return 0 if the borrow is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
-    function borrowAllowed(address cToken, address borrower, uint borrowAmount) external returns (uint);
+    function borrowAllowed(address cToken, address borrower, uint borrowAmount) external virtual override returns (uint);
 
     /**
      * @notice Checks if the account should be allowed to repay a borrow in the given market
@@ -222,7 +383,7 @@ interface Comptroller is ComptrollerV5Storage {
      * @param repayAmount The amount of the underlying asset the account would repay
      * @return 0 if the repay is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
-    function repayBorrowAllowed(address cToken, address payer, address borrower, uint repayAmount) external returns (uint);
+    function repayBorrowAllowed(address cToken, address payer, address borrower, uint repayAmount) external virtual override returns (uint);
 
     /**
      * @notice Checks if the liquidation should be allowed to occur
@@ -238,7 +399,7 @@ interface Comptroller is ComptrollerV5Storage {
         address liquidator,
         address borrower,
         uint repayAmount) 
-    external returns (uint);
+    external virtual override returns (uint);
 
     /**
      * @notice Checks if the seizing of assets should be allowed to occur
@@ -254,7 +415,7 @@ interface Comptroller is ComptrollerV5Storage {
         address liquidator,
         address borrower,
         uint seizeTokens) 
-    external returns (uint);
+    external virtual override returns (uint);
 
     /**
      * @notice Checks if the account should be allowed to transfer tokens in the given market
@@ -264,7 +425,7 @@ interface Comptroller is ComptrollerV5Storage {
      * @param transferTokens The number of cTokens to transfer
      * @return 0 if the transfer is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
-    function transferAllowed(address cToken, address src, address dst, uint transferTokens) external returns (uint);
+    function transferAllowed(address cToken, address src, address dst, uint transferTokens) external virtual override returns (uint);
 
     /*** Admin Functions ***/
 
@@ -274,7 +435,7 @@ interface Comptroller is ComptrollerV5Storage {
       * @param newCloseFactorMantissa New close factor, scaled by 1e18
       * @return uint 0=success, otherwise a failure
       */
-    function _setCloseFactor(uint newCloseFactorMantissa) external returns (uint);
+    function _setCloseFactor(uint newCloseFactorMantissa) external virtual returns (uint);
 
     /**
       * @notice Sets the collateralFactor for a market
@@ -283,7 +444,7 @@ interface Comptroller is ComptrollerV5Storage {
       * @param newCollateralFactorMantissa The new collateral factor, scaled by 1e18
       * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
       */
-    function _setCollateralFactor(CToken cToken, uint newCollateralFactorMantissa) external returns (uint);
+    function _setCollateralFactor(CToken cToken, uint newCollateralFactorMantissa) external virtual returns (uint);
 
     /**
       * @notice Sets liquidationIncentive
@@ -291,7 +452,7 @@ interface Comptroller is ComptrollerV5Storage {
       * @param newLiquidationIncentiveMantissa New liquidationIncentive scaled by 1e18
       * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
       */
-    function _setLiquidationIncentive(uint newLiquidationIncentiveMantissa) external returns (uint);
+    function _setLiquidationIncentive(uint newLiquidationIncentiveMantissa) external virtual returns (uint);
 
     /**
       * @notice Add the market to the markets mapping and set it as listed
@@ -299,31 +460,31 @@ interface Comptroller is ComptrollerV5Storage {
       * @param cToken The address of the market (token) to list
       * @return uint 0=success, otherwise a failure. (See enum Error for details)
       */
-    function _supportMarket(CToken cToken) external returns (uint);
+    function _supportMarket(CToken cToken) external virtual returns (uint);
 
     /**
      * @notice Claim all the comp accrued by holder in all markets
      * @param holder The address to claim COMP for
      */
-    function claimComp(address holder) external;
+    function claimComp(address holder) external virtual;
 
     /**
      * @notice Claim all the comp accrued by holder in the specified markets
      * @param holder The address to claim COMP for
      * @param cTokens The list of markets to claim COMP in
      */
-    function claimComp(address holder, CToken[] calldata cTokens) external;
+    function claimComp(address holder, CToken[] calldata cTokens) external virtual;
 
     /**
      * @notice Return all of the markets
      * @dev The automatic getter may be used to access an individual market.
      * @return The list of market addresses
      */
-    function getAllMarkets() external view returns (CToken[] memory);
+    function getAllMarkets() external virtual view returns (CToken[] memory);
 
     /**
      * @notice Return the address of the COMP token
      * @return The address of COMP
      */
-    function getCompAddress() external view returns (address);
+    function getCompAddress() external virtual view returns (address);
 }
