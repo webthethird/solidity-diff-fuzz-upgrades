@@ -20,9 +20,12 @@ contract ComptrollerDiffFuzz is Setup {
 
     function testAddNewMarket(uint8 marketIndex) public {
         require(!marketAdded);
-        uint numMarketsBefore = comptrollerBefore.getAllMarkets().length;
-        uint numMarketsAfter = comptrollerAfter.getAllMarkets().length;
+        CToken[] memory marketsBefore = comptrollerBefore.getAllMarkets();
+        CToken[] memory marketsAfter = comptrollerAfter.getAllMarkets();
+        uint numMarketsBefore = marketsBefore.length;
+        uint numMarketsAfter = marketsAfter.length;
         require(numMarketsAfter == numMarketsBefore);
+        require(numMarketsBefore > 0 && numMarketsAfter > 0);
         
         CToken cErc20Before = CToken(CErc20Immutable_BEFORE_ADDR);
         CToken cErc20After = CToken(CErc20Immutable_AFTER_ADDR);
@@ -32,10 +35,10 @@ contract ComptrollerDiffFuzz is Setup {
 
         uint index = marketIndex % numMarketsBefore;
         CToken example = marketsBefore[index];
-        uint exampleUnderlyingPrice = SimplePriceOracle(comptrollerBefore.oracle()).getUnderlyingPrice(example);
-        uint exampleDirectPrice = SimplePriceOracle(comptrollerBefore.oracle()).assetPrices(address(example));
+        uint exampleUnderlyingPrice = SimplePriceOracle(address(comptrollerBefore.oracle())).getUnderlyingPrice(example);
+        uint exampleDirectPrice = SimplePriceOracle(address(comptrollerBefore.oracle())).assetPrices(address(example));
         uint exampleReserveFactor = example.reserveFactorMantissa();
-        uint exampleCollateralFactor = comptrollerBefore.markets(address(example)).collateralFactorMantissa;
+        uint exampleCollateralFactor = 60e16;
 
         address adminBefore = cErc20Before.admin();
         CheatCodes(HEVM_ADDRESS).prank(adminBefore);
@@ -44,10 +47,10 @@ contract ComptrollerDiffFuzz is Setup {
         CheatCodes(HEVM_ADDRESS).prank(adminAfter);
         cErc20After._setReserveFactor(exampleReserveFactor);
 
-        SimplePriceOracle(comptrollerBefore.oracle()).setUnderlyingPrice(cErc20Before, exampleUnderlyingPrice);
-        SimplePriceOracle(comptrollerAfter.oracle()).setUnderlyingPrice(cErc20After, exampleUnderlyingPrice);
-        SimplePriceOracle(comptrollerBefore.oracle()).setDirectPrice(address(cErc20Before), exampleDirectPrice);
-        SimplePriceOracle(comptrollerAfter.oracle()).setDirectPrice(address(cErc20After), exampleDirectPrice);
+        SimplePriceOracle(address(comptrollerBefore.oracle())).setUnderlyingPrice(cErc20Before, exampleUnderlyingPrice);
+        SimplePriceOracle(address(comptrollerAfter.oracle())).setUnderlyingPrice(cErc20After, exampleUnderlyingPrice);
+        SimplePriceOracle(address(comptrollerBefore.oracle())).setDirectPrice(address(cErc20Before), exampleDirectPrice);
+        SimplePriceOracle(address(comptrollerAfter.oracle())).setDirectPrice(address(cErc20After), exampleDirectPrice);
 
         comptrollerBefore._supportMarket(cErc20Before);
         comptrollerAfter._supportMarket(cErc20After);
@@ -59,5 +62,69 @@ contract ComptrollerDiffFuzz is Setup {
         assert(comptrollerAfter.getAllMarkets().length == numMarketsAfter + 1);
 
         marketAdded = true;
+    }
+
+    function testSupportExistingMarket(uint8 marketIndex) public {
+        CToken[] memory marketsBefore = comptrollerBefore.getAllMarkets();
+        CToken[] memory marketsAfter = comptrollerAfter.getAllMarkets();
+        uint index = marketIndex % marketsAfter.length;
+        CToken cErc20Before = marketsBefore[index];
+        CToken cErc20After = marketsAfter[index];
+        require(cErc20Before.isCToken());
+        require(cErc20After.isCToken());
+
+        uint numMarketsBefore = marketsBefore.length;
+        uint numMarketsAfter = marketsAfter.length;
+
+        comptrollerBefore._supportMarket(cErc20Before);
+        comptrollerAfter._supportMarket(cErc20After);
+
+        assert(comptrollerBefore.getAllMarkets().length == numMarketsBefore);
+        assert(comptrollerAfter.getAllMarkets().length == numMarketsAfter);
+    }
+
+    function testSetPauseGuardian() public {
+        (bool success1,) = address(comptrollerBefore).call(abi.encodeWithSignature("_setPauseGuardian(address)", address(this)));
+        (bool success2,) = address(comptrollerAfter).call(abi.encodeWithSignature("_setPauseGuardian(address)", address(this)));
+        assert(success1 && success2);
+    }
+
+    function testClaimComp(bool[] calldata toClaim) public {
+        CToken[] memory marketsBefore = comptrollerBefore.getAllMarkets();
+        CToken[] memory marketsAfter = comptrollerAfter.getAllMarkets();
+        require(toClaim.length >= marketsBefore.length && marketsBefore.length == marketsAfter.length);
+        
+        uint h = 0;
+        for(uint i = 0; i < toClaim.length; i++) {
+            if(toClaim[i] && h < marketsBefore.length) {
+                h++;
+            }
+        }
+        require(h > 0);
+
+        CToken[] memory toClaimBefore = new CToken[](h);
+        CToken[] memory toClaimAfter = new CToken[](h);
+        uint j = 0;
+        for(uint i = 0; i < marketsBefore.length; i++) {
+            if (toClaim[i]) {
+                toClaimBefore[j] = marketsBefore[i];
+                toClaimAfter[j] = marketsAfter[i];
+                j++;
+            }
+        }
+
+        assert(compTokenBefore.decimals() == 18);
+
+        uint balanceBefore0 = compTokenBefore.balanceOf(msg.sender);
+        comptrollerBefore.claimComp(msg.sender, toClaimBefore);
+        uint balanceBefore1 = compTokenBefore.balanceOf(msg.sender);
+        uint deltaBefore = balanceBefore1 - balanceBefore0;
+
+        uint balanceAfter0 = compTokenAfter.balanceOf(msg.sender);
+        comptrollerAfter.claimComp(msg.sender, toClaimAfter);
+        uint balanceAfter1 = compTokenAfter.balanceOf(msg.sender);
+        uint deltaAfter = balanceAfter1 - balanceAfter0;
+
+        assert(deltaBefore == deltaAfter);
     }
 }
