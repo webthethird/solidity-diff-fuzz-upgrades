@@ -67,6 +67,3 @@ corpus
 
 # VS Code
 .vscode
-
-# Avoid committing potentially differently licensed code..
-src/implementation
