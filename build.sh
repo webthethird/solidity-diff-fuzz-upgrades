@@ -87,7 +87,7 @@ DEPLOY_COMPOUND_WITH_SUFFIX () {
     echo "# Deploying Compound Protocol to etheno.."
     cd ./compound-eureka
     # Use foundry to deploy contracts via etheno
-    CONTRACT_ADDRESS=$(echo "y" | yarn eureka apply -n development -b ./.build -c config/*.js -e eureka/{compound,testnet,testnet-gov,ropsten}.eureka | grep "Contract Unitroller deployed to")
+    CONTRACT_ADDRESS=$(echo "y" | yarn eureka apply -n development -b ./.build -c config/*.js -e eureka/{compound,testnet,testnet-gov,ropsten,2_ropsten,3_ropsten}.eureka | grep "Contract Unitroller deployed to")
     CONTRACT_ADDRESS=${CONTRACT_ADDRESS#Contract Unitroller deployed to 0x}
     mv ./state/development-state.json ./state/development-state-${SUFFIX}.json
     mv ./networks/development.json ./networks/development-${SUFFIX}.json
