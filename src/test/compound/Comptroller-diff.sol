@@ -1,7 +1,10 @@
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.10;
 
 import "./Setup.sol";
-import { CErc20Immutable_BEFORE_ADDR, CErc20Immutable_AFTER_ADDR } from "../addresses.sol";
+import "../../implementation/@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol";
+import {CErc20Immutable} from "../../implementation/compound/master-contracts/CErc20Immutable.sol";
+import {SimplePriceOracle} from "../../implementation/compound/master-contracts/SimplePriceOracle.sol";
+import {Fauceteer} from "../../implementation/compound/master-contracts/Fauceteer.sol";
 
 contract ComptrollerDiffFuzz is Setup {
     function testCompBalances() public view {
@@ -21,32 +24,75 @@ contract ComptrollerDiffFuzz is Setup {
     }
 
     function testAddNewMarket(uint8 marketIndex) public {
-        require(!marketAdded);
-        CToken[] memory marketsBefore = comptrollerBefore.getAllMarkets();
-        CToken[] memory marketsAfter = comptrollerAfter.getAllMarkets();
-        uint numMarketsBefore = marketsBefore.length;
-        uint numMarketsAfter = marketsAfter.length;
+        // Preconditions
+        // require(!marketAdded);
+        uint256 numMarketsBefore = marketsBefore.length;
+        uint256 numMarketsAfter = marketsAfter.length;
         require(numMarketsAfter == numMarketsBefore);
         require(numMarketsBefore > 0 && numMarketsAfter > 0);
-        
-        CToken cErc20Before = CToken(CErc20Immutable_BEFORE_ADDR);
-        CToken cErc20After = CToken(CErc20Immutable_AFTER_ADDR);
 
-        assert(cErc20Before.isCToken());
-        assert(cErc20After.isCToken());
+        // Create underlying ERC20 tokens with initial supply given to faucets
+        ERC20PresetFixedSupply underlyingBefore = new ERC20PresetFixedSupply(
+            "testBefore",
+            "BFOR",
+            1e16,
+            FAUCET_BEFORE_ADDR
+        );
+        ERC20PresetFixedSupply underlyingAfter = new ERC20PresetFixedSupply(
+            "testBefore",
+            "AFTR",
+            1e16,
+            FAUCET_AFTER_ADDR
+        );
 
-        uint index = marketIndex % numMarketsBefore;
+        // CToken cErc20Before = CToken(CErc20Immutable_BEFORE_ADDR);
+        // CToken cErc20After = CToken(CErc20Immutable_AFTER_ADDR);
+
+        // assert(cErc20Before.isCToken());
+        // assert(cErc20After.isCToken());
+
+        // Get example initialization values from pre-existing cERC20
+        uint256 index = marketIndex % numMarketsBefore;
         CToken example = marketsBefore[index];
-        uint exampleUnderlyingPrice = SimplePriceOracle(address(comptrollerBefore.oracle())).getUnderlyingPrice(example);
-        uint exampleDirectPrice = SimplePriceOracle(address(comptrollerBefore.oracle())).assetPrices(address(example));
-        uint exampleReserveFactor = example.reserveFactorMantissa();
-        uint exampleCollateralFactor = 60e16;
+        InterestRateModel exampleInterestModel = example.interestRateModel();
+        uint256 exampleExchangeRate = example.exchangeRateStored();
+        uint256 exampleUnderlyingPrice = SimplePriceOracle(
+            address(comptrollerBefore.oracle())
+        ).getUnderlyingPrice(example);
+        uint256 exampleDirectPrice = SimplePriceOracle(
+            address(comptrollerBefore.oracle())
+        ).assetPrices(address(example));
+        uint256 exampleReserveFactor = example.reserveFactorMantissa();
+        uint256 exampleCollateralFactor = 60e16;
 
-        address adminBefore = cErc20Before.admin();
-        CheatCodes(HEVM_ADDRESS).prank(adminBefore);
+        // Deploy cErc20Immutable tokens
+        CErc20Immutable cErc20Before = new CErc20Immutable(
+            address(underlyingBefore),
+            ComptrollerInterface(comptrollerBefore),
+            exampleInterestModel,
+            exampleExchangeRate,
+            "cTestBefore",
+            "cBFOR",
+            underlyingBefore.decimals(),
+            payable(address(this))
+        );
+        CErc20Immutable cErc20After = new CErc20Immutable(
+            address(underlyingAfter),
+            ComptrollerInterface(comptrollerAfter),
+            exampleInterestModel,
+            exampleExchangeRate,
+            "cTestAfter",
+            "cAFTR",
+            underlyingAfter.decimals(),
+            payable(address(this))
+        );
+
+        // Actions
+        // address adminBefore = cErc20Before.admin();
+        // CheatCodes(HEVM_ADDRESS).prank(adminBefore);
         cErc20Before._setReserveFactor(exampleReserveFactor);
-        address adminAfter = cErc20After.admin();
-        CheatCodes(HEVM_ADDRESS).prank(adminAfter);
+        // address adminAfter = cErc20After.admin();
+        // CheatCodes(HEVM_ADDRESS).prank(adminAfter);
         cErc20After._setReserveFactor(exampleReserveFactor);
 
         SimplePriceOracle(address(comptrollerBefore.oracle()))
@@ -74,10 +120,14 @@ contract ComptrollerDiffFuzz is Setup {
             exampleCollateralFactor
         );
 
-        assert(comptrollerBefore.getAllMarkets().length == numMarketsBefore + 1);
-        assert(comptrollerAfter.getAllMarkets().length == numMarketsAfter + 1);
+        marketsBefore = comptrollerBefore.getAllMarkets();
+        marketsAfter = comptrollerAfter.getAllMarkets();
 
-        marketAdded = true;
+        // Postconditions
+        assert(marketsBefore.length == numMarketsBefore + 1);
+        assert(marketsAfter.length == numMarketsAfter + 1);
+
+        // marketAdded = true;
     }
 
     function testSupportExistingMarket(uint8 marketIndex) public {

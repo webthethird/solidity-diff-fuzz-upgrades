@@ -1,7 +1,7 @@
 pragma solidity ^0.8.9;
 
-import "../../interface/compound/Comptroller.sol";
-import {UNITROLLER_BEFORE_ADDR, UNITROLLER_AFTER_ADDR} from "../addresses.sol";
+import "../../implementation/compound/master-contracts/Comptroller.sol";
+import "../addresses.sol";
 import "../helpers.sol";
 
 contract Users {
