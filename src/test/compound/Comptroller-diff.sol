@@ -150,4 +150,78 @@ contract ComptrollerDiffFuzz is Setup {
         // Postcondition
         assert(deltaBefore == deltaAfter);
     }
+
+    function testFaucet(uint8 marketIndex) public {
+        // Preconditions
+        uint256 index = marketIndex % marketsAfter.length;
+        require(marketsBefore[index].isCToken());
+        require(marketsAfter[index].isCToken());
+        CErc20Interface cErc20Before = CErc20Interface(
+            address(marketsBefore[index])
+        );
+        CErc20Interface cErc20After = CErc20Interface(
+            address(marketsAfter[index])
+        );
+        address underlyingBefore = cErc20Before.underlying();
+        address underlyingAfter = cErc20After.underlying();
+        uint256 balanceBefore = EIP20NonStandardInterface(underlyingBefore)
+            .balanceOf(msg.sender);
+        uint256 balanceAfter = EIP20NonStandardInterface(underlyingAfter)
+            .balanceOf(msg.sender);
+
+        // Actions
+        CheatCodes(HEVM_ADDRESS).prank(msg.sender);
+        Fauceteer(FAUCET_BEFORE_ADDR).drip(
+            EIP20NonStandardInterface(underlyingBefore)
+        );
+        CheatCodes(HEVM_ADDRESS).prank(msg.sender);
+        Fauceteer(FAUCET_AFTER_ADDR).drip(
+            EIP20NonStandardInterface(underlyingAfter)
+        );
+
+        // Postconditions
+        assert(
+            EIP20NonStandardInterface(underlyingBefore).balanceOf(msg.sender) >
+                balanceBefore
+        );
+        assert(
+            EIP20NonStandardInterface(underlyingAfter).balanceOf(msg.sender) >
+                balanceAfter
+        );
+    }
+
+    function testMint(uint8 marketIndex, uint256 mintAmount) public {
+        // Preconditions
+        require(mintAmount > 0);
+        uint256 index = marketIndex % marketsAfter.length;
+        require(marketsBefore[index].isCToken());
+        require(marketsAfter[index].isCToken());
+        CErc20Interface cErc20Before = CErc20Interface(
+            address(marketsBefore[index])
+        );
+        CErc20Interface cErc20After = CErc20Interface(
+            address(marketsAfter[index])
+        );
+        uint256 balanceBefore = CToken(address(cErc20Before)).balanceOf(msg.sender);
+        uint256 balanceAfter = CToken(address(cErc20After)).balanceOf(msg.sender);
+        address underlyingBefore = cErc20Before.underlying();
+        address underlyingAfter = cErc20After.underlying();
+        require(
+            EIP20NonStandardInterface(underlyingBefore).balanceOf(msg.sender) >
+                0
+        );
+        require(
+            EIP20NonStandardInterface(underlyingAfter).balanceOf(msg.sender) > 0
+        );
+
+        // Actions
+        CheatCodes(HEVM_ADDRESS).prank(msg.sender);
+        cErc20Before.mint(mintAmount);
+        CheatCodes(HEVM_ADDRESS).prank(msg.sender);
+        cErc20After.mint(mintAmount);
+
+        // Postconditions
+        assert(CToken(address(cErc20Before)).balanceOf(msg.sender) > balanceBefore);
+        assert(CToken(address(cErc20After)).balanceOf(msg.sender) > balanceAfter);
+    }
 }
