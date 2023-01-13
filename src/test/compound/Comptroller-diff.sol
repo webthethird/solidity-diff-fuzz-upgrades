@@ -91,9 +91,12 @@ contract ComptrollerDiffFuzz is Setup {
         uint256 numMarketsBefore = marketsBefore.length;
         uint256 numMarketsAfter = marketsAfter.length;
 
-        comptrollerBefore._supportMarket(cErc20Before);
-        comptrollerAfter._supportMarket(cErc20After);
+        // Action
+        uint256 result1 = comptrollerBefore._supportMarket(cErc20Before);
+        uint256 result2 = comptrollerAfter._supportMarket(cErc20After);
 
+        // Postconditions
+        assert(result1 > 0 && result2 > 0);
         assert(comptrollerBefore.getAllMarkets().length == numMarketsBefore);
         assert(comptrollerAfter.getAllMarkets().length == numMarketsAfter);
     }
