@@ -93,6 +93,9 @@ DEPLOY_COMPOUND_WITH_SUFFIX () {
     mv ./networks/development.json ./networks/development-${SUFFIX}.json
     cd ..
     echo "address constant ${CONTRACT}_${SUFFIX}_ADDR = address(0x00$CONTRACT_ADDRESS);" >> /tmp/addresses.sol.tmp # we don't get addresses with valid checksums from forge, workaround with 00 prefix
+    FAUCET_ADDRESS=$(cat ./compound-eureka/networks/development-${SUFFIX}.json | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['Contracts']['Fauceteer'])")
+    FAUCET_ADDRESS=${FAUCET_ADDRESS#0x}
+    echo "address constant FAUCET_${SUFFIX}_ADDR = address(0x00$FAUCET_ADDRESS);" >> /tmp/addresses.sol.tmp
 }
 UPGRADE_COMPOUND_WITH_VERSION_KEY () {
     local NETWORK_FILE=$1
