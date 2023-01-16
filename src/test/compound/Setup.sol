@@ -50,4 +50,8 @@ contract Setup {
         assert(comptrollerBefore.admin() == address(this));
         assert(comptrollerAfter.admin() == address(this));
     }
+
+    function _between(uint val, uint low, uint high) internal pure returns (uint) {
+        return low + (val % (high - low + 1));
+    }
 }
