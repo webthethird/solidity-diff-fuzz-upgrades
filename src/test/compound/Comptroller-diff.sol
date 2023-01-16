@@ -7,6 +7,14 @@ import {SimplePriceOracle} from "../../implementation/compound/master-contracts/
 import {Fauceteer} from "../../implementation/compound/master-contracts/Fauceteer.sol";
 
 contract ComptrollerDiffFuzz is Setup {
+    event ObtainedUnderlying(address tokenAddr, string symbol, uint256 amount);
+    event MintedCToken(
+        address tokenAddr,
+        string symbol,
+        uint256 underlyingIn,
+        uint256 amountOut
+    );
+
     function testCompBalances() public view {
         uint256 balanceBefore = compTokenBefore.balanceOf(msg.sender);
         uint256 balanceAfter = compTokenAfter.balanceOf(msg.sender);
@@ -47,9 +55,6 @@ contract ComptrollerDiffFuzz is Setup {
 
         // CToken cErc20Before = CToken(CErc20Immutable_BEFORE_ADDR);
         // CToken cErc20After = CToken(CErc20Immutable_AFTER_ADDR);
-
-        // assert(cErc20Before.isCToken());
-        // assert(cErc20After.isCToken());
 
         // Get example initialization values from pre-existing cERC20
         uint256 index = marketIndex % numMarketsBefore;
@@ -238,6 +243,16 @@ contract ComptrollerDiffFuzz is Setup {
             EIP20NonStandardInterface(underlyingAfter).balanceOf(msg.sender) >
                 balanceAfter
         );
+        emit ObtainedUnderlying(
+            underlyingBefore,
+            EIP20Interface(underlyingBefore).symbol(),
+            EIP20Interface(underlyingBefore).balanceOf(msg.sender)
+        );
+        emit ObtainedUnderlying(
+            underlyingAfter,
+            EIP20Interface(underlyingAfter).symbol(),
+            EIP20Interface(underlyingAfter).balanceOf(msg.sender)
+        );
     }
 
     function testMint(uint8 marketIndex, uint256 mintAmount) public {
@@ -252,26 +267,58 @@ contract ComptrollerDiffFuzz is Setup {
         CErc20Interface cErc20After = CErc20Interface(
             address(marketsAfter[index])
         );
-        uint256 balanceBefore = CToken(address(cErc20Before)).balanceOf(msg.sender);
-        uint256 balanceAfter = CToken(address(cErc20After)).balanceOf(msg.sender);
+        uint256 balanceBefore = CToken(address(cErc20Before)).balanceOf(
+            msg.sender
+        );
+        uint256 balanceAfter = CToken(address(cErc20After)).balanceOf(
+            msg.sender
+        );
         address underlyingBefore = cErc20Before.underlying();
         address underlyingAfter = cErc20After.underlying();
-        require(
-            EIP20NonStandardInterface(underlyingBefore).balanceOf(msg.sender) >
-                0
+        uint256 low = 1e16;
+        uint256 high = EIP20Interface(underlyingBefore).balanceOf(msg.sender);
+        require(EIP20Interface(underlyingBefore).balanceOf(msg.sender) > low);
+        require(EIP20Interface(underlyingAfter).balanceOf(msg.sender) > low);
+        uint256 actualMintAmount = _between(mintAmount, low, high);
+        // Allowances
+        CheatCodes(HEVM_ADDRESS).prank(msg.sender);
+        EIP20Interface(underlyingBefore).approve(
+            address(cErc20Before),
+            type(uint256).max
         );
-        require(
-            EIP20NonStandardInterface(underlyingAfter).balanceOf(msg.sender) > 0
+        CheatCodes(HEVM_ADDRESS).prank(msg.sender);
+        EIP20Interface(underlyingAfter).approve(
+            address(cErc20After),
+            type(uint256).max
         );
 
         // Actions
         CheatCodes(HEVM_ADDRESS).prank(msg.sender);
-        cErc20Before.mint(mintAmount);
+        uint256 err = cErc20Before.mint(actualMintAmount);
+        assert(err == 0);
+        emit MintedCToken(
+            address(cErc20Before),
+            CToken(address(cErc20Before)).symbol(),
+            actualMintAmount,
+            CToken(address(cErc20Before)).balanceOf(msg.sender)
+        );
+
         CheatCodes(HEVM_ADDRESS).prank(msg.sender);
-        cErc20After.mint(mintAmount);
+        err = cErc20After.mint(actualMintAmount);
+        assert(err == 0);
+        emit MintedCToken(
+            address(cErc20After),
+            CToken(address(cErc20After)).symbol(),
+            actualMintAmount,
+            CToken(address(cErc20After)).balanceOf(msg.sender)
+        );
 
         // Postconditions
-        assert(CToken(address(cErc20Before)).balanceOf(msg.sender) > balanceBefore);
-        assert(CToken(address(cErc20After)).balanceOf(msg.sender) > balanceAfter);
+        assert(
+            CToken(address(cErc20Before)).balanceOf(msg.sender) > balanceBefore
+        );
+        assert(
+            CToken(address(cErc20After)).balanceOf(msg.sender) > balanceAfter
+        );
     }
 }
