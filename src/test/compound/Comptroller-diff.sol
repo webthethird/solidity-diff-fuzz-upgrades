@@ -2,6 +2,7 @@ pragma solidity ^0.8.10;
 
 import "./Setup.sol";
 import "../../implementation/@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol";
+import "../../implementation/compound/master-contracts/Reservoir.sol";
 import {CErc20Immutable} from "../../implementation/compound/master-contracts/CErc20Immutable.sol";
 import {SimplePriceOracle} from "../../implementation/compound/master-contracts/SimplePriceOracle.sol";
 import {Fauceteer} from "../../implementation/compound/master-contracts/Fauceteer.sol";
@@ -165,6 +166,22 @@ contract ComptrollerDiffFuzz is Setup {
 
     function testClaimComp(bool[] calldata toClaim) public {
         // Preconditions
+        /// Drip COMP tokens to Comptrollers
+        assert(address(Reservoir(RESERVOIR_BEFORE_ADDR).token()) == address(compTokenBefore));
+        assert(compTokenBefore.balanceOf(RESERVOIR_BEFORE_ADDR) > 0);
+        assert(address(Reservoir(RESERVOIR_AFTER_ADDR).token()) == address(compTokenAfter));
+        assert(compTokenAfter.balanceOf(RESERVOIR_AFTER_ADDR) > 0);
+        uint256 blocknumber = block.number >
+            Reservoir(RESERVOIR_BEFORE_ADDR).dripStart()
+            ? block.number
+            : Reservoir(RESERVOIR_BEFORE_ADDR).dripStart();
+        CheatCodes(HEVM_ADDRESS).roll(blocknumber + 100);
+        Reservoir(RESERVOIR_BEFORE_ADDR).drip();
+        Reservoir(RESERVOIR_AFTER_ADDR).drip();
+
+        assert(compTokenBefore.balanceOf(address(comptrollerBefore)) > 0);
+        assert(compTokenAfter.balanceOf(address(comptrollerAfter)) > 0);
+
         require(
             toClaim.length >= marketsBefore.length &&
                 marketsBefore.length == marketsAfter.length
@@ -188,8 +205,6 @@ contract ComptrollerDiffFuzz is Setup {
                 j++;
             }
         }
-
-        assert(compTokenBefore.decimals() == 18);
 
         // Actions
         uint256 balanceBefore0 = compTokenBefore.balanceOf(msg.sender);
