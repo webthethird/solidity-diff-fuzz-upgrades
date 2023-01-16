@@ -35,13 +35,13 @@ contract ComptrollerDiffFuzz is Setup {
         ERC20PresetFixedSupply underlyingBefore = new ERC20PresetFixedSupply(
             "testBefore",
             "BFOR",
-            1e16,
+            1e28,
             FAUCET_BEFORE_ADDR
         );
         ERC20PresetFixedSupply underlyingAfter = new ERC20PresetFixedSupply(
-            "testBefore",
+            "testAfter",
             "AFTR",
-            1e16,
+            1e28,
             FAUCET_AFTER_ADDR
         );
 
@@ -54,14 +54,7 @@ contract ComptrollerDiffFuzz is Setup {
         // Get example initialization values from pre-existing cERC20
         uint256 index = marketIndex % numMarketsBefore;
         CToken example = marketsBefore[index];
-        InterestRateModel exampleInterestModel = example.interestRateModel();
-        uint256 exampleExchangeRate = example.exchangeRateStored();
-        uint256 exampleUnderlyingPrice = SimplePriceOracle(
-            address(comptrollerBefore.oracle())
-        ).getUnderlyingPrice(example);
-        uint256 exampleDirectPrice = SimplePriceOracle(
-            address(comptrollerBefore.oracle())
-        ).assetPrices(address(example));
+        assert(example.isCToken());
         uint256 exampleReserveFactor = example.reserveFactorMantissa();
         uint256 exampleCollateralFactor = 60e16;
 
@@ -69,21 +62,21 @@ contract ComptrollerDiffFuzz is Setup {
         CErc20Immutable cErc20Before = new CErc20Immutable(
             address(underlyingBefore),
             ComptrollerInterface(comptrollerBefore),
-            exampleInterestModel,
-            exampleExchangeRate,
+            example.interestRateModel(),
+            2e16,
             "cTestBefore",
             "cBFOR",
-            underlyingBefore.decimals(),
+            8,
             payable(address(this))
         );
         CErc20Immutable cErc20After = new CErc20Immutable(
             address(underlyingAfter),
             ComptrollerInterface(comptrollerAfter),
-            exampleInterestModel,
-            exampleExchangeRate,
+            example.interestRateModel(),
+            2e16,
             "cTestAfter",
             "cAFTR",
-            underlyingAfter.decimals(),
+            8,
             payable(address(this))
         );
 
@@ -95,18 +88,22 @@ contract ComptrollerDiffFuzz is Setup {
         // CheatCodes(HEVM_ADDRESS).prank(adminAfter);
         cErc20After._setReserveFactor(exampleReserveFactor);
 
+        uint256 exampleUnderlyingPrice = SimplePriceOracle(
+            address(comptrollerBefore.oracle())
+        ).getUnderlyingPrice(example);
+        assert(exampleUnderlyingPrice > 0);
         SimplePriceOracle(address(comptrollerBefore.oracle()))
             .setUnderlyingPrice(cErc20Before, exampleUnderlyingPrice);
         SimplePriceOracle(address(comptrollerAfter.oracle()))
             .setUnderlyingPrice(cErc20After, exampleUnderlyingPrice);
-        SimplePriceOracle(address(comptrollerBefore.oracle())).setDirectPrice(
-            address(cErc20Before),
-            exampleDirectPrice
-        );
-        SimplePriceOracle(address(comptrollerAfter.oracle())).setDirectPrice(
-            address(cErc20After),
-            exampleDirectPrice
-        );
+        // SimplePriceOracle(address(comptrollerBefore.oracle())).setDirectPrice(
+        //     address(cErc20Before),
+        //     exampleDirectPrice
+        // );
+        // SimplePriceOracle(address(comptrollerAfter.oracle())).setDirectPrice(
+        //     address(cErc20After),
+        //     exampleDirectPrice
+        // );
 
         comptrollerBefore._supportMarket(cErc20Before);
         comptrollerAfter._supportMarket(cErc20After);
