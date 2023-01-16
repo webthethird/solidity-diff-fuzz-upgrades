@@ -3,6 +3,7 @@ allowFFI: true                                                # Enabling HEVM's 
 
 # Fuzz run options - adjust as needed for your fuzzing campaign
 testLimit: 10000                                            # Number of test sequences to run
+testMaxGas: 8000030000
 
 # Fuzzing stateless contracts / libraries
 seqLen: 10                                                     # Increase when fuzzing non-libraries (contracts with state)
