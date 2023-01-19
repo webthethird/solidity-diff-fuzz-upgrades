@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./Smartian_motiv.sol";
+import "./simplest_example.sol";
 import "../helpers.sol";
 
 contract TestStore {
