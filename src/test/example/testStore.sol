@@ -4,11 +4,12 @@ pragma solidity ^0.8.0;
 import "../helpers.sol";
 
 contract C {
-  address public owner;
+    address public owner;
 
-  constructor() { // Constructor
-    owner = msg.sender;
-  }
+    constructor() {
+        // Constructor
+        owner = msg.sender;
+    }
 }
 
 contract TestStore {
@@ -22,8 +23,16 @@ contract TestStore {
     function testStore() public {
         c = new C();
         require(c.owner() == address(this));
-        CheatCodes(HEVM_ADDRESS).store(address(c), bytes32(0), bytes32(bytes20(admin)));
-        assert(address(bytes20(CheatCodes(HEVM_ADDRESS).load(address(c), bytes32(0)))) == admin);
+        CheatCodes(HEVM_ADDRESS).store(
+            address(c),
+            bytes32(0),
+            bytes32(bytes20(admin))
+        );
+        assert(
+            address(
+                bytes20(CheatCodes(HEVM_ADDRESS).load(address(c), bytes32(0)))
+            ) == admin
+        );
         assert(c.owner() == admin);
     }
 }
