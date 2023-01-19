@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./simplest_example.sol";
 import "../helpers.sol";
+
+contract C {
+  address public owner;
+
+  constructor() { // Constructor
+    owner = msg.sender;
+  }
+}
 
 contract TestStore {
     address admin;
