@@ -34,19 +34,16 @@ contract Setup {
         marketsAfter = comptrollerAfter.getAllMarkets();
         marketAdded = false;
         // Set this contract as the Unitrollers' admin using the store cheat code
-        address adminBefore = comptrollerBefore.admin();
-        CheatCodes(HEVM_ADDRESS).prank(adminBefore);
-        (bool success1,) = address(comptrollerBefore).call(abi.encodeWithSignature("_setPendingAdmin(address)", address(this)));
-        address adminAfter = comptrollerAfter.admin();
-        CheatCodes(HEVM_ADDRESS).prank(adminAfter);
-        (bool success2,) = address(comptrollerAfter).call(abi.encodeWithSignature("_setPendingAdmin(address)", address(this)));
-        require(success1, "First _setPendingAdmin failed");
-        require(success2, "Second _setPendingAdmin failed");
-        (bool success3,) = address(comptrollerBefore).call(abi.encodeWithSignature("_acceptAdmin()"));
-        (bool success4,) = address(comptrollerAfter).call(abi.encodeWithSignature("_acceptAdmin()"));
-        require(success3, "First _acceptAdmin failed");
-        require(success4, "Second _acceptAdmin failed");
-
+        CheatCodes(HEVM_ADDRESS).store(
+            address(comptrollerBefore),
+            bytes32(0),
+            bytes32(uint256(uint160(address(this))))
+        );
+        CheatCodes(HEVM_ADDRESS).store(
+            address(comptrollerAfter),
+            bytes32(0),
+            bytes32(uint256(uint160(address(this))))
+        );
         assert(comptrollerBefore.admin() == address(this));
         assert(comptrollerAfter.admin() == address(this));
     }
