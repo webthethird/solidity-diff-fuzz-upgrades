@@ -99,6 +99,13 @@ DEPLOY_COMPOUND_WITH_SUFFIX () {
     RESERVOIR_ADDRESS=$(cat ./compound-eureka/networks/development-${SUFFIX}.json | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['Contracts']['Reservoir'])")
     RESERVOIR_ADDRESS=${RESERVOIR_ADDRESS#0x}
     echo "address constant RESERVOIR_${SUFFIX}_ADDR = address(0x00$RESERVOIR_ADDRESS);" >> /tmp/addresses.sol.tmp
+    if [ $SUFFIX = "AFTER" ]; then
+        COMPTROLLER_ADDRESS=$(cat ./compound-eureka/networks/development-${SUFFIX}.json | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['Contracts']['ComptrollerAfter'])")
+    else
+        COMPTROLLER_ADDRESS=$(cat ./compound-eureka/networks/development-${SUFFIX}.json | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['Contracts']['ComptrollerBefore'])")
+    fi
+    COMPTROLLER_ADDRESS=${COMPTROLLER_ADDRESS#0x}
+    echo "address constant COMPTROLLER_${SUFFIX}_ADDR = address(0x00$COMPTROLLER_ADDRESS);" >> /tmp/addresses.sol.tmp
     COMP_ADDRESS=$(cat ./compound-eureka/networks/development-${SUFFIX}.json | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['Contracts']['Comp'])")
     echo "# Transferring COMP to faucet and reservoir..."
     cast send --legacy --private-key $GANACHE_KEY $COMP_ADDRESS "transfer(address,uint256)" 0x$FAUCET_ADDRESS 1000000000000000000000000
@@ -183,9 +190,9 @@ RECORD_START
 DEPLOY ./src/expose/example/BytesLib.sol ExposedBytesLib
 DEPLOY ./src/expose/example/BytesUtil.sol ExposedBytesUtil
 DEPLOY_COMPOUND_WITH_SUFFIX BEFORE
-UPGRADE_COMPOUND_WITH_VERSION_KEY ./compound-eureka/networks/development-BEFORE.json ComptrollerBefore
+# UPGRADE_COMPOUND_WITH_VERSION_KEY ./compound-eureka/networks/development-BEFORE.json ComptrollerBefore
 DEPLOY_COMPOUND_WITH_SUFFIX AFTER
-UPGRADE_COMPOUND_WITH_VERSION_KEY ./compound-eureka/networks/development-AFTER.json ComptrollerAfter
+# UPGRADE_COMPOUND_WITH_VERSION_KEY ./compound-eureka/networks/development-AFTER.json ComptrollerAfter
 DEPLOY_CTOKEN_WITH_UNDERLYING TestBefore BFOR BEFORE ./compound-eureka/networks/development-BEFORE.json Base200bps_Slope1000bps
 DEPLOY_CTOKEN_WITH_UNDERLYING TestAfter AFTR AFTER ./compound-eureka/networks/development-AFTER.json Base200bps_Slope1000bps
 
