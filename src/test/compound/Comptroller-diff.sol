@@ -164,7 +164,7 @@ contract ComptrollerDiffFuzz is Setup {
         assert(success1 && success2);
     }
 
-    function testClaimComp(bool[] calldata toClaim) public {
+    function testClaimComp() public {
         // Preconditions
         /// Drip COMP tokens to Comptrollers
         assert(address(Reservoir(RESERVOIR_BEFORE_ADDR).token()) == address(compTokenBefore));
@@ -182,38 +182,14 @@ contract ComptrollerDiffFuzz is Setup {
         assert(compTokenBefore.balanceOf(address(comptrollerBefore)) > 0);
         assert(compTokenAfter.balanceOf(address(comptrollerAfter)) > 0);
 
-        require(
-            toClaim.length >= marketsBefore.length &&
-                marketsBefore.length == marketsAfter.length
-        );
-
-        uint256 h = 0;
-        for (uint256 i = 0; i < toClaim.length; i++) {
-            if (toClaim[i] && h < marketsBefore.length) {
-                h++;
-            }
-        }
-        require(h > 0);
-
-        CToken[] memory toClaimBefore = new CToken[](h);
-        CToken[] memory toClaimAfter = new CToken[](h);
-        uint256 j = 0;
-        for (uint256 i = 0; i < marketsBefore.length; i++) {
-            if (toClaim[i]) {
-                toClaimBefore[j] = marketsBefore[i];
-                toClaimAfter[j] = marketsAfter[i];
-                j++;
-            }
-        }
-
         // Actions
         uint256 balanceBefore0 = compTokenBefore.balanceOf(msg.sender);
-        comptrollerBefore.claimComp(msg.sender, toClaimBefore);
+        comptrollerBefore.claimComp(msg.sender);
         uint256 balanceBefore1 = compTokenBefore.balanceOf(msg.sender);
         uint256 deltaBefore = balanceBefore1 - balanceBefore0;
 
         uint256 balanceAfter0 = compTokenAfter.balanceOf(msg.sender);
-        comptrollerAfter.claimComp(msg.sender, toClaimAfter);
+        comptrollerAfter.claimComp(msg.sender);
         uint256 balanceAfter1 = compTokenAfter.balanceOf(msg.sender);
         uint256 deltaAfter = balanceAfter1 - balanceAfter0;
 
