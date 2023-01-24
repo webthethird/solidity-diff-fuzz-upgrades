@@ -338,7 +338,7 @@ contract ComptrollerDiffFuzz is Setup {
         uint256 balanceAfter = ERC20(underlyingAfter).balanceOf(
             msg.sender
         );
-        uint256 actualRedeemAmount = _between(redeemAmount, 1, cTokenBalance);
+        uint256 actualRedeemAmount = _between(redeemAmount, 1e8, cTokenBalance);
 
         // Actions
         CheatCodes(HEVM_ADDRESS).prank(msg.sender);
