@@ -16,6 +16,7 @@ contract ComptrollerDiffFuzz is Setup {
         uint256 underlyingIn,
         uint256 amountOut
     );
+    event ClaimCompDeltas(uint256 deltaBefore, uint256 deltaAfter);
 
     function testCompBalances() public view {
         uint256 balanceBefore = compTokenBefore.balanceOf(msg.sender);
@@ -151,8 +152,16 @@ contract ComptrollerDiffFuzz is Setup {
         // Postconditions
         assert(marketsBefore.length == numMarketsBefore + 1);
         assert(marketsAfter.length == numMarketsAfter + 1);
-
-        // marketAdded = true;
+        if(upgradeDone) {
+            (uint224 supplyIndexBefore,) = comptrollerBefore.compSupplyState(address(cErc20Before));
+            (uint224 supplyIndexAfter,) = comptrollerAfter.compSupplyState(address(cErc20After));
+            (uint224 borrowIndexBefore,) = comptrollerBefore.compBorrowState(address(cErc20Before));
+            (uint224 borrowIndexAfter,) = comptrollerAfter.compBorrowState(address(cErc20After));
+            assert(supplyIndexBefore == 0);
+            assert(borrowIndexBefore == 0);
+            assert(supplyIndexAfter == comptrollerAfter.compInitialIndex());
+            assert(borrowIndexAfter == comptrollerAfter.compInitialIndex());
+        }
     }
 
     function testSupportExistingMarket(uint8 marketIndex) public {
@@ -188,6 +197,7 @@ contract ComptrollerDiffFuzz is Setup {
 
     function testClaimComp() public {
         // Preconditions
+        require(upgradeDone);
         /// Drip COMP tokens to Comptrollers
         assert(address(Reservoir(RESERVOIR_BEFORE_ADDR).token()) == address(compTokenBefore));
         assert(compTokenBefore.balanceOf(RESERVOIR_BEFORE_ADDR) > 0);
@@ -214,6 +224,8 @@ contract ComptrollerDiffFuzz is Setup {
         comptrollerAfter.claimComp(msg.sender);
         uint256 balanceAfter1 = compTokenAfter.balanceOf(msg.sender);
         uint256 deltaAfter = balanceAfter1 - balanceAfter0;
+
+        emit ClaimCompDeltas(deltaBefore, deltaAfter);
 
         // Postcondition
         assert(deltaBefore == deltaAfter);
