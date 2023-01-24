@@ -18,7 +18,7 @@ contract Setup {
     Comptroller comptrollerBefore;
     Comptroller comptrollerAfter;
     Users user;
-    bool marketAdded;
+    bool upgradeDone;
 
     /**
      * Must run build.sh first to create both Compound protocol deployments
@@ -32,7 +32,7 @@ contract Setup {
         compTokenAfter = Comp(comptrollerAfter.getCompAddress());
         marketsBefore = comptrollerBefore.getAllMarkets();
         marketsAfter = comptrollerAfter.getAllMarkets();
-        marketAdded = false;
+        upgradeDone = false;
         // Set this contract as the Unitrollers' admin using the store cheat code
         CheatCodes(HEVM_ADDRESS).store(
             address(comptrollerBefore),

@@ -6,6 +6,7 @@ import "../../implementation/compound/master-contracts/Reservoir.sol";
 import {CErc20Immutable} from "../../implementation/compound/master-contracts/CErc20Immutable.sol";
 import {SimplePriceOracle} from "../../implementation/compound/master-contracts/SimplePriceOracle.sol";
 import {Fauceteer} from "../../implementation/compound/master-contracts/Fauceteer.sol";
+import "../../implementation/compound/master-contracts/Unitroller.sol";
 
 contract ComptrollerDiffFuzz is Setup {
     event ObtainedUnderlying(address tokenAddr, string symbol, uint256 amount);
@@ -30,6 +31,27 @@ contract ComptrollerDiffFuzz is Setup {
         uint256 balanceBefore = marketsBefore[index].balanceOf(msg.sender);
         uint256 balanceAfter = marketsAfter[index].balanceOf(msg.sender);
         assert(balanceBefore == balanceAfter);
+    }
+
+    function testUpgrade() public {
+        // Preconditions
+        require(!upgradeDone);
+
+        // Actions
+        uint err = Unitroller(payable(address(comptrollerBefore)))._setPendingImplementation(COMPTROLLER_BEFORE_ADDR);
+        require(err == 0);
+        err = Unitroller(payable(address(comptrollerAfter)))._setPendingImplementation(COMPTROLLER_AFTER_ADDR);
+        require(err == 0);
+        Comptroller(COMPTROLLER_BEFORE_ADDR)._become(Unitroller(payable(address(comptrollerBefore))));
+        Comptroller(COMPTROLLER_AFTER_ADDR)._become(Unitroller(payable(address(comptrollerAfter))));
+
+        // Postconditions
+        assert(comptrollerBefore.comptrollerImplementation() == COMPTROLLER_BEFORE_ADDR);
+        assert(comptrollerAfter.comptrollerImplementation() == COMPTROLLER_AFTER_ADDR);
+
+        compTokenBefore = Comp(comptrollerBefore.getCompAddress());
+        compTokenAfter = Comp(comptrollerAfter.getCompAddress());
+        upgradeDone = true;
     }
 
     function testAddNewMarket(uint8 marketIndex) public {
