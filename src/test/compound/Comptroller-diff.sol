@@ -311,5 +311,94 @@ contract ComptrollerDiffFuzz is Setup {
         assert(
             CToken(address(cErc20After)).balanceOf(msg.sender) > balanceAfter
         );
+        assert(
+            CToken(address(cErc20After)).balanceOf(msg.sender) == CToken(address(cErc20Before)).balanceOf(msg.sender)
+        );
+    }
+
+    function testRedeem(uint8 marketIndex, uint256 redeemAmount) public {
+        require(redeemAmount > 0);
+        uint256 index = marketIndex % marketsAfter.length;
+        require(marketsBefore[index].isCToken());
+        require(marketsAfter[index].isCToken());
+        require(marketsBefore[index].balanceOf(msg.sender) > 0 && marketsAfter[index].balanceOf(msg.sender) > 0);
+        require(marketsAfter[index].balanceOf(msg.sender) == marketsBefore[index].balanceOf(msg.sender));
+        uint256 cTokenBalance = marketsAfter[index].balanceOf(msg.sender);
+        CErc20Interface cErc20Before = CErc20Interface(
+            address(marketsBefore[index])
+        );
+        CErc20Interface cErc20After = CErc20Interface(
+            address(marketsAfter[index])
+        );
+        address underlyingBefore = cErc20Before.underlying();
+        address underlyingAfter = cErc20After.underlying();
+        uint256 balanceBefore = ERC20(underlyingBefore).balanceOf(
+            msg.sender
+        );
+        uint256 balanceAfter = ERC20(underlyingAfter).balanceOf(
+            msg.sender
+        );
+        uint256 actualRedeemAmount = _between(redeemAmount, 1, cTokenBalance);
+
+        // Actions
+        CheatCodes(HEVM_ADDRESS).prank(msg.sender);
+        uint256 err = cErc20Before.redeem(actualRedeemAmount);
+        require(err == 0);
+
+        CheatCodes(HEVM_ADDRESS).prank(msg.sender);
+        err = cErc20After.redeem(actualRedeemAmount);
+        require(err == 0);
+
+        // Postconditions
+        assert(
+            ERC20(underlyingBefore).balanceOf(msg.sender) > balanceBefore
+        );
+        assert(
+            ERC20(underlyingAfter).balanceOf(msg.sender) > balanceAfter
+        );
+        assert(
+            ERC20(underlyingAfter).balanceOf(msg.sender) == ERC20(underlyingBefore).balanceOf(msg.sender)
+        );
+    }
+
+    function testBorrow(uint8 marketIndex, uint256 borrowAmount) public {
+        // Preconditions
+        require(borrowAmount > 0);
+        uint256 index = marketIndex % marketsAfter.length;
+        require(marketsBefore[index].isCToken());
+        require(marketsAfter[index].isCToken());
+        require(marketsBefore[index].comptroller() == ComptrollerInterface(comptrollerBefore));
+        require(marketsAfter[index].comptroller() == ComptrollerInterface(comptrollerAfter));
+        CErc20Interface cErc20Before = CErc20Interface(
+            address(marketsBefore[index])
+        );
+        CErc20Interface cErc20After = CErc20Interface(
+            address(marketsAfter[index])
+        );
+        address underlyingBefore = cErc20Before.underlying();
+        address underlyingAfter = cErc20After.underlying();
+        uint256 balanceBefore = ERC20(underlyingBefore).balanceOf(
+            msg.sender
+        );
+        uint256 balanceAfter = ERC20(underlyingAfter).balanceOf(
+            msg.sender
+        );
+
+        // Actions
+        CheatCodes(HEVM_ADDRESS).prank(msg.sender);
+        uint256 err = cErc20Before.borrow(borrowAmount);
+        require(err == 0);
+
+        CheatCodes(HEVM_ADDRESS).prank(msg.sender);
+        err = cErc20After.borrow(borrowAmount);
+        require(err == 0);
+
+        // Postconditions
+        assert(
+            ERC20(underlyingBefore).balanceOf(msg.sender) > balanceBefore
+        );
+        assert(
+            ERC20(underlyingAfter).balanceOf(msg.sender) > balanceAfter
+        );
     }
 }
