@@ -57,7 +57,6 @@ contract ComptrollerDiffFuzz is Setup {
 
     function testAddNewMarket(uint8 marketIndex) public {
         // Preconditions
-        // require(!marketAdded);
         uint256 numMarketsBefore = marketsBefore.length;
         uint256 numMarketsAfter = marketsAfter.length;
         require(numMarketsAfter == numMarketsBefore);
@@ -76,9 +75,6 @@ contract ComptrollerDiffFuzz is Setup {
             1e28,
             FAUCET_AFTER_ADDR
         );
-
-        // CToken cErc20Before = CToken(CErc20Immutable_BEFORE_ADDR);
-        // CToken cErc20After = CToken(CErc20Immutable_AFTER_ADDR);
 
         // Get example initialization values from pre-existing cERC20
         uint256 index = marketIndex % numMarketsBefore;
@@ -110,11 +106,7 @@ contract ComptrollerDiffFuzz is Setup {
         );
 
         // Actions
-        // address adminBefore = cErc20Before.admin();
-        // CheatCodes(HEVM_ADDRESS).prank(adminBefore);
         cErc20Before._setReserveFactor(exampleReserveFactor);
-        // address adminAfter = cErc20After.admin();
-        // CheatCodes(HEVM_ADDRESS).prank(adminAfter);
         cErc20After._setReserveFactor(exampleReserveFactor);
 
         uint256 exampleUnderlyingPrice = SimplePriceOracle(
@@ -125,14 +117,6 @@ contract ComptrollerDiffFuzz is Setup {
             .setUnderlyingPrice(cErc20Before, exampleUnderlyingPrice);
         SimplePriceOracle(address(comptrollerAfter.oracle()))
             .setUnderlyingPrice(cErc20After, exampleUnderlyingPrice);
-        // SimplePriceOracle(address(comptrollerBefore.oracle())).setDirectPrice(
-        //     address(cErc20Before),
-        //     exampleDirectPrice
-        // );
-        // SimplePriceOracle(address(comptrollerAfter.oracle())).setDirectPrice(
-        //     address(cErc20After),
-        //     exampleDirectPrice
-        // );
 
         comptrollerBefore._supportMarket(cErc20Before);
         comptrollerAfter._supportMarket(cErc20After);
@@ -152,15 +136,18 @@ contract ComptrollerDiffFuzz is Setup {
         // Postconditions
         assert(marketsBefore.length == numMarketsBefore + 1);
         assert(marketsAfter.length == numMarketsAfter + 1);
+        (uint224 supplyIndexBefore,) = comptrollerBefore.compSupplyState(address(cErc20Before));
+        (uint224 supplyIndexAfter,) = comptrollerAfter.compSupplyState(address(cErc20After));
+        (uint224 borrowIndexBefore,) = comptrollerBefore.compBorrowState(address(cErc20Before));
+        (uint224 borrowIndexAfter,) = comptrollerAfter.compBorrowState(address(cErc20After));
+        assert(supplyIndexBefore == 0);
+        assert(borrowIndexBefore == 0);
         if(upgradeDone) {
-            (uint224 supplyIndexBefore,) = comptrollerBefore.compSupplyState(address(cErc20Before));
-            (uint224 supplyIndexAfter,) = comptrollerAfter.compSupplyState(address(cErc20After));
-            (uint224 borrowIndexBefore,) = comptrollerBefore.compBorrowState(address(cErc20Before));
-            (uint224 borrowIndexAfter,) = comptrollerAfter.compBorrowState(address(cErc20After));
-            assert(supplyIndexBefore == 0);
-            assert(borrowIndexBefore == 0);
             assert(supplyIndexAfter == comptrollerAfter.compInitialIndex());
             assert(borrowIndexAfter == comptrollerAfter.compInitialIndex());
+        } else {
+            assert(supplyIndexAfter == 0);
+            assert(borrowIndexAfter == 0);
         }
     }
 
