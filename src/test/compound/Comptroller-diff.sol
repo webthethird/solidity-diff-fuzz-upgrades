@@ -351,6 +351,20 @@ contract ComptrollerDiffFuzz is Setup {
         require(EIP20Interface(underlyingBefore).balanceOf(msg.sender) > low);
         require(EIP20Interface(underlyingAfter).balanceOf(msg.sender) > low);
         uint256 actualMintAmount = _between(mintAmount, low, high);
+        require(
+            comptrollerBefore.mintAllowed(
+                address(cErc20Before),
+                msg.sender,
+                actualMintAmount
+            ) == 0
+        );
+        require(
+            comptrollerAfter.mintAllowed(
+                address(cErc20After),
+                msg.sender,
+                actualMintAmount
+            ) == 0
+        );
         // Allowances
         CheatCodes(HEVM_ADDRESS).prank(msg.sender);
         EIP20Interface(underlyingBefore).approve(
@@ -419,6 +433,20 @@ contract ComptrollerDiffFuzz is Setup {
             msg.sender
         );
         uint256 actualRedeemAmount = _between(redeemAmount, 1e8, cTokenBalance);
+        require(
+            comptrollerBefore.redeemAllowed(
+                address(cErc20Before),
+                msg.sender,
+                actualRedeemAmount
+            ) == 0
+        );
+        require(
+            comptrollerAfter.redeemAllowed(
+                address(cErc20After),
+                msg.sender,
+                actualRedeemAmount
+            ) == 0
+        );
 
         // Actions
         CheatCodes(HEVM_ADDRESS).prank(msg.sender);
