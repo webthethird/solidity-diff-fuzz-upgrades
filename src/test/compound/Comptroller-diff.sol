@@ -39,16 +39,28 @@ contract ComptrollerDiffFuzz is Setup {
         require(!upgradeDone);
 
         // Actions
-        uint err = Unitroller(payable(address(comptrollerBefore)))._setPendingImplementation(COMPTROLLER_BEFORE_ADDR);
+        uint256 err = Unitroller(payable(address(comptrollerBefore)))
+            ._setPendingImplementation(COMPTROLLER_BEFORE_ADDR);
         require(err == 0);
-        err = Unitroller(payable(address(comptrollerAfter)))._setPendingImplementation(COMPTROLLER_AFTER_ADDR);
+        err = Unitroller(payable(address(comptrollerAfter)))
+            ._setPendingImplementation(COMPTROLLER_AFTER_ADDR);
         require(err == 0);
-        Comptroller(COMPTROLLER_BEFORE_ADDR)._become(Unitroller(payable(address(comptrollerBefore))));
-        Comptroller(COMPTROLLER_AFTER_ADDR)._become(Unitroller(payable(address(comptrollerAfter))));
+        Comptroller(COMPTROLLER_BEFORE_ADDR)._become(
+            Unitroller(payable(address(comptrollerBefore)))
+        );
+        Comptroller(COMPTROLLER_AFTER_ADDR)._become(
+            Unitroller(payable(address(comptrollerAfter)))
+        );
 
         // Postconditions
-        assert(comptrollerBefore.comptrollerImplementation() == COMPTROLLER_BEFORE_ADDR);
-        assert(comptrollerAfter.comptrollerImplementation() == COMPTROLLER_AFTER_ADDR);
+        assert(
+            comptrollerBefore.comptrollerImplementation() ==
+                COMPTROLLER_BEFORE_ADDR
+        );
+        assert(
+            comptrollerAfter.comptrollerImplementation() ==
+                COMPTROLLER_AFTER_ADDR
+        );
 
         compTokenBefore = Comp(comptrollerBefore.getCompAddress());
         compTokenAfter = Comp(comptrollerAfter.getCompAddress());
@@ -136,13 +148,21 @@ contract ComptrollerDiffFuzz is Setup {
         // Postconditions
         assert(marketsBefore.length == numMarketsBefore + 1);
         assert(marketsAfter.length == numMarketsAfter + 1);
-        (uint224 supplyIndexBefore,) = comptrollerBefore.compSupplyState(address(cErc20Before));
-        (uint224 supplyIndexAfter,) = comptrollerAfter.compSupplyState(address(cErc20After));
-        (uint224 borrowIndexBefore,) = comptrollerBefore.compBorrowState(address(cErc20Before));
-        (uint224 borrowIndexAfter,) = comptrollerAfter.compBorrowState(address(cErc20After));
+        (uint224 supplyIndexBefore, ) = comptrollerBefore.compSupplyState(
+            address(cErc20Before)
+        );
+        (uint224 supplyIndexAfter, ) = comptrollerAfter.compSupplyState(
+            address(cErc20After)
+        );
+        (uint224 borrowIndexBefore, ) = comptrollerBefore.compBorrowState(
+            address(cErc20Before)
+        );
+        (uint224 borrowIndexAfter, ) = comptrollerAfter.compBorrowState(
+            address(cErc20After)
+        );
         assert(supplyIndexBefore == 0);
         assert(borrowIndexBefore == 0);
-        if(upgradeDone) {
+        if (upgradeDone) {
             assert(supplyIndexAfter == comptrollerAfter.compInitialIndex());
             assert(borrowIndexAfter == comptrollerAfter.compInitialIndex());
         } else {
@@ -222,9 +242,15 @@ contract ComptrollerDiffFuzz is Setup {
         // Preconditions
         require(upgradeDone);
         /// Drip COMP tokens to Comptrollers
-        assert(address(Reservoir(RESERVOIR_BEFORE_ADDR).token()) == address(compTokenBefore));
+        assert(
+            address(Reservoir(RESERVOIR_BEFORE_ADDR).token()) ==
+                address(compTokenBefore)
+        );
         assert(compTokenBefore.balanceOf(RESERVOIR_BEFORE_ADDR) > 0);
-        assert(address(Reservoir(RESERVOIR_AFTER_ADDR).token()) == address(compTokenAfter));
+        assert(
+            address(Reservoir(RESERVOIR_AFTER_ADDR).token()) ==
+                address(compTokenAfter)
+        );
         assert(compTokenAfter.balanceOf(RESERVOIR_AFTER_ADDR) > 0);
         uint256 blocknumber = block.number >
             Reservoir(RESERVOIR_BEFORE_ADDR).dripStart()
@@ -406,7 +432,8 @@ contract ComptrollerDiffFuzz is Setup {
             CToken(address(cErc20After)).balanceOf(msg.sender) > balanceAfter
         );
         assert(
-            CToken(address(cErc20After)).balanceOf(msg.sender) == CToken(address(cErc20Before)).balanceOf(msg.sender)
+            CToken(address(cErc20After)).balanceOf(msg.sender) ==
+                CToken(address(cErc20Before)).balanceOf(msg.sender)
         );
     }
 
@@ -415,8 +442,14 @@ contract ComptrollerDiffFuzz is Setup {
         uint256 index = marketIndex % marketsAfter.length;
         require(marketsBefore[index].isCToken());
         require(marketsAfter[index].isCToken());
-        require(marketsBefore[index].balanceOf(msg.sender) > 0 && marketsAfter[index].balanceOf(msg.sender) > 0);
-        require(marketsAfter[index].balanceOf(msg.sender) == marketsBefore[index].balanceOf(msg.sender));
+        require(
+            marketsBefore[index].balanceOf(msg.sender) > 0 &&
+                marketsAfter[index].balanceOf(msg.sender) > 0
+        );
+        require(
+            marketsAfter[index].balanceOf(msg.sender) ==
+                marketsBefore[index].balanceOf(msg.sender)
+        );
         uint256 cTokenBalance = marketsAfter[index].balanceOf(msg.sender);
         CErc20Interface cErc20Before = CErc20Interface(
             address(marketsBefore[index])
@@ -426,12 +459,8 @@ contract ComptrollerDiffFuzz is Setup {
         );
         address underlyingBefore = cErc20Before.underlying();
         address underlyingAfter = cErc20After.underlying();
-        uint256 balanceBefore = ERC20(underlyingBefore).balanceOf(
-            msg.sender
-        );
-        uint256 balanceAfter = ERC20(underlyingAfter).balanceOf(
-            msg.sender
-        );
+        uint256 balanceBefore = ERC20(underlyingBefore).balanceOf(msg.sender);
+        uint256 balanceAfter = ERC20(underlyingAfter).balanceOf(msg.sender);
         uint256 actualRedeemAmount = _between(redeemAmount, 1e8, cTokenBalance);
         require(
             comptrollerBefore.redeemAllowed(
@@ -458,14 +487,11 @@ contract ComptrollerDiffFuzz is Setup {
         require(err == 0);
 
         // Postconditions
+        assert(ERC20(underlyingBefore).balanceOf(msg.sender) > balanceBefore);
+        assert(ERC20(underlyingAfter).balanceOf(msg.sender) > balanceAfter);
         assert(
-            ERC20(underlyingBefore).balanceOf(msg.sender) > balanceBefore
-        );
-        assert(
-            ERC20(underlyingAfter).balanceOf(msg.sender) > balanceAfter
-        );
-        assert(
-            ERC20(underlyingAfter).balanceOf(msg.sender) == ERC20(underlyingBefore).balanceOf(msg.sender)
+            ERC20(underlyingAfter).balanceOf(msg.sender) ==
+                ERC20(underlyingBefore).balanceOf(msg.sender)
         );
     }
 
@@ -475,8 +501,14 @@ contract ComptrollerDiffFuzz is Setup {
         uint256 index = marketIndex % marketsAfter.length;
         require(marketsBefore[index].isCToken());
         require(marketsAfter[index].isCToken());
-        require(marketsBefore[index].comptroller() == ComptrollerInterface(comptrollerBefore));
-        require(marketsAfter[index].comptroller() == ComptrollerInterface(comptrollerAfter));
+        require(
+            marketsBefore[index].comptroller() ==
+                ComptrollerInterface(comptrollerBefore)
+        );
+        require(
+            marketsAfter[index].comptroller() ==
+                ComptrollerInterface(comptrollerAfter)
+        );
         CErc20Interface cErc20Before = CErc20Interface(
             address(marketsBefore[index])
         );
@@ -485,12 +517,8 @@ contract ComptrollerDiffFuzz is Setup {
         );
         address underlyingBefore = cErc20Before.underlying();
         address underlyingAfter = cErc20After.underlying();
-        uint256 balanceBefore = ERC20(underlyingBefore).balanceOf(
-            msg.sender
-        );
-        uint256 balanceAfter = ERC20(underlyingAfter).balanceOf(
-            msg.sender
-        );
+        uint256 balanceBefore = ERC20(underlyingBefore).balanceOf(msg.sender);
+        uint256 balanceAfter = ERC20(underlyingAfter).balanceOf(msg.sender);
 
         // Actions
         CheatCodes(HEVM_ADDRESS).prank(msg.sender);
@@ -502,11 +530,7 @@ contract ComptrollerDiffFuzz is Setup {
         require(err == 0);
 
         // Postconditions
-        assert(
-            ERC20(underlyingBefore).balanceOf(msg.sender) > balanceBefore
-        );
-        assert(
-            ERC20(underlyingAfter).balanceOf(msg.sender) > balanceAfter
-        );
+        assert(ERC20(underlyingBefore).balanceOf(msg.sender) > balanceBefore);
+        assert(ERC20(underlyingAfter).balanceOf(msg.sender) > balanceAfter);
     }
 }
