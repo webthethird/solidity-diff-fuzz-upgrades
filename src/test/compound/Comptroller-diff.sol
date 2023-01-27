@@ -182,6 +182,42 @@ contract ComptrollerDiffFuzz is Setup {
         assert(success1 && success2);
     }
 
+    function testCompSpeeds(uint8 marketIndex, uint256 newSpeed) public {
+        // Preconditions
+        if (!upgradeDone) {
+            // Actions
+            (bool success1, ) = address(comptrollerBefore).call(
+                abi.encodeWithSignature("refreshCompSpeeds()")
+            );
+            (bool success2, ) = address(comptrollerAfter).call(
+                abi.encodeWithSignature("refreshCompSpeeds()")
+            );
+            // Postcondition
+            assert(success1 && success2);
+        } else {
+            uint256 actualNewSpeed = _between(newSpeed, 1, 300) * 1e15;
+            uint256 index = marketIndex % marketsAfter.length;
+            // Actions
+            (bool success1, ) = address(comptrollerBefore).call(
+                abi.encodeWithSignature(
+                    "_setCompSpeed(address,uint256)",
+                    address(marketsBefore[index]),
+                    actualNewSpeed
+                )
+            );
+            assert(success1);
+            CToken[] memory cTokens = new CToken[](1);
+            cTokens[0] = marketsAfter[index];
+            uint[] memory compSpeeds = new uint[](1);
+            compSpeeds[0] = actualNewSpeed;
+            comptrollerAfter._setCompSpeeds(cTokens, compSpeeds, compSpeeds);
+            // Postconditions
+            assert(comptrollerBefore.compSpeeds(address(marketsBefore[index])) == actualNewSpeed);
+            assert(comptrollerAfter.compSupplySpeeds(address(marketsAfter[index])) == actualNewSpeed);
+            assert(comptrollerAfter.compBorrowSpeeds(address(marketsAfter[index])) == actualNewSpeed);
+        }
+    }
+
     function testClaimComp() public {
         // Preconditions
         require(upgradeDone);
