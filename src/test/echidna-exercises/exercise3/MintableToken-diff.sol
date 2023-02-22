@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
-import "../helpers.sol";
+import "../../helpers.sol";
 
 // import { MintableToken_ADDR } from "../addresses.sol";
-import { MintableToken } from "../../implementation/echidna-exercises/mintable.sol";
+import { MintableToken } from "../../../implementation/echidna-exercises/exercise3/mintable.sol";
 // import "../../interface/echidna-exercises/IMintable.sol";
 
 contract MintableTokenFixed is MintableToken {
