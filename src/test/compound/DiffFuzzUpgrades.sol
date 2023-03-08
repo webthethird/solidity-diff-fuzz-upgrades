@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPLv3
 pragma solidity ^0.8.0;
 
-interface IComptrollerV1 {
+interface IComptrollerHarnessV1 {
     function getAssetsIn(address) external returns (address[] memory);
     function checkMembership(address,address) external returns (bool);
     function enterMarkets(address[] memory) external returns (uint256[] memory);
@@ -45,8 +45,28 @@ interface IComptrollerV1 {
     function _setContributorCompSpeed(address,uint256) external;
     function getAllMarkets() external returns (address[] memory);
     function isDeprecated(address) external returns (bool);
-    function getBlockNumber() external returns (uint256);
+    function setPauseGuardian(address) external;
+    function setCompSupplyState(address,uint224,uint32) external;
+    function setCompBorrowState(address,uint224,uint32) external;
+    function setCompAccrued(address,uint256) external;
+    function setCompAddress(address) external;
     function getCompAddress() external returns (address);
+    function harnessSetCompRate(uint256) external;
+    function harnessRefreshCompSpeeds() external;
+    function setCompBorrowerIndex(address,address,uint256) external;
+    function setCompSupplierIndex(address,address,uint256) external;
+    function harnessDistributeAllBorrowerComp(address,address,uint256) external;
+    function harnessDistributeAllSupplierComp(address,address) external;
+    function harnessUpdateCompBorrowIndex(address,uint256) external;
+    function harnessUpdateCompSupplyIndex(address) external;
+    function harnessDistributeBorrowerComp(address,address,uint256) external;
+    function harnessDistributeSupplierComp(address,address) external;
+    function harnessTransferComp(address,uint256,uint256) external returns (uint256);
+    function harnessAddCompMarkets(address[] memory) external;
+    function harnessFastForward(uint256) external returns (uint256);
+    function setBlockNumber(uint256) external;
+    function getBlockNumber() external returns (uint256);
+    function getCompMarkets() external returns (address[] memory);
     function admin() external returns (address);
     function pendingAdmin() external returns (address);
     function comptrollerImplementation() external returns (address);
@@ -77,6 +97,7 @@ interface IComptrollerV1 {
     function lastContributorBlock(address) external returns (uint256);
     function isComptroller() external returns (bool);
     function compInitialIndex() external returns (uint224);
+    function blockNumber() external returns (uint256);
 }
 
 struct CompMarketState {
@@ -84,7 +105,7 @@ struct CompMarketState {
     uint32 block;
 }
 
-interface IComptrollerV2 {
+interface IComptrollerHarnessV2 {
     function getAssetsIn(address) external returns (address[] memory);
     function checkMembership(address,address) external returns (bool);
     function enterMarkets(address[] memory) external returns (uint256[] memory);
@@ -129,8 +150,28 @@ interface IComptrollerV2 {
     function _setContributorCompSpeed(address,uint256) external;
     function getAllMarkets() external returns (address[] memory);
     function isDeprecated(address) external returns (bool);
-    function getBlockNumber() external returns (uint256);
+    function setPauseGuardian(address) external;
+    function setCompSupplyState(address,uint224,uint32) external;
+    function setCompBorrowState(address,uint224,uint32) external;
+    function setCompAccrued(address,uint256) external;
+    function setCompAddress(address) external;
     function getCompAddress() external returns (address);
+    function harnessSetCompRate(uint256) external;
+    function harnessRefreshCompSpeeds() external;
+    function setCompBorrowerIndex(address,address,uint256) external;
+    function setCompSupplierIndex(address,address,uint256) external;
+    function harnessDistributeAllBorrowerComp(address,address,uint256) external;
+    function harnessDistributeAllSupplierComp(address,address) external;
+    function harnessUpdateCompBorrowIndex(address,uint256) external;
+    function harnessUpdateCompSupplyIndex(address) external;
+    function harnessDistributeBorrowerComp(address,address,uint256) external;
+    function harnessDistributeSupplierComp(address,address) external;
+    function harnessTransferComp(address,uint256,uint256) external returns (uint256);
+    function harnessAddCompMarkets(address[] memory) external;
+    function harnessFastForward(uint256) external returns (uint256);
+    function setBlockNumber(uint256) external;
+    function getBlockNumber() external returns (uint256);
+    function getCompMarkets() external returns (address[] memory);
     function admin() external returns (address);
     function pendingAdmin() external returns (address);
     function comptrollerImplementation() external returns (address);
@@ -163,6 +204,7 @@ interface IComptrollerV2 {
     function compSupplySpeeds(address) external returns (uint256);
     function isComptroller() external returns (bool);
     function compInitialIndex() external returns (uint224);
+    function blockNumber() external returns (uint256);
 }
 
 struct CompMarketState {
@@ -184,481 +226,756 @@ interface IHevm {
 contract DiffFuzzUpgrades {
     IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
-    IComptrollerV1 ComptrollerV1 = IComptrollerV1(V1_ADDRESS_HERE);
-    IComptrollerV2 ComptrollerV2 = IComptrollerV2(V2_ADDRESS_HERE);
+    // TODO: Deploy the contracts and put their addresses below
+    IComptrollerHarnessV1 ComptrollerHarnessV1 = IComptrollerHarnessV1(V1_ADDRESS_HERE);
+    IComptrollerHarnessV2 ComptrollerHarnessV2 = IComptrollerHarnessV2(V2_ADDRESS_HERE);
+
     constructor() {
-        // TODO: Add any necessary initialization logic to the constructor here.    }
+        // TODO: Add any necessary initialization logic to the constructor here.
+    }
 
-    function Comptroller__supportMarket(address a) public returns (bool) {
+    function ComptrollerHarness__supportMarket(address a) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1._supportMarket.selector, a
+                ComptrollerHarnessV1._supportMarket.selector, a
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2._supportMarket.selector, a
+                ComptrollerHarnessV2._supportMarket.selector, a
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__become(address a) public returns (bool) {
+    function ComptrollerHarness__become(address a) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1._become.selector, a
+                ComptrollerHarnessV1._become.selector, a
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2._become.selector, a
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_checkMembership(address a, address b) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1.checkMembership.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2.checkMembership.selector, a, b
+                ComptrollerHarnessV2._become.selector, a
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_exitMarket(address a) public returns (bool) {
+    function ComptrollerHarness_harnessRefreshCompSpeeds() public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1.exitMarket.selector, a
+                ComptrollerHarnessV1.harnessRefreshCompSpeeds.selector
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2.exitMarket.selector, a
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_mintAllowed(address a, address b, uint256 c) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1.mintAllowed.selector, a, b, c
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2.mintAllowed.selector, a, b, c
+                ComptrollerHarnessV2.harnessRefreshCompSpeeds.selector
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_redeemAllowed(address a, address b, uint256 c) public returns (bool) {
+    function ComptrollerHarness_harnessAddCompMarkets(address[] memory a) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1.redeemAllowed.selector, a, b, c
+                ComptrollerHarnessV1.harnessAddCompMarkets.selector, a
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2.redeemAllowed.selector, a, b, c
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_borrowAllowed(address a, address b, uint256 c) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1.borrowAllowed.selector, a, b, c
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2.borrowAllowed.selector, a, b, c
+                ComptrollerHarnessV2.harnessAddCompMarkets.selector, a
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_repayBorrowAllowed(address a, address b, address c, uint256 d) public returns (bool) {
+    function ComptrollerHarness_getCompMarkets() public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1.repayBorrowAllowed.selector, a, b, c, d
+                ComptrollerHarnessV1.getCompMarkets.selector
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2.repayBorrowAllowed.selector, a, b, c, d
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_liquidateBorrowAllowed(address a, address b, address c, address d, uint256 e) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1.liquidateBorrowAllowed.selector, a, b, c, d, e
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2.liquidateBorrowAllowed.selector, a, b, c, d, e
+                ComptrollerHarnessV2.getCompMarkets.selector
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_seizeAllowed(address a, address b, address c, address d, uint256 e) public returns (bool) {
+    function ComptrollerHarness_checkMembership(address a, address b) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1.seizeAllowed.selector, a, b, c, d, e
+                ComptrollerHarnessV1.checkMembership.selector, a, b
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2.seizeAllowed.selector, a, b, c, d, e
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_transferAllowed(address a, address b, address c, uint256 d) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1.transferAllowed.selector, a, b, c, d
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2.transferAllowed.selector, a, b, c, d
+                ComptrollerHarnessV2.checkMembership.selector, a, b
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setPriceOracle(address a) public returns (bool) {
+    function ComptrollerHarness_exitMarket(address a) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1._setPriceOracle.selector, a
+                ComptrollerHarnessV1.exitMarket.selector, a
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2._setPriceOracle.selector, a
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setCloseFactor(uint256 a) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1._setCloseFactor.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2._setCloseFactor.selector, a
+                ComptrollerHarnessV2.exitMarket.selector, a
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setCollateralFactor(address a, uint256 b) public returns (bool) {
+    function ComptrollerHarness_mintAllowed(address a, address b, uint256 c) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1._setCollateralFactor.selector, a, b
+                ComptrollerHarnessV1.mintAllowed.selector, a, b, c
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2._setCollateralFactor.selector, a, b
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setLiquidationIncentive(uint256 a) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1._setLiquidationIncentive.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2._setLiquidationIncentive.selector, a
+                ComptrollerHarnessV2.mintAllowed.selector, a, b, c
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setMarketBorrowCaps(address[] calldata a, uint256[] calldata b) public returns (bool) {
+    function ComptrollerHarness_redeemAllowed(address a, address b, uint256 c) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1._setMarketBorrowCaps.selector, a, b
+                ComptrollerHarnessV1.redeemAllowed.selector, a, b, c
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2._setMarketBorrowCaps.selector, a, b
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setBorrowCapGuardian(address a) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1._setBorrowCapGuardian.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2._setBorrowCapGuardian.selector, a
+                ComptrollerHarnessV2.redeemAllowed.selector, a, b, c
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setPauseGuardian(address a) public returns (bool) {
+    function ComptrollerHarness_borrowAllowed(address a, address b, uint256 c) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1._setPauseGuardian.selector, a
+                ComptrollerHarnessV1.borrowAllowed.selector, a, b, c
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2._setPauseGuardian.selector, a
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setMintPaused(address a, bool b) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1._setMintPaused.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2._setMintPaused.selector, a, b
+                ComptrollerHarnessV2.borrowAllowed.selector, a, b, c
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setBorrowPaused(address a, bool b) public returns (bool) {
+    function ComptrollerHarness_repayBorrowAllowed(address a, address b, address c, uint256 d) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1._setBorrowPaused.selector, a, b
+                ComptrollerHarnessV1.repayBorrowAllowed.selector, a, b, c, d
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2._setBorrowPaused.selector, a, b
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setTransferPaused(bool a) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1._setTransferPaused.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2._setTransferPaused.selector, a
+                ComptrollerHarnessV2.repayBorrowAllowed.selector, a, b, c, d
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setSeizePaused(bool a) public returns (bool) {
+    function ComptrollerHarness_liquidateBorrowAllowed(address a, address b, address c, address d, uint256 e) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1._setSeizePaused.selector, a
+                ComptrollerHarnessV1.liquidateBorrowAllowed.selector, a, b, c, d, e
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2._setSeizePaused.selector, a
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_updateContributorRewards(address a) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1.updateContributorRewards.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2.updateContributorRewards.selector, a
+                ComptrollerHarnessV2.liquidateBorrowAllowed.selector, a, b, c, d, e
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_claimComp(address a) public returns (bool) {
+    function ComptrollerHarness_seizeAllowed(address a, address b, address c, address d, uint256 e) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1.claimComp.selector, a
+                ComptrollerHarnessV1.seizeAllowed.selector, a, b, c, d, e
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2.claimComp.selector, a
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_claimComp(address a) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1.claimComp.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2.claimComp.selector, a
+                ComptrollerHarnessV2.seizeAllowed.selector, a, b, c, d, e
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_getAllMarkets() public returns (bool) {
+    function ComptrollerHarness_transferAllowed(address a, address b, address c, uint256 d) public returns (bool) {
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
             abi.encodeWithSelector(
-                ComptrollerV1.getAllMarkets.selector
+                ComptrollerHarnessV1.transferAllowed.selector, a, b, c, d
             )
         );
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
             abi.encodeWithSelector(
-                ComptrollerV2.getAllMarkets.selector
-            )
-        );
-        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_isDeprecated(address a) public returns (bool) {
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(ComptrollerV1).call(
-            abi.encodeWithSelector(
-                ComptrollerV1.isDeprecated.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(ComptrollerV2).call(
-            abi.encodeWithSelector(
-                ComptrollerV2.isDeprecated.selector, a
+                ComptrollerHarnessV2.transferAllowed.selector, a, b, c, d
             )
         );
         return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_admin() public returns (bool) {
-        return ComptrollerV1.admin() == ComptrollerV2.admin();
+    function ComptrollerHarness_liquidateCalculateSeizeTokens(address a, address b, uint256 c) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.liquidateCalculateSeizeTokens.selector, a, b, c
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.liquidateCalculateSeizeTokens.selector, a, b, c
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_comptrollerImplementation() public returns (bool) {
-        return ComptrollerV1.comptrollerImplementation() == ComptrollerV2.comptrollerImplementation();
+    function ComptrollerHarness__setPriceOracle(address a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1._setPriceOracle.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2._setPriceOracle.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_markets(address a) public returns (bool) {
-        return ComptrollerV1.markets(a) == ComptrollerV2.markets(a);
+    function ComptrollerHarness__setCloseFactor(uint256 a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1._setCloseFactor.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2._setCloseFactor.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_allMarkets(uint i) public returns (bool) {
-        return ComptrollerV1.allMarkets[i] == ComptrollerV2.allMarkets[i];
+    function ComptrollerHarness__setCollateralFactor(address a, uint256 b) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1._setCollateralFactor.selector, a, b
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2._setCollateralFactor.selector, a, b
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_compSpeeds(address a) public returns (bool) {
-        return ComptrollerV1.compSpeeds(a) == ComptrollerV2.compSpeeds(a);
+    function ComptrollerHarness__setLiquidationIncentive(uint256 a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1._setLiquidationIncentive.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2._setLiquidationIncentive.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_compSupplyState(address a) public returns (bool) {
-        return ComptrollerV1.compSupplyState(a) == ComptrollerV2.compSupplyState(a);
+    function ComptrollerHarness__setMarketBorrowCaps(address[] calldata a, uint256[] calldata b) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1._setMarketBorrowCaps.selector, a, b
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2._setMarketBorrowCaps.selector, a, b
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_compBorrowState(address a) public returns (bool) {
-        return ComptrollerV1.compBorrowState(a) == ComptrollerV2.compBorrowState(a);
+    function ComptrollerHarness__setBorrowCapGuardian(address a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1._setBorrowCapGuardian.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2._setBorrowCapGuardian.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_compSupplierIndex(address a) public returns (bool) {
-        return ComptrollerV1.compSupplierIndex(a) == ComptrollerV2.compSupplierIndex(a);
+    function ComptrollerHarness__setPauseGuardian(address a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1._setPauseGuardian.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2._setPauseGuardian.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_compBorrowerIndex(address a) public returns (bool) {
-        return ComptrollerV1.compBorrowerIndex(a) == ComptrollerV2.compBorrowerIndex(a);
+    function ComptrollerHarness__setMintPaused(address a, bool b) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1._setMintPaused.selector, a, b
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2._setMintPaused.selector, a, b
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_compAccrued(address a) public returns (bool) {
-        return ComptrollerV1.compAccrued(a) == ComptrollerV2.compAccrued(a);
+    function ComptrollerHarness__setBorrowPaused(address a, bool b) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1._setBorrowPaused.selector, a, b
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2._setBorrowPaused.selector, a, b
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness__setTransferPaused(bool a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1._setTransferPaused.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2._setTransferPaused.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness__setSeizePaused(bool a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1._setSeizePaused.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2._setSeizePaused.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_updateContributorRewards(address a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.updateContributorRewards.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.updateContributorRewards.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_claimComp(address a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.claimComp.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.claimComp.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_claimComp(address a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.claimComp.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.claimComp.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_getAllMarkets() public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.getAllMarkets.selector
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.getAllMarkets.selector
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_isDeprecated(address a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.isDeprecated.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.isDeprecated.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_setCompSupplyState(address a, uint224 b, uint32 c) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.setCompSupplyState.selector, a, b, c
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.setCompSupplyState.selector, a, b, c
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_setCompBorrowState(address a, uint224 b, uint32 c) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.setCompBorrowState.selector, a, b, c
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.setCompBorrowState.selector, a, b, c
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_setCompAccrued(address a, uint256 b) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.setCompAccrued.selector, a, b
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.setCompAccrued.selector, a, b
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_harnessSetCompRate(uint256 a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.harnessSetCompRate.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.harnessSetCompRate.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_setCompBorrowerIndex(address a, address b, uint256 c) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.setCompBorrowerIndex.selector, a, b, c
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.setCompBorrowerIndex.selector, a, b, c
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_setCompSupplierIndex(address a, address b, uint256 c) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.setCompSupplierIndex.selector, a, b, c
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.setCompSupplierIndex.selector, a, b, c
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_harnessDistributeAllBorrowerComp(address a, address b, uint256 c) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.harnessDistributeAllBorrowerComp.selector, a, b, c
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.harnessDistributeAllBorrowerComp.selector, a, b, c
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_harnessDistributeAllSupplierComp(address a, address b) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.harnessDistributeAllSupplierComp.selector, a, b
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.harnessDistributeAllSupplierComp.selector, a, b
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_harnessUpdateCompBorrowIndex(address a, uint256 b) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.harnessUpdateCompBorrowIndex.selector, a, b
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.harnessUpdateCompBorrowIndex.selector, a, b
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_harnessUpdateCompSupplyIndex(address a) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.harnessUpdateCompSupplyIndex.selector, a
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.harnessUpdateCompSupplyIndex.selector, a
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_harnessDistributeBorrowerComp(address a, address b, uint256 c) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.harnessDistributeBorrowerComp.selector, a, b, c
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.harnessDistributeBorrowerComp.selector, a, b, c
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_harnessDistributeSupplierComp(address a, address b) public returns (bool) {
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(ComptrollerHarnessV1).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV1.harnessDistributeSupplierComp.selector, a, b
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
+            abi.encodeWithSelector(
+                ComptrollerHarnessV2.harnessDistributeSupplierComp.selector, a, b
+            )
+        );
+        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function ComptrollerHarness_admin() public returns (bool) {
+        return ComptrollerHarnessV1.admin() == ComptrollerHarnessV2.admin();
+    }
+
+    function ComptrollerHarness_comptrollerImplementation() public returns (bool) {
+        return ComptrollerHarnessV1.comptrollerImplementation() == ComptrollerHarnessV2.comptrollerImplementation();
+    }
+
+    function ComptrollerHarness_oracle() public returns (bool) {
+        return ComptrollerHarnessV1.oracle() == ComptrollerHarnessV2.oracle();
+    }
+
+    function ComptrollerHarness_markets(address a) public returns (bool) {
+        return ComptrollerHarnessV1.markets(a) == ComptrollerHarnessV2.markets(a);
+    }
+
+    function ComptrollerHarness_allMarkets(uint i) public returns (bool) {
+        return ComptrollerHarnessV1.allMarkets[i] == ComptrollerHarnessV2.allMarkets[i];
+    }
+
+    function ComptrollerHarness_compRate() public returns (bool) {
+        return ComptrollerHarnessV1.compRate() == ComptrollerHarnessV2.compRate();
+    }
+
+    function ComptrollerHarness_compSpeeds(address a) public returns (bool) {
+        return ComptrollerHarnessV1.compSpeeds(a) == ComptrollerHarnessV2.compSpeeds(a);
+    }
+
+    function ComptrollerHarness_compSupplyState(address a) public returns (bool) {
+        return ComptrollerHarnessV1.compSupplyState(a) == ComptrollerHarnessV2.compSupplyState(a);
+    }
+
+    function ComptrollerHarness_compBorrowState(address a) public returns (bool) {
+        return ComptrollerHarnessV1.compBorrowState(a) == ComptrollerHarnessV2.compBorrowState(a);
+    }
+
+    function ComptrollerHarness_compSupplierIndex(address a) public returns (bool) {
+        return ComptrollerHarnessV1.compSupplierIndex(a) == ComptrollerHarnessV2.compSupplierIndex(a);
+    }
+
+    function ComptrollerHarness_compBorrowerIndex(address a) public returns (bool) {
+        return ComptrollerHarnessV1.compBorrowerIndex(a) == ComptrollerHarnessV2.compBorrowerIndex(a);
+    }
+
+    function ComptrollerHarness_compAccrued(address a) public returns (bool) {
+        return ComptrollerHarnessV1.compAccrued(a) == ComptrollerHarnessV2.compAccrued(a);
+    }
+
+    function ComptrollerHarness_compBorrowSpeeds(address a) public returns (bool) {
+        return ComptrollerHarnessV1.compBorrowSpeeds(a) == ComptrollerHarnessV2.compBorrowSpeeds(a);
+    }
+
+    function ComptrollerHarness_compSupplySpeeds(address a) public returns (bool) {
+        return ComptrollerHarnessV1.compSupplySpeeds(a) == ComptrollerHarnessV2.compSupplySpeeds(a);
     }
 
 }
