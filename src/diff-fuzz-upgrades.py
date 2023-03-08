@@ -383,16 +383,27 @@ def wrap_diff_functions(v1, v2):
 
         wrapped +=  f"    function {v1['name']}_{func[0]}{args} public returns (bool) {{\n"
         wrapped +=   "        hevm.prank(msg.sender);\n"
-        if len(return_vals) > 0:
-            wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
-        else:
-            wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
+        wrapped +=  f"        (bool success1, bytes memory output1) = address({v1['name']}V1).call(\n"
+        wrapped +=  f"            abi.encodeWithSelector(\n"
+        wrapped +=  f"                {v1['name']}V1.{func[0]}.selector{call_args.replace('()','').replace('(',', ').replace(')', '')}\n"
+        wrapped +=  f"            )\n"
+        wrapped +=  f"        );\n"
+        # if len(return_vals) > 0:
+        #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
+        # else:
+        #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
         wrapped +=   "        hevm.prank(msg.sender);\n"
-        if len(return_vals) > 0:
-            wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"
-            wrapped +=  f"        return {returns_to_compare[0]} == {returns_to_compare [1]};\n"
-        else:
-            wrapped +=  f"        {v2['name']}V2.{func[0]}{call_args};\n"
+        wrapped +=  f"        (bool success2, bytes memory output2) = address({v2['name']}V2).call(\n"
+        wrapped +=  f"            abi.encodeWithSelector(\n"
+        wrapped +=  f"                {v2['name']}V2.{func[0]}.selector{call_args.replace('()','').replace('(',', ').replace(')', '')}\n"
+        wrapped +=  f"            )\n"
+        wrapped +=  f"        );\n"
+        wrapped +=  f"        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));\n"
+        # if len(return_vals) > 0:
+        #     wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"
+        #     wrapped +=  f"        return {returns_to_compare[0]} == {returns_to_compare [1]};\n"
+        # else:
+        #     wrapped +=  f"        {v2['name']}V2.{func[0]}{call_args};\n"
         wrapped +=   "    }\n\n"
 
     for v in diff_variables:
@@ -417,8 +428,8 @@ def wrap_diff_functions(v1, v2):
     return wrapped
 
 
-def write_to_file(filename, content):
-    out_file = open(filename, "wt")
+def write_to_file(filename, dir, content):
+    out_file = open(os.path.sep.join([dir, filename]) , "wt")
     out_file.write(content)
     out_file.close()
     
@@ -477,7 +488,7 @@ def generate_test_contract(v1, v2, tokens=None, targets=None):
     # Constructor
     crytic_print(PrintMode.INFORMATION, f"  * Generating constructor.")
 
-    final_contract +=  "    constructor() {\n"
+    final_contract +=  "\n    constructor() {\n"
     # final_contract += f"        hevm.warp({timestamp});\n"
     # final_contract += f"        hevm.roll({blocknumber});\n\n"
 
@@ -525,8 +536,14 @@ def main():
 
     parser.add_argument('v1_filename', help='The path to the original version of the contract.')
     parser.add_argument('v2_filename', help='The path to the upgraded version of the contract.')
+    parser.add_argument('-d', '--output-dir', dest='output_dir')
 
     args = parser.parse_args()
+
+    if args.output_dir is not None:
+        output_dir = args.output_dir
+    else:
+        output_dir = "./"
 
     v1_contract_data = get_contract_data_from_path(args.v1_filename, suffix="V1")
     v2_contract_data = get_contract_data_from_path(args.v2_filename, suffix="V2")
@@ -543,7 +560,7 @@ def main():
     #                 crytic_print(PrintMode.WARNING, f'        * {obj.signature_str}')
 
     contract = generate_test_contract(v1_contract_data, v2_contract_data)
-    write_to_file("DiffFuzzUpgrades.sol", contract)
+    write_to_file("DiffFuzzUpgrades.sol", output_dir, contract)
 
 
 if __name__ == "__main__":
