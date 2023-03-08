@@ -474,8 +474,9 @@ def generate_test_contract(v1, v2, tokens=None, targets=None):
     crytic_print(PrintMode.INFORMATION, f"  * Adding state variables declarations.")
 
     final_contract +=  "    IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);\n\n"
+    final_contract +=  "    // TODO: Deploy the contracts and "
     final_contract += f"    {v1['interface_name']} {v1['name']}V1 = {v1['interface_name']}(V1_ADDRESS_HERE);\n"
-    final_contract += f"    {v2['interface_name']} {v2['name']}V2 = {v2['interface_name']}(V2_ADDRESS_HERE);\n"
+    final_contract += f"    {v2['interface_name']} {v2['name']}V2 = {v2['interface_name']}(V2_ADDRESS_HERE);\n\n"
 
     if tokens is not None:
         for t in tokens:
@@ -489,7 +490,7 @@ def generate_test_contract(v1, v2, tokens=None, targets=None):
     crytic_print(PrintMode.INFORMATION, f"  * Generating constructor.")
 
     final_contract +=  "    constructor() {\n"
-    final_contract +=  "        // TODO: Add any necessary initialization logic to the constructor here."
+    final_contract +=  "        // TODO: Add any necessary initialization logic to the constructor here.\n"
     # final_contract += f"        hevm.warp({timestamp});\n"
     # final_contract += f"        hevm.roll({blocknumber});\n\n"
 
