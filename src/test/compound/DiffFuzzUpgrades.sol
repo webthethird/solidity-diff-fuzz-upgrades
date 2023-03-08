@@ -186,9 +186,8 @@ contract DiffFuzzUpgrades {
 
     IComptrollerV1 ComptrollerV1 = IComptrollerV1(V1_ADDRESS_HERE);
     IComptrollerV2 ComptrollerV2 = IComptrollerV2(V2_ADDRESS_HERE);
-
     constructor() {
-    }
+        // TODO: Add any necessary initialization logic to the constructor here.    }
 
     function Comptroller__supportMarket(address a) public returns (bool) {
         hevm.prank(msg.sender);

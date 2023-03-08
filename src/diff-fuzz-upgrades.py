@@ -488,7 +488,8 @@ def generate_test_contract(v1, v2, tokens=None, targets=None):
     # Constructor
     crytic_print(PrintMode.INFORMATION, f"  * Generating constructor.")
 
-    final_contract +=  "\n    constructor() {\n"
+    final_contract +=  "    constructor() {\n"
+    final_contract +=  "        // TODO: Add any necessary initialization logic to the constructor here."
     # final_contract += f"        hevm.warp({timestamp});\n"
     # final_contract += f"        hevm.roll({blocknumber});\n\n"
 
