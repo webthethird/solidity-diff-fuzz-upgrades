@@ -407,22 +407,9 @@ contract ComptrollerDiffFuzz is Setup {
         CheatCodes(HEVM_ADDRESS).prank(msg.sender);
         uint256 err = cErc20Before.mint(actualMintAmount);
         assert(err == 0);
-        emit MintedCToken(
-            address(cErc20Before),
-            CToken(address(cErc20Before)).symbol(),
-            actualMintAmount,
-            CToken(address(cErc20Before)).balanceOf(msg.sender)
-        );
-
         CheatCodes(HEVM_ADDRESS).prank(msg.sender);
         err = cErc20After.mint(actualMintAmount);
         assert(err == 0);
-        emit MintedCToken(
-            address(cErc20After),
-            CToken(address(cErc20After)).symbol(),
-            actualMintAmount,
-            CToken(address(cErc20After)).balanceOf(msg.sender)
-        );
 
         // Postconditions
         assert(
