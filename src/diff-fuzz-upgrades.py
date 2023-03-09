@@ -386,6 +386,7 @@ def wrap_additional_target_functions(targets):
     if len(targets) == 0:
         return wrapped
 
+    wrapped += "\n    /*** Additional Targets ***/ \n\n"
     for t in targets:
         functions_to_wrap = t["functions"]
         for func in functions_to_wrap:
@@ -440,17 +441,22 @@ def wrap_diff_functions(v1, v2):
     crytic_print(PrintMode.MESSAGE, "\n  * Performing diff of V1 and V2")
     diff = compare(v1["contract_object"], v2["contract_object"])
 
-    diff_functions = diff['modified-functions'] + diff['tainted-functions']
-    new_functions = diff['new-functions']
-    diff_variables = diff['tainted-variables']
-
-    for f in diff_functions:
+    wrapped += "\n    /*** Modified Functions ***/ \n\n"
+    for f in diff['modified-functions']:
         if f.visibility in ["internal", "private"]:
             continue
         func = next(func for func in v2['functions'] if func[0] == f.name)
         wrapped += wrap_diff_function(v1, v2, func)
 
-    for f in new_functions:
+    wrapped += "\n    /*** Tainted Functions ***/ \n\n"
+    for f in diff['tainted-functions']:
+        if f.visibility in ["internal", "private"]:
+            continue
+        func = next(func for func in v2['functions'] if func[0] == f.name)
+        wrapped += wrap_diff_function(v1, v2, func)
+
+    wrapped += "\n    /*** New Functions ***/ \n\n"
+    for f in diff['new-functions']:
         if f.visibility in ["internal", "private"]:
             continue
         for f0 in v1["contract_object"].functions_entry_points:
@@ -464,7 +470,8 @@ def wrap_diff_functions(v1, v2):
                 func2 = next(func for func in v2['functions'] if func[0] == f.name)
                 wrapped += wrap_diff_function(v1, v2, func, func2)
 
-    for v in diff_variables:
+    wrapped += "\n    /*** Tainted Variables ***/ \n\n"
+    for v in diff['tainted-variables']:
         if v.visibility in ["internal", "private"]:
             continue
         if v.type.is_dynamic:
