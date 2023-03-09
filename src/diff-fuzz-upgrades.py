@@ -265,6 +265,16 @@ def get_contract_interface(contract_data, suffix=''):
     return contract_info
 
 
+def get_contracts_from_comma_separated_paths(paths_string: str, suffix=''):
+    contracts = []
+    filepaths = paths_string.split(",")
+
+    for path in filepaths:
+        contract_data = get_contract_data_from_path(path, suffix)
+        contracts.append(contract_data)
+    return contracts
+
+
 def get_contract_data_from_path(filepath, suffix=''):
     contract_data = dict()
 
@@ -333,6 +343,80 @@ def wrap_functions(target):
     return wrapped
 
 
+def get_args_and_returns_for_wrapping(func):
+    args = "("
+    call_args = "("
+    return_vals = []
+    returns_to_compare = []
+    counter = 0
+    if len(func[1]) == 0:
+        args += ")"
+        call_args += ")"
+    else:
+        for i in func[1]:
+            args += f"{i} {chr(ord('a') + counter)}, "
+            call_args += f"{chr(ord('a') + counter)}, "
+            counter += 1
+        args = f"{args[0:-2]})"
+        call_args = f"{call_args[0:-2]})"
+    if len(func[2]) == 0:
+        return_vals = ""
+    elif len(func[2]) == 1:
+        for j in range(0, 2):
+            return_vals.append(f"{func[2][0]} {chr(ord('a') + counter)}")
+            returns_to_compare.append(f"{chr(ord('a') + counter)}")
+            counter += 1
+    else:
+        for j in range(0, 2):
+            return_vals.append("(")
+            returns_to_compare.append("(")
+            for i in func[2]:
+                return_vals[j] += f"{i} {chr(ord('a') + counter)}, "
+                returns_to_compare[j] += f"{chr(ord('a') + counter)}, "
+                counter += 1
+            return_vals[j] = f"{return_vals[j][0:-2]})"
+            returns_to_compare[j] = f"{returns_to_compare[j][0:-2]})"
+    return args, call_args, return_vals, returns_to_compare
+
+
+def wrap_additional_target_functions(targets):
+    wrapped = ""
+
+    if len(targets) == 0:
+        return wrapped
+
+    for t in targets:
+        functions_to_wrap = t["functions"]
+        for func in functions_to_wrap:
+            args, call_args, return_vals, returns_to_compare = get_args_and_returns_for_wrapping(func)
+
+            wrapped += f"    function {t['name']}_{func[0]}{args} public returns (bool) {{\n"
+            wrapped += "        hevm.prank(msg.sender);\n"
+            wrapped += f"        (bool success1, bytes memory output1) = address({t['name']}V1).call(\n"
+            wrapped += f"            abi.encodeWithSelector(\n"
+            wrapped += f"                {t['name']}V1.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
+            wrapped += f"            )\n"
+            wrapped += f"        );\n"
+            # if len(return_vals) > 0:
+            #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
+            # else:
+            #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
+            wrapped += "        hevm.prank(msg.sender);\n"
+            wrapped += f"        (bool success2, bytes memory output2) = address({t['name']}V2).call(\n"
+            wrapped += f"            abi.encodeWithSelector(\n"
+            wrapped += f"                {t['name']}V2.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
+            wrapped += f"            )\n"
+            wrapped += f"        );\n"
+            wrapped += f"        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));\n"
+            # if len(return_vals) > 0:
+            #     wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"
+            #     wrapped +=  f"        return {returns_to_compare[0]} == {returns_to_compare [1]};\n"
+            # else:
+            #     wrapped +=  f"        {v2['name']}V2.{func[0]}{call_args};\n"
+            wrapped += "    }\n\n"
+    return wrapped
+
+
 def wrap_diff_functions(v1, v2):
     wrapped = ""
     
@@ -348,38 +432,7 @@ def wrap_diff_functions(v1, v2):
             continue
         func = next(func for func in v2['functions'] if func[0] == f.name)
 
-        args = "("
-        call_args = "("
-        return_vals = []
-        returns_to_compare = []
-        counter = 0
-        if len(func[1]) == 0:
-            args += ")"
-            call_args += ")"
-        else:
-            for i in func[1]:
-                args += f"{i} {chr(ord('a')+counter)}, "
-                call_args += f"{chr(ord('a')+counter)}, "
-                counter += 1
-            args = f"{args[0:-2]})"
-            call_args = f"{call_args[0:-2]})"
-        if len(func[2]) == 0:
-            return_vals = ""
-        elif len(func[2]) == 1:
-            for j in range(0, 2):
-                return_vals.append(f"{i} {chr(ord('a')+counter)}")
-                returns_to_compare.append(f"{chr(ord('a')+counter)}")
-                counter += 1
-        else:
-            for j in range(0, 2):
-                return_vals.append("(")
-                returns_to_compare.append("(")
-                for i in func[2]:
-                    return_vals[j] += f"{i} {chr(ord('a')+counter)}, "
-                    returns_to_compare[j] += f"{chr(ord('a')+counter)}, "
-                    counter += 1
-                return_vals[j] = f"{return_vals[j][0:-2]})"
-                returns_to_compare[j] = f"{returns_to_compare[j][0:-2]})"
+        args, call_args, return_vals, returns_to_compare = get_args_and_returns_for_wrapping(func)
 
         wrapped +=  f"    function {v1['name']}_{func[0]}{args} public returns (bool) {{\n"
         wrapped +=   "        hevm.prank(msg.sender);\n"
@@ -423,7 +476,6 @@ def wrap_diff_functions(v1, v2):
             wrapped +=  f"    function {v1['name']}_{v.full_name} public returns (bool) {{\n"
             wrapped +=  f"        return {v1['name']}V1.{v.full_name} == {v2['name']}V2.{v.full_name};\n"
             wrapped +=   "    }\n\n"
-            
 
     return wrapped
 
@@ -476,21 +528,23 @@ def generate_test_contract(v1, v2, tokens=None, targets=None):
     final_contract +=  "    IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);\n\n"
     final_contract +=  "    // TODO: Deploy the contracts and put their addresses below\n"
     final_contract += f"    {v1['interface_name']} {v1['name']}V1 = {v1['interface_name']}(V1_ADDRESS_HERE);\n"
-    final_contract += f"    {v2['interface_name']} {v2['name']}V2 = {v2['interface_name']}(V2_ADDRESS_HERE);\n\n"
+    final_contract += f"    {v2['interface_name']} {v2['name']}V2 = {v2['interface_name']}(V2_ADDRESS_HERE);\n"
 
     if tokens is not None:
         for t in tokens:
-            final_contract += f"    {t['interface_name']} {t['name']} = {t['interface_name']}({t['name']}_ADDRESS_HERE);\n"
+            final_contract += f"    {t['interface_name']} {t['name']}V1 = {t['interface_name']}({t['name']}_V1_ADDRESS_HERE);\n"
+            final_contract += f"    {t['interface_name']} {t['name']}V2 = {t['interface_name']}({t['name']}_V2_ADDRESS_HERE);\n"
 
     if targets is not None:
         for t in targets:
-            final_contract += f"    {t['interface_name']} {t['name']} = {t['interface_name']}({t['name']}_ADDRESS_HERE);\n\n"
+            final_contract += f"    {t['interface_name']} {t['name']}V1 = {t['interface_name']}({t['name']}_V1_ADDRESS_HERE);\n"
+            final_contract += f"    {t['interface_name']} {t['name']}V2 = {t['interface_name']}({t['name']}_V2_ADDRESS_HERE);\n"
 
     # Constructor
     crytic_print(PrintMode.INFORMATION, f"  * Generating constructor.")
 
-    final_contract +=  "    constructor() {\n"
-    final_contract +=  "        // TODO: Add any necessary initialization logic to the constructor here.\n"
+    final_contract += "\n    constructor() {\n"
+    final_contract += "        // TODO: Add any necessary initialization logic to the constructor here.\n"
     # final_contract += f"        hevm.warp({timestamp});\n"
     # final_contract += f"        hevm.roll({blocknumber});\n\n"
 
@@ -517,7 +571,7 @@ def generate_test_contract(v1, v2, tokens=None, targets=None):
     final_contract += wrap_diff_functions(v1, v2)
 
     if targets is not None:
-        final_contract += wrap_functions(targets)
+        final_contract += wrap_additional_target_functions(targets)
     if tokens is not None:
         final_contract += wrap_functions(tokens)
 
@@ -538,6 +592,9 @@ def main():
 
     parser.add_argument('v1_filename', help='The path to the original version of the contract.')
     parser.add_argument('v2_filename', help='The path to the upgraded version of the contract.')
+    parser.add_argument('-t', '--tokens', dest='tokens', help='Specifies the token contracts to use.')
+    parser.add_argument('-T', '--targets', dest='targets',
+                        help='Specifies the additional contracts to target.')
     parser.add_argument('-d', '--output-dir', dest='output_dir')
 
     args = parser.parse_args()
@@ -550,6 +607,11 @@ def main():
     v1_contract_data = get_contract_data_from_path(args.v1_filename, suffix="V1")
     v2_contract_data = get_contract_data_from_path(args.v2_filename, suffix="V2")
 
+    if args.targets is not None:
+        targets = get_contracts_from_comma_separated_paths(args.targets)
+    else:
+        targets = None
+
     # crytic_print(PrintMode.MESSAGE, "Performing diff of V1 and V2")
     # diff = compare(v1_contract_data["contract_object"], v2_contract_data["contract_object"])
     # for key in diff.keys():
@@ -561,7 +623,7 @@ def main():
     #             elif isinstance(obj, Function):
     #                 crytic_print(PrintMode.WARNING, f'        * {obj.signature_str}')
 
-    contract = generate_test_contract(v1_contract_data, v2_contract_data)
+    contract = generate_test_contract(v1_contract_data, v2_contract_data, targets=targets)
     write_to_file("DiffFuzzUpgrades.sol", output_dir, contract)
 
 
