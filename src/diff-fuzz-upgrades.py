@@ -388,32 +388,7 @@ def wrap_additional_target_functions(targets):
     for t in targets:
         functions_to_wrap = t["functions"]
         for func in functions_to_wrap:
-            args, call_args, return_vals, returns_to_compare = get_args_and_returns_for_wrapping(func)
-
-            wrapped += f"    function {t['name']}_{func[0]}{args} public returns (bool) {{\n"
-            wrapped += "        hevm.prank(msg.sender);\n"
-            wrapped += f"        (bool success1, bytes memory output1) = address({t['name']}V1).call(\n"
-            wrapped += f"            abi.encodeWithSelector(\n"
-            wrapped += f"                {t['name']}V1.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
-            wrapped += f"            )\n"
-            wrapped += f"        );\n"
-            # if len(return_vals) > 0:
-            #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
-            # else:
-            #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
-            wrapped += "        hevm.prank(msg.sender);\n"
-            wrapped += f"        (bool success2, bytes memory output2) = address({t['name']}V2).call(\n"
-            wrapped += f"            abi.encodeWithSelector(\n"
-            wrapped += f"                {t['name']}V2.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
-            wrapped += f"            )\n"
-            wrapped += f"        );\n"
-            wrapped += f"        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));\n"
-            # if len(return_vals) > 0:
-            #     wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"
-            #     wrapped +=  f"        return {returns_to_compare[0]} == {returns_to_compare [1]};\n"
-            # else:
-            #     wrapped +=  f"        {v2['name']}V2.{func[0]}{call_args};\n"
-            wrapped += "    }\n\n"
+            wrapped += wrap_diff_function(t, t, func)
     return wrapped
 
 
@@ -431,33 +406,7 @@ def wrap_diff_functions(v1, v2):
         if f.visibility in ["internal", "private"]:
             continue
         func = next(func for func in v2['functions'] if func[0] == f.name)
-
-        args, call_args, return_vals, returns_to_compare = get_args_and_returns_for_wrapping(func)
-
-        wrapped +=  f"    function {v1['name']}_{func[0]}{args} public returns (bool) {{\n"
-        wrapped +=   "        hevm.prank(msg.sender);\n"
-        wrapped +=  f"        (bool success1, bytes memory output1) = address({v1['name']}V1).call(\n"
-        wrapped +=  f"            abi.encodeWithSelector(\n"
-        wrapped +=  f"                {v1['name']}V1.{func[0]}.selector{call_args.replace('()','').replace('(',', ').replace(')', '')}\n"
-        wrapped +=  f"            )\n"
-        wrapped +=  f"        );\n"
-        # if len(return_vals) > 0:
-        #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
-        # else:
-        #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
-        wrapped +=   "        hevm.prank(msg.sender);\n"
-        wrapped +=  f"        (bool success2, bytes memory output2) = address({v2['name']}V2).call(\n"
-        wrapped +=  f"            abi.encodeWithSelector(\n"
-        wrapped +=  f"                {v2['name']}V2.{func[0]}.selector{call_args.replace('()','').replace('(',', ').replace(')', '')}\n"
-        wrapped +=  f"            )\n"
-        wrapped +=  f"        );\n"
-        wrapped +=  f"        return success1 == success2 && ((!success1 && !success2) || keccak256(output1) == keccak256(output2));\n"
-        # if len(return_vals) > 0:
-        #     wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"
-        #     wrapped +=  f"        return {returns_to_compare[0]} == {returns_to_compare [1]};\n"
-        # else:
-        #     wrapped +=  f"        {v2['name']}V2.{func[0]}{call_args};\n"
-        wrapped +=   "    }\n\n"
+        wrapped += wrap_diff_function(v1, v2, func)
 
     for v in diff_variables:
         if v.visibility in ["internal", "private"]:
@@ -477,6 +426,39 @@ def wrap_diff_functions(v1, v2):
             wrapped +=  f"        return {v1['name']}V1.{v.full_name} == {v2['name']}V2.{v.full_name};\n"
             wrapped +=   "    }\n\n"
 
+    return wrapped
+
+
+def wrap_diff_function(v1, v2, func):
+    wrapped = ""
+    args, call_args, return_vals, returns_to_compare = get_args_and_returns_for_wrapping(func)
+
+    wrapped += f"    function {v1['name']}_{func[0]}{args} public returns (bool) {{\n"
+    wrapped += "        hevm.prank(msg.sender);\n"
+    wrapped += f"        (bool success1, bytes memory output1) = address({v1['name']}V1).call(\n"
+    wrapped += f"            abi.encodeWithSelector(\n"
+    wrapped += f"                {v1['name']}V1.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
+    wrapped += f"            )\n"
+    wrapped += f"        );\n"
+    # if len(return_vals) > 0:
+    #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
+    # else:
+    #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
+    wrapped += "        hevm.prank(msg.sender);\n"
+    wrapped += f"        (bool success2, bytes memory output2) = address({v2['name']}V2).call(\n"
+    wrapped += f"            abi.encodeWithSelector(\n"
+    wrapped += f"                {v2['name']}V2.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
+    wrapped += f"            )\n"
+    wrapped += f"        );\n"
+    wrapped += f"        return (success1 == success2 && \n" \
+               f"                ((!success1 && !success2) || keccak256(output1) == keccak256(output2))\n" \
+               f"               );\n"
+    # if len(return_vals) > 0:
+    #     wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"
+    #     wrapped +=  f"        return {returns_to_compare[0]} == {returns_to_compare [1]};\n"
+    # else:
+    #     wrapped +=  f"        {v2['name']}V2.{func[0]}{call_args};\n"
+    wrapped += "    }\n\n"
     return wrapped
 
 
