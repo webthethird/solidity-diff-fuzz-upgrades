@@ -306,6 +306,9 @@ contract DiffFuzzUpgrades {
         // TODO: Add any necessary initialization logic to the constructor here.
     }
 
+
+    /*** Modified Functions ***/ 
+
     function ComptrollerHarness__supportMarket(address a) public returns (bool) {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerHarnessV2).call(
@@ -395,6 +398,9 @@ contract DiffFuzzUpgrades {
                 ((!success1 && !success2) || keccak256(output1) == keccak256(output2))
                );
     }
+
+
+    /*** Tainted Functions ***/ 
 
     function ComptrollerHarness_checkMembership(address a, address b) public returns (bool) {
         hevm.prank(msg.sender);
@@ -1080,6 +1086,9 @@ contract DiffFuzzUpgrades {
                );
     }
 
+
+    /*** New Functions ***/ 
+
     // TODO: Double-check this function for correctness
     // Comptroller._setCompSpeeds(CToken[],uint256[],uint256[])
     // is a new function, which appears to replace a function with a similar name,
@@ -1102,6 +1111,9 @@ contract DiffFuzzUpgrades {
                 ((!success1 && !success2) || keccak256(output1) == keccak256(output2))
                );
     }
+
+
+    /*** Tainted Variables ***/ 
 
     function ComptrollerHarness_admin() public returns (bool) {
         return ComptrollerHarnessV1.admin() == ComptrollerHarnessV2.admin();
@@ -1158,6 +1170,9 @@ contract DiffFuzzUpgrades {
     function ComptrollerHarness_compSupplySpeeds(address a) public returns (bool) {
         return ComptrollerHarnessV1.compSupplySpeeds(a) == ComptrollerHarnessV2.compSupplySpeeds(a);
     }
+
+
+    /*** Additional Targets ***/ 
 
     function CToken_initialize(address a, address b, uint256 c, string memory d, string memory e, uint8 f) public returns (bool) {
         hevm.prank(msg.sender);
