@@ -5,6 +5,7 @@ import logging
 import time
 import os
 import subprocess
+import difflib
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
 from slither import Slither
@@ -392,6 +393,47 @@ def wrap_additional_target_functions(targets):
     return wrapped
 
 
+def wrap_low_level_call(c: dict, func: Function, call_args: str, version: str):
+    wrapped = ""
+    wrapped += f"        (bool success{version}, bytes memory output{version}) = address({c['name']}V{version}).call(\n"
+    wrapped += f"            abi.encodeWithSelector(\n"
+    wrapped += f"                {c['name']}V{version}.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
+    wrapped += f"            )\n"
+    wrapped += f"        );\n"
+    return wrapped
+
+
+def wrap_diff_function(v1, v2, func, func2=None):
+    wrapped = ""
+    if func2 is None:
+        func2 = func
+    args, call_args, return_vals, returns_to_compare = get_args_and_returns_for_wrapping(func2)
+
+    wrapped += f"    function {v2['name']}_{func2[0]}{args} public returns (bool) {{\n"
+    wrapped += "        hevm.prank(msg.sender);\n"
+    wrapped += wrap_low_level_call(v2, func2, call_args, "2")
+    # if len(return_vals) > 0:
+    #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
+    # else:
+    #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
+    wrapped += "        hevm.prank(msg.sender);\n"
+    if func == func2:
+        wrapped += wrap_low_level_call(v1, func, call_args, "1")
+    else:
+        _, call_args, _, _ = get_args_and_returns_for_wrapping(func)
+        wrapped += wrap_low_level_call(v1, func, call_args, "1")
+    wrapped += f"        return (success1 == success2 && \n" \
+               f"                ((!success1 && !success2) || keccak256(output1) == keccak256(output2))\n" \
+               f"               );\n"
+    # if len(return_vals) > 0:
+    #     wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"
+    #     wrapped +=  f"        return {returns_to_compare[0]} == {returns_to_compare [1]};\n"
+    # else:
+    #     wrapped +=  f"        {v2['name']}V2.{func[0]}{call_args};\n"
+    wrapped += "    }\n\n"
+    return wrapped
+
+
 def wrap_diff_functions(v1, v2):
     wrapped = ""
     
@@ -407,6 +449,20 @@ def wrap_diff_functions(v1, v2):
             continue
         func = next(func for func in v2['functions'] if func[0] == f.name)
         wrapped += wrap_diff_function(v1, v2, func)
+
+    for f in new_functions:
+        if f.visibility in ["internal", "private"]:
+            continue
+        for f0 in v1["contract_object"].functions_entry_points:
+            if similar(f.name, f0.name):
+                wrapped +=  "    // TODO: Double-check this function for correctness\n"
+                wrapped += f"    // {f.canonical_name}\n"
+                wrapped += f"    // is a new function, which appears to replace a function with a similar name,\n"
+                wrapped += f"    // {f0.canonical_name}.\n"
+                wrapped +=  "    // If these functions have different arguments, this function may be incorrect.\n"
+                func = next(func for func in v1['functions'] if func[0] == f0.name)
+                func2 = next(func for func in v2['functions'] if func[0] == f.name)
+                wrapped += wrap_diff_function(v1, v2, func, func2)
 
     for v in diff_variables:
         if v.visibility in ["internal", "private"]:
@@ -429,37 +485,21 @@ def wrap_diff_functions(v1, v2):
     return wrapped
 
 
-def wrap_diff_function(v1, v2, func):
-    wrapped = ""
-    args, call_args, return_vals, returns_to_compare = get_args_and_returns_for_wrapping(func)
-
-    wrapped += f"    function {v1['name']}_{func[0]}{args} public returns (bool) {{\n"
-    wrapped += "        hevm.prank(msg.sender);\n"
-    wrapped += f"        (bool success1, bytes memory output1) = address({v1['name']}V1).call(\n"
-    wrapped += f"            abi.encodeWithSelector(\n"
-    wrapped += f"                {v1['name']}V1.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
-    wrapped += f"            )\n"
-    wrapped += f"        );\n"
-    # if len(return_vals) > 0:
-    #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
-    # else:
-    #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
-    wrapped += "        hevm.prank(msg.sender);\n"
-    wrapped += f"        (bool success2, bytes memory output2) = address({v2['name']}V2).call(\n"
-    wrapped += f"            abi.encodeWithSelector(\n"
-    wrapped += f"                {v2['name']}V2.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
-    wrapped += f"            )\n"
-    wrapped += f"        );\n"
-    wrapped += f"        return (success1 == success2 && \n" \
-               f"                ((!success1 && !success2) || keccak256(output1) == keccak256(output2))\n" \
-               f"               );\n"
-    # if len(return_vals) > 0:
-    #     wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"
-    #     wrapped +=  f"        return {returns_to_compare[0]} == {returns_to_compare [1]};\n"
-    # else:
-    #     wrapped +=  f"        {v2['name']}V2.{func[0]}{call_args};\n"
-    wrapped += "    }\n\n"
-    return wrapped
+def similar(name1: str, name2: str) -> bool:
+    """
+    Test the name similarity
+    Two names are similar if difflib.SequenceMatcher on the lowercase
+    version of the name is greater than 0.90
+    See: https://docs.python.org/2/library/difflib.html
+    Args:
+        name1 (str): first name
+        name2 (str): second name
+    Returns:
+        bool: true if names are similar
+    """
+    val = difflib.SequenceMatcher(a=name1.lower(), b=name2.lower()).ratio()
+    ret = val > 0.90
+    return ret
 
 
 def write_to_file(filename, dir, content):
