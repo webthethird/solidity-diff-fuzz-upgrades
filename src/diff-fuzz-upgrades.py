@@ -439,8 +439,7 @@ def wrap_diff_function(v1, v2, func, func2=None):
 def wrap_diff_functions(v1, v2):
     wrapped = ""
     
-    crytic_print(PrintMode.MESSAGE, "\n  * Performing diff of V1 and V2")
-    diff = compare(v1["contract_object"], v2["contract_object"])
+    diff = do_diff(v1, v2)
 
     wrapped += "\n    /*** Modified Functions ***/ \n\n"
     for f in diff['modified-functions']:
@@ -491,6 +490,20 @@ def wrap_diff_functions(v1, v2):
             wrapped +=   "    }\n\n"
 
     return wrapped
+
+
+def do_diff(v1: dict, v2: dict) -> dict:
+    crytic_print(PrintMode.MESSAGE, "    * Performing diff of V1 and V2")
+    diff = compare(v1["contract_object"], v2["contract_object"])
+    for key in diff.keys():
+        if len(diff[key]) > 0:
+            crytic_print(PrintMode.WARNING, f'      * {str(key).replace("-", " ")}:')
+            for obj in diff[key]:
+                if isinstance(obj, StateVariable):
+                    crytic_print(PrintMode.WARNING, f'          * {obj.full_name}')
+                elif isinstance(obj, Function):
+                    crytic_print(PrintMode.WARNING, f'          * {obj.signature_str}')
+    return diff
 
 
 def similar(name1: str, name2: str) -> bool:
