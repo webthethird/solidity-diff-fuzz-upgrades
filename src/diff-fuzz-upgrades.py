@@ -625,6 +625,18 @@ def generate_test_contract(v1, v2, tokens=None, targets=None):
     return final_contract
 
 
+def generate_config_file(corpus_dir: str, campaign_length:str, contract_addr: str) -> str:
+    crytic_print(PrintMode.INFORMATION, f"* Generating Echidna configuration file with campaign limit {campaign_length}"
+                                        f" and corpus directory {corpus_dir}")
+    config_file =  f"testMode: assertion\n"
+    config_file += f"testLimit: {campaign_length}\n"
+    config_file += f"corpusDir: {corpus_dir}\n"
+    if contract_addr != "":
+        config_file += f"contractAddr: '{contract_addr}'\n"
+
+    return config_file
+
+
 def main():
     # Read command line arguments
 
@@ -639,6 +651,8 @@ def main():
     parser.add_argument('-T', '--targets', dest='targets',
                         help='Specifies the additional contracts to target.')
     parser.add_argument('-d', '--output-dir', dest='output_dir')
+    parser.add_argument('-A', '--contract-addr', dest='contract_addr',
+                        help='Specifies the address to which to deploy the test contract.')
 
     args = parser.parse_args()
 
@@ -662,6 +676,13 @@ def main():
     else:
         targets = None
 
+    if args.contract_addr:
+        contract_addr = args.contract_addr
+        crytic_print(PrintMode.INFORMATION, f"\n* Exploit contract address specified via command line parameter: "
+                                            f"{contract_addr}")
+    else:
+        contract_addr = ""
+
     # crytic_print(PrintMode.MESSAGE, "Performing diff of V1 and V2")
     # diff = compare(v1_contract_data["contract_object"], v2_contract_data["contract_object"])
     # for key in diff.keys():
@@ -677,6 +698,14 @@ def main():
     write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
     crytic_print(PrintMode.SUCCESS, f"  * Fuzzing contract generated and written to {dir_name}DiffFuzzUpgrades.sol.")
 
+    config_file = generate_config_file(f"{output_dir}corpus", "1000000000000", contract_addr)
+    write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
+    crytic_print(PrintMode.SUCCESS,
+                 f"* Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.")
+
+    crytic_print(PrintMode.MESSAGE, f"\n-----------------------------------------------------------")
+    crytic_print(PrintMode.MESSAGE, f"My work here is done. Thanks for using me, have a nice day!")
+    crytic_print(PrintMode.MESSAGE, f"-----------------------------------------------------------")
 
 if __name__ == "__main__":
     main()
