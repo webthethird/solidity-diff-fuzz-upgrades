@@ -746,6 +746,11 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.prank(msg.sender);
+        /**
+         * The call below is incorrect as auto-generated, and would need manual correction
+         * because `_setCompSpeed(address,uint256) takes only a single address and uint,
+         * but `a` is an `address[] memory` and `b` is a `uint256[] memory`.
+         */
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 ComptrollerV1._setCompSpeed.selector, a, b
