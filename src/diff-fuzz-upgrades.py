@@ -665,7 +665,7 @@ def main():
     else:
         output_dir = "./"
 
-    crytic_print(PrintMode.INFORMATION, "\n* Inspecting V1 and V2 contracts:")
+    crytic_print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     v1_contract_data = get_contract_data_from_path(args.v1_filename, suffix="V1")
     v2_contract_data = get_contract_data_from_path(args.v2_filename, suffix="V2")
 
@@ -695,7 +695,7 @@ def main():
 
     contract = generate_test_contract(v1_contract_data, v2_contract_data, targets=targets)
     write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
-    crytic_print(PrintMode.SUCCESS, f"  * Fuzzing contract generated and written to {dir_name}DiffFuzzUpgrades.sol.")
+    crytic_print(PrintMode.SUCCESS, f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.")
 
     config_file = generate_config_file(f"{output_dir}corpus", "1000000000000", contract_addr)
     write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
