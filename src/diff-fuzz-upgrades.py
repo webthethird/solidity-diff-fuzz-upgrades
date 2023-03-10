@@ -523,8 +523,8 @@ def similar(name1: str, name2: str) -> bool:
     return ret
 
 
-def write_to_file(filename, dir, content):
-    out_file = open(os.path.sep.join([dir, filename]) , "wt")
+def write_to_file(filename, content):
+    out_file = open(filename, "wt")
     out_file.write(content)
     out_file.close()
     
@@ -647,6 +647,8 @@ def main():
 
     if args.output_dir is not None:
         output_dir = args.output_dir
+        if not str(output_dir).endswith(os.path.sep):
+            output_dir += os.path.sep
     else:
         output_dir = "./"
 
@@ -672,7 +674,8 @@ def main():
     #                 crytic_print(PrintMode.WARNING, f'        * {obj.signature_str}')
 
     contract = generate_test_contract(v1_contract_data, v2_contract_data, targets=targets)
-    write_to_file("DiffFuzzUpgrades.sol", output_dir, contract)
+    write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
+    crytic_print(PrintMode.SUCCESS, f"  * Fuzzing contract generated and written to {dir_name}DiffFuzzUpgrades.sol.")
 
 
 if __name__ == "__main__":
