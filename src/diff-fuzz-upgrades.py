@@ -411,7 +411,7 @@ def wrap_diff_function(v1, v2, func, func2=None):
         func2 = func
     args, call_args, return_vals, returns_to_compare = get_args_and_returns_for_wrapping(func2)
 
-    wrapped += f"    function {v2['name']}_{func2[0]}{args} public returns (bool) {{\n"
+    wrapped += f"    function {v2['name']}_{func2[0]}{args} public {{\n"
     wrapped += "        hevm.prank(msg.sender);\n"
     wrapped += wrap_low_level_call(v2, func2, call_args, "2")
     # if len(return_vals) > 0:
@@ -424,7 +424,7 @@ def wrap_diff_function(v1, v2, func, func2=None):
     else:
         _, call_args, _, _ = get_args_and_returns_for_wrapping(func)
         wrapped += wrap_low_level_call(v1, func, call_args, "1")
-    wrapped += f"        assert(success1 == success2) \n"
+    wrapped += f"        assert(success1 == success2); \n"
     wrapped += f"        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));\n"
     # if len(return_vals) > 0:
     #     wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"

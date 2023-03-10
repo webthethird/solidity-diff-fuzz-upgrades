@@ -268,7 +268,7 @@ contract DiffFuzzUpgrades {
 
     /*** Modified Functions ***/ 
 
-    function Comptroller__supportMarket(address a) public returns (bool) {
+    function Comptroller__supportMarket(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -281,11 +281,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._supportMarket.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__become(address a) public returns (bool) {
+    function Comptroller__become(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -298,14 +298,14 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._become.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
 
     /*** Tainted Functions ***/ 
 
-    function Comptroller_checkMembership(address a, address b) public returns (bool) {
+    function Comptroller_checkMembership(address a, address b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -318,11 +318,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.checkMembership.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_exitMarket(address a) public returns (bool) {
+    function Comptroller_exitMarket(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -335,11 +335,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.exitMarket.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_mintAllowed(address a, address b, uint256 c) public returns (bool) {
+    function Comptroller_mintAllowed(address a, address b, uint256 c) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -352,11 +352,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.mintAllowed.selector, a, b, c
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_redeemAllowed(address a, address b, uint256 c) public returns (bool) {
+    function Comptroller_redeemAllowed(address a, address b, uint256 c) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -369,11 +369,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.redeemAllowed.selector, a, b, c
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_borrowAllowed(address a, address b, uint256 c) public returns (bool) {
+    function Comptroller_borrowAllowed(address a, address b, uint256 c) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -386,11 +386,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.borrowAllowed.selector, a, b, c
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_repayBorrowAllowed(address a, address b, address c, uint256 d) public returns (bool) {
+    function Comptroller_repayBorrowAllowed(address a, address b, address c, uint256 d) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -403,11 +403,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.repayBorrowAllowed.selector, a, b, c, d
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_liquidateBorrowAllowed(address a, address b, address c, address d, uint256 e) public returns (bool) {
+    function Comptroller_liquidateBorrowAllowed(address a, address b, address c, address d, uint256 e) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -420,11 +420,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.liquidateBorrowAllowed.selector, a, b, c, d, e
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_seizeAllowed(address a, address b, address c, address d, uint256 e) public returns (bool) {
+    function Comptroller_seizeAllowed(address a, address b, address c, address d, uint256 e) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -437,11 +437,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.seizeAllowed.selector, a, b, c, d, e
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_transferAllowed(address a, address b, address c, uint256 d) public returns (bool) {
+    function Comptroller_transferAllowed(address a, address b, address c, uint256 d) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -454,11 +454,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.transferAllowed.selector, a, b, c, d
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setPriceOracle(address a) public returns (bool) {
+    function Comptroller__setPriceOracle(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -471,11 +471,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setPriceOracle.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setCloseFactor(uint256 a) public returns (bool) {
+    function Comptroller__setCloseFactor(uint256 a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -488,11 +488,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setCloseFactor.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setCollateralFactor(address a, uint256 b) public returns (bool) {
+    function Comptroller__setCollateralFactor(address a, uint256 b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -505,11 +505,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setCollateralFactor.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setLiquidationIncentive(uint256 a) public returns (bool) {
+    function Comptroller__setLiquidationIncentive(uint256 a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -522,11 +522,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setLiquidationIncentive.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setMarketBorrowCaps(address[] calldata a, uint256[] calldata b) public returns (bool) {
+    function Comptroller__setMarketBorrowCaps(address[] calldata a, uint256[] calldata b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -539,11 +539,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setMarketBorrowCaps.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setBorrowCapGuardian(address a) public returns (bool) {
+    function Comptroller__setBorrowCapGuardian(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -556,11 +556,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setBorrowCapGuardian.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setPauseGuardian(address a) public returns (bool) {
+    function Comptroller__setPauseGuardian(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -573,11 +573,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setPauseGuardian.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setMintPaused(address a, bool b) public returns (bool) {
+    function Comptroller__setMintPaused(address a, bool b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -590,11 +590,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setMintPaused.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setBorrowPaused(address a, bool b) public returns (bool) {
+    function Comptroller__setBorrowPaused(address a, bool b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -607,11 +607,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setBorrowPaused.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setTransferPaused(bool a) public returns (bool) {
+    function Comptroller__setTransferPaused(bool a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -624,11 +624,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setTransferPaused.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__setSeizePaused(bool a) public returns (bool) {
+    function Comptroller__setSeizePaused(bool a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -641,11 +641,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setSeizePaused.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_updateContributorRewards(address a) public returns (bool) {
+    function Comptroller_updateContributorRewards(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -658,11 +658,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.updateContributorRewards.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_claimComp(address a) public returns (bool) {
+    function Comptroller_claimComp(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -675,11 +675,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.claimComp.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_claimComp(address a) public returns (bool) {
+    function Comptroller_claimComp(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -692,11 +692,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.claimComp.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_getAllMarkets() public returns (bool) {
+    function Comptroller_getAllMarkets() public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -709,11 +709,11 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.getAllMarkets.selector
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_isDeprecated(address a) public returns (bool) {
+    function Comptroller_isDeprecated(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -726,7 +726,7 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1.isDeprecated.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
@@ -738,7 +738,7 @@ contract DiffFuzzUpgrades {
     // is a new function, which appears to replace a function with a similar name,
     // Comptroller._setCompSpeed(CToken,uint256).
     // If these functions have different arguments, this function may be incorrect.
-    function Comptroller__setCompSpeeds(address[] memory a, uint256[] memory b, uint256[] memory c) public returns (bool) {
+    function Comptroller__setCompSpeeds(address[] memory a, uint256[] memory b, uint256[] memory c) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
@@ -751,7 +751,7 @@ contract DiffFuzzUpgrades {
                 ComptrollerV1._setCompSpeed.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
@@ -801,7 +801,7 @@ contract DiffFuzzUpgrades {
 
     /*** Additional Targets ***/ 
 
-    function CToken_initialize(address a, address b, uint256 c, string memory d, string memory e, uint8 f) public returns (bool) {
+    function CToken_initialize(address a, address b, uint256 c, string memory d, string memory e, uint8 f) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -814,11 +814,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.initialize.selector, a, b, c, d, e, f
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_transfer(address a, uint256 b) public returns (bool) {
+    function CToken_transfer(address a, uint256 b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -831,11 +831,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.transfer.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_transferFrom(address a, address b, uint256 c) public returns (bool) {
+    function CToken_transferFrom(address a, address b, uint256 c) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -848,11 +848,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.transferFrom.selector, a, b, c
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_approve(address a, uint256 b) public returns (bool) {
+    function CToken_approve(address a, uint256 b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -865,11 +865,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.approve.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_allowance(address a, address b) public returns (bool) {
+    function CToken_allowance(address a, address b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -882,11 +882,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.allowance.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_balanceOf(address a) public returns (bool) {
+    function CToken_balanceOf(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -899,11 +899,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.balanceOf.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_balanceOfUnderlying(address a) public returns (bool) {
+    function CToken_balanceOfUnderlying(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -916,11 +916,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.balanceOfUnderlying.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_getAccountSnapshot(address a) public returns (bool) {
+    function CToken_getAccountSnapshot(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -933,11 +933,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.getAccountSnapshot.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_borrowRatePerBlock() public returns (bool) {
+    function CToken_borrowRatePerBlock() public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -950,11 +950,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.borrowRatePerBlock.selector
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_supplyRatePerBlock() public returns (bool) {
+    function CToken_supplyRatePerBlock() public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -967,11 +967,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.supplyRatePerBlock.selector
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_totalBorrowsCurrent() public returns (bool) {
+    function CToken_totalBorrowsCurrent() public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -984,11 +984,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.totalBorrowsCurrent.selector
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_borrowBalanceCurrent(address a) public returns (bool) {
+    function CToken_borrowBalanceCurrent(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1001,11 +1001,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.borrowBalanceCurrent.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_borrowBalanceStored(address a) public returns (bool) {
+    function CToken_borrowBalanceStored(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1018,11 +1018,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.borrowBalanceStored.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_exchangeRateCurrent() public returns (bool) {
+    function CToken_exchangeRateCurrent() public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1035,11 +1035,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.exchangeRateCurrent.selector
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_exchangeRateStored() public returns (bool) {
+    function CToken_exchangeRateStored() public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1052,11 +1052,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.exchangeRateStored.selector
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_getCash() public returns (bool) {
+    function CToken_getCash() public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1069,11 +1069,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.getCash.selector
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_accrueInterest() public returns (bool) {
+    function CToken_accrueInterest() public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1086,11 +1086,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.accrueInterest.selector
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken_seize(address a, address b, uint256 c) public returns (bool) {
+    function CToken_seize(address a, address b, uint256 c) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1103,11 +1103,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1.seize.selector, a, b, c
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken__setPendingAdmin(address a) public returns (bool) {
+    function CToken__setPendingAdmin(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1120,11 +1120,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1._setPendingAdmin.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken__acceptAdmin() public returns (bool) {
+    function CToken__acceptAdmin() public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1137,11 +1137,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1._acceptAdmin.selector
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken__setComptroller(address a) public returns (bool) {
+    function CToken__setComptroller(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1154,11 +1154,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1._setComptroller.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken__setReserveFactor(uint256 a) public returns (bool) {
+    function CToken__setReserveFactor(uint256 a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1171,11 +1171,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1._setReserveFactor.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken__reduceReserves(uint256 a) public returns (bool) {
+    function CToken__reduceReserves(uint256 a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1188,11 +1188,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1._reduceReserves.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CToken__setInterestRateModel(address a) public returns (bool) {
+    function CToken__setInterestRateModel(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CTokenV2).call(
             abi.encodeWithSelector(
@@ -1205,11 +1205,11 @@ contract DiffFuzzUpgrades {
                 CTokenV1._setInterestRateModel.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comp_allowance(address a, address b) public returns (bool) {
+    function Comp_allowance(address a, address b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CompV2).call(
             abi.encodeWithSelector(
@@ -1222,11 +1222,11 @@ contract DiffFuzzUpgrades {
                 CompV1.allowance.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comp_approve(address a, uint256 b) public returns (bool) {
+    function Comp_approve(address a, uint256 b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CompV2).call(
             abi.encodeWithSelector(
@@ -1239,11 +1239,11 @@ contract DiffFuzzUpgrades {
                 CompV1.approve.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comp_balanceOf(address a) public returns (bool) {
+    function Comp_balanceOf(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CompV2).call(
             abi.encodeWithSelector(
@@ -1256,11 +1256,11 @@ contract DiffFuzzUpgrades {
                 CompV1.balanceOf.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comp_transfer(address a, uint256 b) public returns (bool) {
+    function Comp_transfer(address a, uint256 b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CompV2).call(
             abi.encodeWithSelector(
@@ -1273,11 +1273,11 @@ contract DiffFuzzUpgrades {
                 CompV1.transfer.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comp_transferFrom(address a, address b, uint256 c) public returns (bool) {
+    function Comp_transferFrom(address a, address b, uint256 c) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CompV2).call(
             abi.encodeWithSelector(
@@ -1290,11 +1290,11 @@ contract DiffFuzzUpgrades {
                 CompV1.transferFrom.selector, a, b, c
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comp_delegate(address a) public returns (bool) {
+    function Comp_delegate(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CompV2).call(
             abi.encodeWithSelector(
@@ -1307,11 +1307,11 @@ contract DiffFuzzUpgrades {
                 CompV1.delegate.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comp_delegateBySig(address a, uint256 b, uint256 c, uint8 d, bytes32 e, bytes32 f) public returns (bool) {
+    function Comp_delegateBySig(address a, uint256 b, uint256 c, uint8 d, bytes32 e, bytes32 f) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CompV2).call(
             abi.encodeWithSelector(
@@ -1324,11 +1324,11 @@ contract DiffFuzzUpgrades {
                 CompV1.delegateBySig.selector, a, b, c, d, e, f
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comp_getCurrentVotes(address a) public returns (bool) {
+    function Comp_getCurrentVotes(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CompV2).call(
             abi.encodeWithSelector(
@@ -1341,11 +1341,11 @@ contract DiffFuzzUpgrades {
                 CompV1.getCurrentVotes.selector, a
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comp_getPriorVotes(address a, uint256 b) public returns (bool) {
+    function Comp_getPriorVotes(address a, uint256 b) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CompV2).call(
             abi.encodeWithSelector(
@@ -1358,7 +1358,7 @@ contract DiffFuzzUpgrades {
                 CompV1.getPriorVotes.selector, a, b
             )
         );
-        assert(success1 == success2) 
+        assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
