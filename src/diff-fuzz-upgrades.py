@@ -279,7 +279,7 @@ def get_contracts_from_comma_separated_paths(paths_string: str, suffix=''):
 def get_contract_data_from_path(filepath, suffix=''):
     contract_data = dict()
 
-    crytic_print(PrintMode.MESSAGE, f"Getting contract data from {filepath}")
+    crytic_print(PrintMode.MESSAGE, f"* Getting contract data from {filepath}")
 
     try:
         contract_data["slither"] = get_slither_object_from_path(filepath)
@@ -298,6 +298,7 @@ def get_contract_data_from_path(filepath, suffix=''):
         contract_data["interface_name"] = target_info["interface_name"]
         contract_data["name"] = target_info["name"]
         contract_data["functions"] = target_info["functions"]
+        crytic_print(PrintMode.MESSAGE, f"  * Done compiling contract {contract_data['name']}")
 
     return contract_data
 
@@ -306,11 +307,11 @@ def get_slither_object_from_path(filepath):
     if not os.path.exists(filepath):
         raise ValueError("File path does not exist!")
     try:
-        crytic_print(PrintMode.MESSAGE, f"Getting Slither object")
+        crytic_print(PrintMode.MESSAGE, f"  * Compiling contracts and retrieving Slither IR...")
         slither_object = Slither(filepath)
         return slither_object
     except SlitherError as e:
-        crytic_print(PrintMode.ERROR, f"Slither error:\v{str(e)}")
+        crytic_print(PrintMode.ERROR, f"  * Slither error:\v{str(e)}")
         raise SlitherError(str(e))
     
 
@@ -628,15 +629,20 @@ def main():
 
     args = parser.parse_args()
 
+    crytic_print(PrintMode.MESSAGE, "\nWelcome to diff-fuzz-upgrades, enjoy your stay!")
+    crytic_print(PrintMode.MESSAGE, "===============================================\n")
+
     if args.output_dir is not None:
         output_dir = args.output_dir
     else:
         output_dir = "./"
 
+    crytic_print(PrintMode.INFORMATION, "\n* Inspecting V1 and V2 contracts:")
     v1_contract_data = get_contract_data_from_path(args.v1_filename, suffix="V1")
     v2_contract_data = get_contract_data_from_path(args.v2_filename, suffix="V2")
 
     if args.targets is not None:
+        crytic_print(PrintMode.INFORMATION, "\n* Additional targets specified via command line parameter:")
         targets = get_contracts_from_comma_separated_paths(args.targets)
     else:
         targets = None
