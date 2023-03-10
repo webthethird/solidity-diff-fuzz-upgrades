@@ -424,9 +424,8 @@ def wrap_diff_function(v1, v2, func, func2=None):
     else:
         _, call_args, _, _ = get_args_and_returns_for_wrapping(func)
         wrapped += wrap_low_level_call(v1, func, call_args, "1")
-    wrapped += f"        return (success1 == success2 && \n" \
-               f"                ((!success1 && !success2) || keccak256(output1) == keccak256(output2))\n" \
-               f"               );\n"
+    wrapped += f"        assert(success1 == success2) \n"
+    wrapped += f"        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));\n"
     # if len(return_vals) > 0:
     #     wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"
     #     wrapped +=  f"        return {returns_to_compare[0]} == {returns_to_compare [1]};\n"
@@ -477,16 +476,16 @@ def wrap_diff_functions(v1, v2):
         if v.type.is_dynamic:
             if isinstance(v.type, MappingType):
                 type_from = v.type.type_from.name
-                wrapped +=  f"    function {v1['name']}_{v.name}({type_from} a) public returns (bool) {{\n"
-                wrapped +=  f"        return {v1['name']}V1.{v.name}(a) == {v2['name']}V2.{v.name}(a);\n"
+                wrapped +=  f"    function {v1['name']}_{v.name}({type_from} a) public {{\n"
+                wrapped +=  f"        assert({v1['name']}V1.{v.name}(a) == {v2['name']}V2.{v.name}(a));\n"
                 wrapped +=   "    }\n\n"
             elif isinstance(v.type, ArrayType):
-                wrapped +=  f"    function {v1['name']}_{v.name}(uint i) public returns (bool) {{\n"
-                wrapped +=  f"        return {v1['name']}V1.{v.name}[i] == {v2['name']}V2.{v.name}[i];\n"
+                wrapped +=  f"    function {v1['name']}_{v.name}(uint i) public {{\n"
+                wrapped +=  f"        assert({v1['name']}V1.{v.name}[i] == {v2['name']}V2.{v.name}[i]);\n"
                 wrapped +=   "    }\n\n"
         else:
-            wrapped +=  f"    function {v1['name']}_{v.full_name} public returns (bool) {{\n"
-            wrapped +=  f"        return {v1['name']}V1.{v.full_name} == {v2['name']}V2.{v.full_name};\n"
+            wrapped +=  f"    function {v1['name']}_{v.full_name} public {{\n"
+            wrapped +=  f"        assert({v1['name']}V1.{v.full_name} == {v2['name']}V2.{v.full_name});\n"
             wrapped +=   "    }\n\n"
 
     return wrapped
