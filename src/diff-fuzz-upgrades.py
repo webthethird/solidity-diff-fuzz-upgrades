@@ -11,7 +11,7 @@ from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
 from slither import Slither
 from slither.exceptions import SlitherError
-from slither.utils.upgradeability import compare
+from slither.utils.upgradeability import compare, get_proxy_implementation_slot
 from slither.utils.type import convert_type_for_solidity_signature_to_string
 from slither.tools.read_storage.utils import get_storage_data
 from slither.tools.read_storage import SlitherReadStorage
@@ -330,8 +330,13 @@ def get_contract_data_from_path(filepath, suffix=''):
     if contract_data["valid_data"]:
         slither_object = contract_data["slither"]
         contract_name = get_compilation_unit_name(slither_object)
-        contract_data["contract_object"] = slither_object.get_contract_from_name(contract_name)[0]
-
+        contract = slither_object.get_contract_from_name(contract_name)[0]
+        contract_data["contract_object"] = contract
+        if contract.is_upgradeable_proxy:
+            contract_data["is_proxy"] = True
+            contract_data["implementation_slot"] = get_proxy_implementation_slot(contract)
+        else:
+            contract_data["is_proxy"] = False
         target_info = get_contract_interface(contract_data, suffix)
         contract_data["interface"] = target_info["interface"]
         contract_data["interface_name"] = target_info["interface_name"]
@@ -567,7 +572,7 @@ def write_to_file(filename, content):
     out_file.close()
     
 
-def generate_test_contract(v1, v2, tokens=None, targets=None):
+def generate_test_contract(v1, v2, tokens=None, targets=None, proxy=None):
 
     crytic_print(PrintMode.INFORMATION, f"\n* Generating exploit contract...")
 
@@ -587,6 +592,8 @@ def generate_test_contract(v1, v2, tokens=None, targets=None):
     if targets is not None:
         for i in targets:
             final_contract += i["interface"]
+    if proxy is not None:
+        final_contract += proxy["interface"]
 
     # Add the hevm interface
     final_contract += "interface IHevm {\n"
@@ -685,6 +692,7 @@ def main():
 
     parser.add_argument('v1_filename', help='The path to the original version of the contract.')
     parser.add_argument('v2_filename', help='The path to the upgraded version of the contract.')
+    parser.add_argument('-p', '--proxy', dest='proxy', help='Specifies the proxy contract to use.')
     parser.add_argument('-t', '--tokens', dest='tokens', help='Specifies the token contracts to use.')
     parser.add_argument('-T', '--targets', dest='targets',
                         help='Specifies the additional contracts to target.')
@@ -707,6 +715,15 @@ def main():
     crytic_print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     v1_contract_data = get_contract_data_from_path(args.v1_filename, suffix="V1")
     v2_contract_data = get_contract_data_from_path(args.v2_filename, suffix="V2")
+
+    if args.proxy is not None:
+        crytic_print(PrintMode.INFORMATION, "\n* Proxy contract specified via command line parameter:")
+        proxy = get_contract_data_from_path(args.proxy)
+        if not proxy["is_proxy"]:
+            crytic_print(PrintMode.ERROR, f"\n  * {proxy['name']} does not appear to be a proxy. Ignoring...")
+            proxy = None
+    else:
+        proxy = None
 
     if args.targets is not None:
         crytic_print(PrintMode.INFORMATION, "\n* Additional targets specified via command line parameter:")
@@ -739,7 +756,7 @@ def main():
     config_file = generate_config_file(f"{output_dir}corpus", "1000000000000", contract_addr)
     write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
     crytic_print(PrintMode.SUCCESS,
-                 f"* Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.")
+                 f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.")
 
     crytic_print(PrintMode.MESSAGE, f"\n-----------------------------------------------------------")
     crytic_print(PrintMode.MESSAGE, f"My work here is done. Thanks for using me, have a nice day!")
