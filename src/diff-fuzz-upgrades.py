@@ -6,6 +6,7 @@ import time
 import os
 import subprocess
 import difflib
+from solc_select.solc_select import switch_global_version, installed_versions, get_installable_versions
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
 from slither import Slither
@@ -266,6 +267,40 @@ def get_contract_interface(contract_data, suffix=''):
     return contract_info
 
 
+def get_pragma_version_from_file(filepath: str) -> str:
+    try:
+        f = open(filepath, "r")
+        lines = f.readlines()
+        f.close()
+    except FileNotFoundError:
+        return "0.0.0"
+    versions = [line.split("solidity")[1].split(";")[0].replace(" ", "") for line in lines if "pragma solidity" in line]
+    imports = [line for line in lines if "import" in line]
+    files = [line.split()[1].split(";")[0].replace('"', '').replace("'", "") if line.startswith("import")
+             else line.split()[1].replace('"', '').replace("'", "") for line in imports]
+    for file in files:
+        if file.startswith("./"):
+            file = file.replace("./", filepath.rsplit("/", maxsplit=1)[0] + "/")
+        elif file.startswith("../"):
+            file = file.replace("../", filepath.rsplit("/", maxsplit=2)[0] + "/")
+        versions.append(get_pragma_version_from_file(file))
+    high_version = ["0", "0", "0"]
+    for v in versions:
+        vers = v.split(".")
+        vers[0] = "0"
+        if int(vers[1]) > int(high_version[1]) or (int(vers[1]) == int(high_version[1]) and
+                                                   int(vers[2]) > int(high_version[2])):
+            high_version = vers
+            if v.startswith(">") and not v.startswith(">="):
+                vers[2] = str(int(vers[2]) + 1)
+                if not ".".join(vers) in get_installable_versions():
+                    vers[1] = str(int(vers[1]) + 1)
+                    vers[2] = "0"
+                if ".".join(vers) in get_installable_versions():
+                    high_version = vers
+    return ".".join(high_version)
+
+
 def get_contracts_from_comma_separated_paths(paths_string: str, suffix=''):
     contracts = []
     filepaths = paths_string.split(",")
@@ -280,6 +315,10 @@ def get_contract_data_from_path(filepath, suffix=''):
     contract_data = dict()
 
     crytic_print(PrintMode.MESSAGE, f"* Getting contract data from {filepath}")
+
+    version = get_pragma_version_from_file(filepath)
+    if version in installed_versions() or version in get_installable_versions():
+        switch_global_version(version, True)
 
     try:
         contract_data["slither"] = get_slither_object_from_path(filepath)
