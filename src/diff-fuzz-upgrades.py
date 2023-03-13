@@ -316,6 +316,7 @@ def get_contract_data_from_path(filepath, suffix=''):
 
     crytic_print(PrintMode.MESSAGE, f"* Getting contract data from {filepath}")
 
+    contract_data['path'] = filepath
     version = get_pragma_version_from_file(filepath)
     if version in installed_versions() or version in get_installable_versions():
         switch_global_version(version, True)
@@ -572,14 +573,27 @@ def write_to_file(filename, content):
     out_file.close()
     
 
-def generate_test_contract(v1, v2, tokens=None, targets=None, proxy=None):
+def generate_test_contract(v1: dict, v2: dict, deploy: bool, version: str, tokens: [dict] = None, targets: [dict] = None, proxy: dict = None):
 
     crytic_print(PrintMode.INFORMATION, f"\n* Generating exploit contract...")
 
     final_contract = ""
 
     # Add solidity pragma and SPDX to avoid warnings
-    final_contract += "// SPDX-License-Identifier: AGPLv3\npragma solidity ^0.8.0;\n\n"
+    final_contract += f"// SPDX-License-Identifier: AGPLv3\npragma solidity ^{version};\n\n"
+
+    if deploy:
+        final_contract += f'import {{ {v1["name"]} as {v1["name"]}_V1 }} from "{v1["path"]}";\n'
+        final_contract += f'import {{ {v2["name"]} as {v2["name"]}_V2 }} from "{v2["path"]}";\n'
+        if proxy:
+            final_contract += f'import {{ {proxy["name"]} }} from "{proxy["path"]}";\n'
+        if tokens is not None:
+            for i in tokens:
+                final_contract += f'import {{ {i["name"]} }} from "{i["path"]}";\n'
+        if targets is not None:
+            for i in targets:
+                final_contract += f'import {{ {i["name"]} }} from "{i["path"]}";\n'
+        final_contract += "\n"
 
     # Add all interfaces first
     crytic_print(PrintMode.INFORMATION, f"  * Adding interfaces.")
@@ -618,6 +632,10 @@ def generate_test_contract(v1, v2, tokens=None, targets=None, proxy=None):
     final_contract += f"    {v1['interface_name']} {v1['name']}V1 = {v1['interface_name']}(V1_ADDRESS_HERE);\n"
     final_contract += f"    {v2['interface_name']} {v2['name']}V2 = {v2['interface_name']}(V2_ADDRESS_HERE);\n"
 
+    if proxy is not None:
+        final_contract += f"    {proxy['interface_name']} {proxy['name']}V1 = {proxy['interface_name']}({proxy['name']}_V1_ADDRESS_HERE);\n"
+        final_contract += f"    {proxy['interface_name']} {proxy['name']}V2 = {proxy['interface_name']}({proxy['name']}_V2_ADDRESS_HERE);\n"
+
     if tokens is not None:
         for t in tokens:
             final_contract += f"    {t['interface_name']} {t['name']}V1 = {t['interface_name']}({t['name']}_V1_ADDRESS_HERE);\n"
@@ -631,27 +649,30 @@ def generate_test_contract(v1, v2, tokens=None, targets=None, proxy=None):
     # Constructor
     crytic_print(PrintMode.INFORMATION, f"  * Generating constructor.")
 
-    final_contract += "\n    constructor() {\n"
-    final_contract += "        // TODO: Add any necessary initialization logic to the constructor here.\n"
-    # final_contract += f"        hevm.warp({timestamp});\n"
-    # final_contract += f"        hevm.roll({blocknumber});\n\n"
+    if deploy:
+        final_contract += generate_deploy_constructor(v1, v2, tokens, targets, proxy)
+    else:
+        final_contract += "\n    constructor() public {\n"
+        final_contract += "        // TODO: Add any necessary initialization logic to the constructor here.\n"
+        # final_contract += f"        hevm.warp({timestamp});\n"
+        # final_contract += f"        hevm.roll({blocknumber});\n\n"
 
-    # # Borrow some tokens from holder
-    # for t in tokens:
-    #     final_contract += f"        tokenHolder = address({holder});\n"
-    #     final_contract += f"        initialAmount = {t['name']}.balanceOf(tokenHolder);\n"
-    #     final_contract += f"        hevm.prank(tokenHolder);\n"
-    #     final_contract += f"        {t['name']}.transfer(address(this), initialAmount);\n\n"
-    #     final_contract += f"        require({t['name']}.balanceOf(address(this)) > 0, \"Zero balance in the contract, perhaps transfer failed?\");\n\n"
+        # # Borrow some tokens from holder
+        # for t in tokens:
+        #     final_contract += f"        tokenHolder = address({holder});\n"
+        #     final_contract += f"        initialAmount = {t['name']}.balanceOf(tokenHolder);\n"
+        #     final_contract += f"        hevm.prank(tokenHolder);\n"
+        #     final_contract += f"        {t['name']}.transfer(address(this), initialAmount);\n\n"
+        #     final_contract += f"        require({t['name']}.balanceOf(address(this)) > 0, \"Zero balance in the contract, perhaps transfer failed?\");\n\n"
 
-    # if len(targets) > 0:
-    #     for t in targets:
-    #         for tk in tokens:
-    #             final_contract +=  f"        {tk['name']}.approve(address({t['name']}), type(uint256).max);\n"
-    #         for f in t["functions"]:
-    #             if f[0] == "approve" and f[1] == ["address", "uint256"]:
-    #                 final_contract +=  f"        {t['name']}.approve(address({t['name']}), type(uint256).max);\n"
-    final_contract += f"    }}\n\n"
+        # if len(targets) > 0:
+        #     for t in targets:
+        #         for tk in tokens:
+        #             final_contract +=  f"        {tk['name']}.approve(address({t['name']}), type(uint256).max);\n"
+        #         for f in t["functions"]:
+        #             if f[0] == "approve" and f[1] == ["address", "uint256"]:
+        #                 final_contract +=  f"        {t['name']}.approve(address({t['name']}), type(uint256).max);\n"
+        final_contract += f"    }}\n\n"
 
     # Wrapper functions
     crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions.")
@@ -668,6 +689,35 @@ def generate_test_contract(v1, v2, tokens=None, targets=None, proxy=None):
     final_contract +=  "}\n"
 
     return final_contract
+
+
+def generate_deploy_constructor(v1, v2, tokens=None, targets=None, proxy=None):
+    constructor = "\n    constructor() public {\n"
+    constructor += f"        {v1['name']}V1 = {v1['interface_name']}(address(new {v1['name']}_V1()));\n"
+    constructor += f"        {v2['name']}V2 = {v2['interface_name']}(address(new {v2['name']}_V2()));\n"
+    if proxy:
+        constructor += f"        {proxy['name']}V1 = {proxy['interface_name']}(address(new {proxy['name']}()));\n"
+        constructor += f"        {proxy['name']}V2 = {proxy['interface_name']}(address(new {proxy['name']}()));\n"
+        constructor += f"        hevm.store(\n"
+        constructor += f"            address({proxy['name']}V1),\n"
+        constructor += f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
+        constructor += f"            bytes32(uint256(uint160(address({v1['name']}V1))))\n"
+        constructor += f"        );\n"
+        constructor += f"        hevm.store(\n"
+        constructor += f"            address({proxy['name']}V2),\n"
+        constructor += f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
+        constructor += f"            bytes32(uint256(uint160(address({v2['name']}V2))))\n"
+        constructor += f"        );\n"
+    if tokens is not None:
+        for t in tokens:
+            constructor += f"        {t['name']}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
+            constructor += f"        {t['name']}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
+    if targets is not None:
+        for t in targets:
+            constructor += f"        {t['name']}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
+            constructor += f"        {t['name']}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
+    constructor += "    }\n\n"
+    return constructor
 
 
 def generate_config_file(corpus_dir: str, campaign_length:str, contract_addr: str) -> str:
@@ -696,9 +746,13 @@ def main():
     parser.add_argument('-t', '--tokens', dest='tokens', help='Specifies the token contracts to use.')
     parser.add_argument('-T', '--targets', dest='targets',
                         help='Specifies the additional contracts to target.')
+    parser.add_argument('-D', '--deploy', dest='deploy', action='store_true',
+                        help='Specifies if the test contract deploys the contracts under test in its constructor.')
     parser.add_argument('-d', '--output-dir', dest='output_dir')
     parser.add_argument('-A', '--contract-addr', dest='contract_addr',
                         help='Specifies the address to which to deploy the test contract.')
+    parser.add_argument('-v', '--version', dest='version',
+                        help='Specifies the solc version to use in the test contract (default is 0.8.0).')
 
     args = parser.parse_args()
 
@@ -731,6 +785,16 @@ def main():
     else:
         targets = None
 
+    if args.deploy:
+        deploy = True
+    else:
+        deploy = False
+
+    if args.version:
+        version = args.version
+    else:
+        version = "0.8.0"
+
     if args.contract_addr:
         contract_addr = args.contract_addr
         crytic_print(PrintMode.INFORMATION, f"\n* Exploit contract address specified via command line parameter: "
@@ -749,7 +813,7 @@ def main():
     #             elif isinstance(obj, Function):
     #                 crytic_print(PrintMode.WARNING, f'        * {obj.signature_str}')
 
-    contract = generate_test_contract(v1_contract_data, v2_contract_data, targets=targets, proxy=proxy)
+    contract = generate_test_contract(v1_contract_data, v2_contract_data, deploy, version, targets=targets, proxy=proxy)
     write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
     crytic_print(PrintMode.SUCCESS, f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.")
 
