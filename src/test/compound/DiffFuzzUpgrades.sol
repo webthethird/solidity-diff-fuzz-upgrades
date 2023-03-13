@@ -239,6 +239,17 @@ struct Checkpoint {
     uint96 votes;
 }
 
+interface IUnitroller {
+    function _setPendingImplementation(address) external returns (uint256);
+    function _acceptImplementation() external returns (uint256);
+    function _setPendingAdmin(address) external returns (uint256);
+    function _acceptAdmin() external returns (uint256);
+    function admin() external returns (address);
+    function pendingAdmin() external returns (address);
+    function comptrollerImplementation() external returns (address);
+    function pendingComptrollerImplementation() external returns (address);
+}
+
 interface IHevm {
     function warp(uint256 newTimestamp) external;
     function roll(uint256 newNumber) external;

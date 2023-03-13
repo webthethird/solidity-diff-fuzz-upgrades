@@ -749,7 +749,7 @@ def main():
     #             elif isinstance(obj, Function):
     #                 crytic_print(PrintMode.WARNING, f'        * {obj.signature_str}')
 
-    contract = generate_test_contract(v1_contract_data, v2_contract_data, targets=targets)
+    contract = generate_test_contract(v1_contract_data, v2_contract_data, targets=targets, proxy=proxy)
     write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
     crytic_print(PrintMode.SUCCESS, f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.")
 
