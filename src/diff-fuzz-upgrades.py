@@ -685,22 +685,22 @@ def generate_test_contract(
     final_contract += (
         "    // TODO: Deploy the contracts and put their addresses below\n"
     )
-    final_contract += f"    {v1['interface_name']} {v1['name']}V1 = {v1['interface_name']}(V1_ADDRESS_HERE);\n"
-    final_contract += f"    {v2['interface_name']} {v2['name']}V2 = {v2['interface_name']}(V2_ADDRESS_HERE);\n"
+    final_contract += f"    {v1['interface_name']} {v1['name']}V1;\n"
+    final_contract += f"    {v2['interface_name']} {v2['name']}V2;\n"
 
     if proxy is not None:
-        final_contract += f"    {proxy['interface_name']} {proxy['name']}V1 = {proxy['interface_name']}({proxy['name']}_V1_ADDRESS_HERE);\n"
-        final_contract += f"    {proxy['interface_name']} {proxy['name']}V2 = {proxy['interface_name']}({proxy['name']}_V2_ADDRESS_HERE);\n"
+        final_contract += f"    {proxy['interface_name']} {proxy['name']}V1;\n"
+        final_contract += f"    {proxy['interface_name']} {proxy['name']}V2;\n"
 
     if tokens is not None:
         for t in tokens:
-            final_contract += f"    {t['interface_name']} {t['name']}V1 = {t['interface_name']}({t['name']}_V1_ADDRESS_HERE);\n"
-            final_contract += f"    {t['interface_name']} {t['name']}V2 = {t['interface_name']}({t['name']}_V2_ADDRESS_HERE);\n"
+            final_contract += f"    {t['interface_name']} {t['name']}V1;\n"
+            final_contract += f"    {t['interface_name']} {t['name']}V2;\n"
 
     if targets is not None:
         for t in targets:
-            final_contract += f"    {t['interface_name']} {t['name']}V1 = {t['interface_name']}({t['name']}_V1_ADDRESS_HERE);\n"
-            final_contract += f"    {t['interface_name']} {t['name']}V2 = {t['interface_name']}({t['name']}_V2_ADDRESS_HERE);\n"
+            final_contract += f"    {t['interface_name']} {t['name']}V1;\n"
+            final_contract += f"    {t['interface_name']} {t['name']}V2;\n"
 
     # Constructor
     crytic_print(PrintMode.INFORMATION, f"  * Generating constructor.")
