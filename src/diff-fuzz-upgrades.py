@@ -6,7 +6,11 @@ import time
 import os
 import subprocess
 import difflib
-from solc_select.solc_select import switch_global_version, installed_versions, get_installable_versions
+from solc_select.solc_select import (
+    switch_global_version,
+    installed_versions,
+    get_installable_versions,
+)
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
 from slither import Slither
@@ -79,7 +83,7 @@ def get_solidity_function_parameters(parameters):
             elif isinstance(inp.type, UserDefinedType):
                 if isinstance(inp.type.type, Structure):
                     base_type = f"{inp.type.type.name} {inp.location}"
-                    
+
                     new_type = f"struct {inp.type.type.name} {{\n"
                     for t in inp.type.type.elems_ordered:
                         new_type += f"    {convert_type_for_solidity_signature_to_string(t.type)} {t.name};\n"
@@ -92,15 +96,14 @@ def get_solidity_function_parameters(parameters):
                 base_type = convert_type_for_solidity_signature_to_string(inp.type)
                 if inp.type.is_dynamic:
                     base_type += f" {inp.location}"
-            
+
             inputs.append(base_type)
-    
+
     return inputs, additional_interfaces
 
 
 def get_solidity_function_returns(return_type):
-    """Get function return types as solidity types.
-    """
+    """Get function return types as solidity types."""
     outputs = []
 
     if not return_type:
@@ -108,7 +111,11 @@ def get_solidity_function_returns(return_type):
 
     if len(return_type) > 0:
         for out in return_type:
-            if isinstance(out, ElementaryType) or isinstance(out, ArrayType) or isinstance(out, UserDefinedType):
+            if (
+                isinstance(out, ElementaryType)
+                or isinstance(out, ArrayType)
+                or isinstance(out, UserDefinedType)
+            ):
                 base_type = convert_type_for_solidity_signature_to_string(out)
                 if out.is_dynamic or isinstance(out, ArrayType):
                     base_type += f" memory"
@@ -156,7 +163,7 @@ def get_solidity_getter_outputs(getter):
     additional_interfaces = None
     nested = False
     itype = None
-    
+
     if isinstance(getter.type, MappingType):
         itype = getter.type
         while isinstance(itype.type_to, MappingType):
@@ -189,19 +196,20 @@ def get_solidity_getter_outputs(getter):
     else:
         itype = getter.type
         outputs = convert_type_for_solidity_signature_to_string(itype)
-    
-    if (outputs == "string" or outputs == "bytes" or "[]" in outputs) and not "memory" in outputs:
+
+    if (
+        outputs == "string" or outputs == "bytes" or "[]" in outputs
+    ) and not "memory" in outputs:
         outputs += f" memory"
 
     if isinstance(itype, UserDefinedType):
         additional_interfaces, nested = structure_to_interface(itype.type)
 
-    return outputs, additional_interfaces, nested  
+    return outputs, additional_interfaces, nested
 
 
-def get_contract_interface(contract_data, suffix=''):
-    """Get contract ABI from Slither
-    """
+def get_contract_interface(contract_data, suffix=""):
+    """Get contract ABI from Slither"""
 
     contract = contract_data["contract_object"]
     interface = ""
@@ -214,7 +222,9 @@ def get_contract_interface(contract_data, suffix=''):
     contract_info["functions"] = []
     additional_interfaces = set()
 
-    entry_points_signatures = [n.signature[0:2] for n in contract.functions_entry_points]
+    entry_points_signatures = [
+        n.signature[0:2] for n in contract.functions_entry_points
+    ]
 
     for i in contract.functions_entry_points:
 
@@ -231,7 +241,7 @@ def get_contract_interface(contract_data, suffix=''):
 
         outputs = get_solidity_function_returns(i.return_type)
 
-        # Only wrap state-modifying, not protected functions 
+        # Only wrap state-modifying, not protected functions
         # Might wrap protected functions anyway, as the modifiers can have any other name
         # modifiers = list(map(str,i.modifiers))
         # protected_mods = ["onlyAdmin", "onlyGov", "onlyOwner"]
@@ -274,10 +284,18 @@ def get_pragma_version_from_file(filepath: str) -> str:
         f.close()
     except FileNotFoundError:
         return "0.0.0"
-    versions = [line.split("solidity")[1].split(";")[0].replace(" ", "") for line in lines if "pragma solidity" in line]
+    versions = [
+        line.split("solidity")[1].split(";")[0].replace(" ", "")
+        for line in lines
+        if "pragma solidity" in line
+    ]
     imports = [line for line in lines if "import" in line]
-    files = [line.split()[1].split(";")[0].replace('"', '').replace("'", "") if line.startswith("import")
-             else line.split()[1].replace('"', '').replace("'", "") for line in imports]
+    files = [
+        line.split()[1].split(";")[0].replace('"', "").replace("'", "")
+        if line.startswith("import")
+        else line.split()[1].replace('"', "").replace("'", "")
+        for line in imports
+    ]
     for file in files:
         if file.startswith("./"):
             file = file.replace("./", filepath.rsplit("/", maxsplit=1)[0] + "/")
@@ -288,8 +306,9 @@ def get_pragma_version_from_file(filepath: str) -> str:
     for v in versions:
         vers = v.split(".")
         vers[0] = "0"
-        if int(vers[1]) > int(high_version[1]) or (int(vers[1]) == int(high_version[1]) and
-                                                   int(vers[2]) > int(high_version[2])):
+        if int(vers[1]) > int(high_version[1]) or (
+            int(vers[1]) == int(high_version[1]) and int(vers[2]) > int(high_version[2])
+        ):
             high_version = vers
             if v.startswith(">") and not v.startswith(">="):
                 vers[2] = str(int(vers[2]) + 1)
@@ -301,7 +320,7 @@ def get_pragma_version_from_file(filepath: str) -> str:
     return ".".join(high_version)
 
 
-def get_contracts_from_comma_separated_paths(paths_string: str, suffix=''):
+def get_contracts_from_comma_separated_paths(paths_string: str, suffix=""):
     contracts = []
     filepaths = paths_string.split(",")
 
@@ -311,12 +330,12 @@ def get_contracts_from_comma_separated_paths(paths_string: str, suffix=''):
     return contracts
 
 
-def get_contract_data_from_path(filepath, suffix=''):
+def get_contract_data_from_path(filepath, suffix=""):
     contract_data = dict()
 
     crytic_print(PrintMode.MESSAGE, f"* Getting contract data from {filepath}")
 
-    contract_data['path'] = filepath
+    contract_data["path"] = filepath
     version = get_pragma_version_from_file(filepath)
     if version in installed_versions() or version in get_installable_versions():
         switch_global_version(version, True)
@@ -335,7 +354,9 @@ def get_contract_data_from_path(filepath, suffix=''):
         contract_data["contract_object"] = contract
         if contract.is_upgradeable_proxy:
             contract_data["is_proxy"] = True
-            contract_data["implementation_slot"] = get_proxy_implementation_slot(contract)
+            contract_data["implementation_slot"] = get_proxy_implementation_slot(
+                contract
+            )
         else:
             contract_data["is_proxy"] = False
         target_info = get_contract_interface(contract_data, suffix)
@@ -343,7 +364,9 @@ def get_contract_data_from_path(filepath, suffix=''):
         contract_data["interface_name"] = target_info["interface_name"]
         contract_data["name"] = target_info["name"]
         contract_data["functions"] = target_info["functions"]
-        crytic_print(PrintMode.MESSAGE, f"  * Done compiling contract {contract_data['name']}")
+        crytic_print(
+            PrintMode.MESSAGE, f"  * Done compiling contract {contract_data['name']}"
+        )
 
     return contract_data
 
@@ -352,13 +375,15 @@ def get_slither_object_from_path(filepath):
     if not os.path.exists(filepath):
         raise ValueError("File path does not exist!")
     try:
-        crytic_print(PrintMode.MESSAGE, f"  * Compiling contracts and retrieving Slither IR...")
+        crytic_print(
+            PrintMode.MESSAGE, f"  * Compiling contracts and retrieving Slither IR..."
+        )
         slither_object = Slither(filepath)
         return slither_object
     except SlitherError as e:
         crytic_print(PrintMode.ERROR, f"  * Slither error:\v{str(e)}")
         raise SlitherError(str(e))
-    
+
 
 def wrap_functions(target):
     wrapped = ""
@@ -383,9 +408,9 @@ def wrap_functions(target):
                 args = f"{args[0:-2]})"
                 call_args = f"{call_args[0:-2]})"
 
-            wrapped +=  f"    function {t['name']}_{f[0]}{args} public {{\n"
-            wrapped +=   "        hevm.prank(msg.sender);\n"
-            wrapped +=  f"        {t['name']}.{f[0]}{call_args};\n    }}\n\n"
+            wrapped += f"    function {t['name']}_{f[0]}{args} public {{\n"
+            wrapped += "        hevm.prank(msg.sender);\n"
+            wrapped += f"        {t['name']}.{f[0]}{call_args};\n    }}\n\n"
 
     return wrapped
 
@@ -454,7 +479,12 @@ def wrap_diff_function(v1, v2, func, func2=None):
     wrapped = ""
     if func2 is None:
         func2 = func
-    args, call_args, return_vals, returns_to_compare = get_args_and_returns_for_wrapping(func2)
+    (
+        args,
+        call_args,
+        return_vals,
+        returns_to_compare,
+    ) = get_args_and_returns_for_wrapping(func2)
 
     wrapped += f"    function {v2['name']}_{func2[0]}{args} public {{\n"
     wrapped += "        hevm.prank(msg.sender);\n"
@@ -482,56 +512,58 @@ def wrap_diff_function(v1, v2, func, func2=None):
 
 def wrap_diff_functions(v1, v2):
     wrapped = ""
-    
+
     diff = do_diff(v1, v2)
 
     wrapped += "\n    /*** Modified Functions ***/ \n\n"
-    for f in diff['modified-functions']:
+    for f in diff["modified-functions"]:
         if f.visibility in ["internal", "private"]:
             continue
-        func = next(func for func in v2['functions'] if func[0] == f.name)
+        func = next(func for func in v2["functions"] if func[0] == f.name)
         wrapped += wrap_diff_function(v1, v2, func)
 
     wrapped += "\n    /*** Tainted Functions ***/ \n\n"
-    for f in diff['tainted-functions']:
+    for f in diff["tainted-functions"]:
         if f.visibility in ["internal", "private"]:
             continue
-        func = next(func for func in v2['functions'] if func[0] == f.name)
+        func = next(func for func in v2["functions"] if func[0] == f.name)
         wrapped += wrap_diff_function(v1, v2, func)
 
     wrapped += "\n    /*** New Functions ***/ \n\n"
-    for f in diff['new-functions']:
+    for f in diff["new-functions"]:
         if f.visibility in ["internal", "private"]:
             continue
         for f0 in v1["contract_object"].functions_entry_points:
             if similar(f.name, f0.name):
-                wrapped +=  "    // TODO: Double-check this function for correctness\n"
+                wrapped += "    // TODO: Double-check this function for correctness\n"
                 wrapped += f"    // {f.canonical_name}\n"
                 wrapped += f"    // is a new function, which appears to replace a function with a similar name,\n"
                 wrapped += f"    // {f0.canonical_name}.\n"
-                wrapped +=  "    // If these functions have different arguments, this function may be incorrect.\n"
-                func = next(func for func in v1['functions'] if func[0] == f0.name)
-                func2 = next(func for func in v2['functions'] if func[0] == f.name)
+                wrapped += "    // If these functions have different arguments, this function may be incorrect.\n"
+                func = next(func for func in v1["functions"] if func[0] == f0.name)
+                func2 = next(func for func in v2["functions"] if func[0] == f.name)
                 wrapped += wrap_diff_function(v1, v2, func, func2)
 
     wrapped += "\n    /*** Tainted Variables ***/ \n\n"
-    for v in diff['tainted-variables']:
+    for v in diff["tainted-variables"]:
         if v.visibility in ["internal", "private"]:
             continue
         if v.type.is_dynamic:
             if isinstance(v.type, MappingType):
                 type_from = v.type.type_from.name
-                wrapped +=  f"    function {v1['name']}_{v.name}({type_from} a) public {{\n"
-                wrapped +=  f"        assert({v1['name']}V1.{v.name}(a) == {v2['name']}V2.{v.name}(a));\n"
-                wrapped +=   "    }\n\n"
+                wrapped += (
+                    f"    function {v1['name']}_{v.name}({type_from} a) public {{\n"
+                )
+                wrapped += f"        assert({v1['name']}V1.{v.name}(a) == {v2['name']}V2.{v.name}(a));\n"
+                wrapped += "    }\n\n"
             elif isinstance(v.type, ArrayType):
-                wrapped +=  f"    function {v1['name']}_{v.name}(uint i) public {{\n"
-                wrapped +=  f"        assert({v1['name']}V1.{v.name}[i] == {v2['name']}V2.{v.name}[i]);\n"
-                wrapped +=   "    }\n\n"
+                wrapped += f"    function {v1['name']}_{v.name}(uint i) public {{\n"
+                wrapped += f"        assert({v1['name']}V1.{v.name}[i] == {v2['name']}V2.{v.name}[i]);\n"
+                wrapped += "    }\n\n"
         else:
-            wrapped +=  f"    function {v1['name']}_{v.full_name} public {{\n"
-            wrapped +=  f"        assert({v1['name']}V1.{v.full_name} == {v2['name']}V2.{v.full_name});\n"
-            wrapped +=   "    }\n\n"
+            wrapped += f"    function {v1['name']}_{v.full_name} public {{\n"
+            wrapped += f"        assert({v1['name']}V1.{v.full_name} == {v2['name']}V2.{v.full_name});\n"
+            wrapped += "    }\n\n"
 
     return wrapped
 
@@ -544,9 +576,9 @@ def do_diff(v1: dict, v2: dict) -> dict:
             crytic_print(PrintMode.WARNING, f'      * {str(key).replace("-", " ")}:')
             for obj in diff[key]:
                 if isinstance(obj, StateVariable):
-                    crytic_print(PrintMode.WARNING, f'          * {obj.full_name}')
+                    crytic_print(PrintMode.WARNING, f"          * {obj.full_name}")
                 elif isinstance(obj, Function):
-                    crytic_print(PrintMode.WARNING, f'          * {obj.signature_str}')
+                    crytic_print(PrintMode.WARNING, f"          * {obj.signature_str}")
     return diff
 
 
@@ -571,20 +603,34 @@ def write_to_file(filename, content):
     out_file = open(filename, "wt")
     out_file.write(content)
     out_file.close()
-    
 
-def generate_test_contract(v1: dict, v2: dict, deploy: bool, version: str, tokens: [dict] = None, targets: [dict] = None, proxy: dict = None):
+
+def generate_test_contract(
+    v1: dict,
+    v2: dict,
+    deploy: bool,
+    version: str,
+    tokens: [dict] = None,
+    targets: [dict] = None,
+    proxy: dict = None,
+):
 
     crytic_print(PrintMode.INFORMATION, f"\n* Generating exploit contract...")
 
     final_contract = ""
 
     # Add solidity pragma and SPDX to avoid warnings
-    final_contract += f"// SPDX-License-Identifier: AGPLv3\npragma solidity ^{version};\n\n"
+    final_contract += (
+        f"// SPDX-License-Identifier: AGPLv3\npragma solidity ^{version};\n\n"
+    )
 
     if deploy:
-        final_contract += f'import {{ {v1["name"]} as {v1["name"]}_V1 }} from "{v1["path"]}";\n'
-        final_contract += f'import {{ {v2["name"]} as {v2["name"]}_V2 }} from "{v2["path"]}";\n'
+        final_contract += (
+            f'import {{ {v1["name"]} as {v1["name"]}_V1 }} from "{v1["path"]}";\n'
+        )
+        final_contract += (
+            f'import {{ {v2["name"]} as {v2["name"]}_V2 }} from "{v2["path"]}";\n'
+        )
         if proxy:
             final_contract += f'import {{ {proxy["name"]} }} from "{proxy["path"]}";\n'
         if tokens is not None:
@@ -601,7 +647,7 @@ def generate_test_contract(v1: dict, v2: dict, deploy: bool, version: str, token
     final_contract += v2["interface"]
 
     if tokens is not None:
-        for i in tokens:   
+        for i in tokens:
             final_contract += i["interface"]
     if targets is not None:
         for i in targets:
@@ -613,22 +659,32 @@ def generate_test_contract(v1: dict, v2: dict, deploy: bool, version: str, token
     final_contract += "interface IHevm {\n"
     final_contract += "    function warp(uint256 newTimestamp) external;\n"
     final_contract += "    function roll(uint256 newNumber) external;\n"
-    final_contract += "    function load(address where, bytes32 slot) external returns (bytes32);\n"
-    final_contract += "    function store(address where, bytes32 slot, bytes32 value) external;\n"
+    final_contract += (
+        "    function load(address where, bytes32 slot) external returns (bytes32);\n"
+    )
+    final_contract += (
+        "    function store(address where, bytes32 slot, bytes32 value) external;\n"
+    )
     final_contract += "    function sign(uint256 privateKey, bytes32 digest) external returns (uint8 r, bytes32 v, bytes32 s);\n"
-    final_contract += "    function addr(uint256 privateKey) external returns (address add);\n"
+    final_contract += (
+        "    function addr(uint256 privateKey) external returns (address add);\n"
+    )
     final_contract += "    function ffi(string[] calldata inputs) external returns (bytes memory result);\n"
     final_contract += "    function prank(address newSender) external;\n}\n\n"
 
     # Create the exploit contract
     crytic_print(PrintMode.INFORMATION, f"  * Creating the exploit contract.")
-    final_contract +=  "contract DiffFuzzUpgrades {\n"
+    final_contract += "contract DiffFuzzUpgrades {\n"
 
     # State variables
     crytic_print(PrintMode.INFORMATION, f"  * Adding state variables declarations.")
 
-    final_contract +=  "    IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);\n\n"
-    final_contract +=  "    // TODO: Deploy the contracts and put their addresses below\n"
+    final_contract += (
+        "    IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);\n\n"
+    )
+    final_contract += (
+        "    // TODO: Deploy the contracts and put their addresses below\n"
+    )
     final_contract += f"    {v1['interface_name']} {v1['name']}V1 = {v1['interface_name']}(V1_ADDRESS_HERE);\n"
     final_contract += f"    {v2['interface_name']} {v2['name']}V2 = {v2['interface_name']}(V2_ADDRESS_HERE);\n"
 
@@ -684,9 +740,8 @@ def generate_test_contract(v1: dict, v2: dict, deploy: bool, version: str, token
     if tokens is not None:
         final_contract += wrap_functions(tokens)
 
-
     # End of contract
-    final_contract +=  "}\n"
+    final_contract += "}\n"
 
     return final_contract
 
@@ -700,13 +755,21 @@ def generate_deploy_constructor(v1, v2, tokens=None, targets=None, proxy=None):
         constructor += f"        {proxy['name']}V2 = {proxy['interface_name']}(address(new {proxy['name']}()));\n"
         constructor += f"        hevm.store(\n"
         constructor += f"            address({proxy['name']}V1),\n"
-        constructor += f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
-        constructor += f"            bytes32(uint256(uint160(address({v1['name']}V1))))\n"
+        constructor += (
+            f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
+        )
+        constructor += (
+            f"            bytes32(uint256(uint160(address({v1['name']}V1))))\n"
+        )
         constructor += f"        );\n"
         constructor += f"        hevm.store(\n"
         constructor += f"            address({proxy['name']}V2),\n"
-        constructor += f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
-        constructor += f"            bytes32(uint256(uint160(address({v2['name']}V2))))\n"
+        constructor += (
+            f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
+        )
+        constructor += (
+            f"            bytes32(uint256(uint160(address({v2['name']}V2))))\n"
+        )
         constructor += f"        );\n"
     if tokens is not None:
         for t in tokens:
@@ -720,10 +783,15 @@ def generate_deploy_constructor(v1, v2, tokens=None, targets=None, proxy=None):
     return constructor
 
 
-def generate_config_file(corpus_dir: str, campaign_length:str, contract_addr: str) -> str:
-    crytic_print(PrintMode.INFORMATION, f"* Generating Echidna configuration file with campaign limit {campaign_length}"
-                                        f" and corpus directory {corpus_dir}")
-    config_file =  f"testMode: assertion\n"
+def generate_config_file(
+    corpus_dir: str, campaign_length: str, contract_addr: str
+) -> str:
+    crytic_print(
+        PrintMode.INFORMATION,
+        f"* Generating Echidna configuration file with campaign limit {campaign_length}"
+        f" and corpus directory {corpus_dir}",
+    )
+    config_file = f"testMode: assertion\n"
     config_file += f"testLimit: {campaign_length}\n"
     config_file += f"corpusDir: {corpus_dir}\n"
     if contract_addr != "":
@@ -736,23 +804,48 @@ def main():
     # Read command line arguments
 
     parser = argparse.ArgumentParser(
-        prog='diff-fuzz-upgrades',
-        description='Generate differential fuzz testing contract for comparing two upgradeable contract versions.'
+        prog="diff-fuzz-upgrades",
+        description="Generate differential fuzz testing contract for comparing two upgradeable contract versions.",
     )
 
-    parser.add_argument('v1_filename', help='The path to the original version of the contract.')
-    parser.add_argument('v2_filename', help='The path to the upgraded version of the contract.')
-    parser.add_argument('-p', '--proxy', dest='proxy', help='Specifies the proxy contract to use.')
-    parser.add_argument('-t', '--tokens', dest='tokens', help='Specifies the token contracts to use.')
-    parser.add_argument('-T', '--targets', dest='targets',
-                        help='Specifies the additional contracts to target.')
-    parser.add_argument('-D', '--deploy', dest='deploy', action='store_true',
-                        help='Specifies if the test contract deploys the contracts under test in its constructor.')
-    parser.add_argument('-d', '--output-dir', dest='output_dir')
-    parser.add_argument('-A', '--contract-addr', dest='contract_addr',
-                        help='Specifies the address to which to deploy the test contract.')
-    parser.add_argument('-v', '--version', dest='version',
-                        help='Specifies the solc version to use in the test contract (default is 0.8.0).')
+    parser.add_argument(
+        "v1_filename", help="The path to the original version of the contract."
+    )
+    parser.add_argument(
+        "v2_filename", help="The path to the upgraded version of the contract."
+    )
+    parser.add_argument(
+        "-p", "--proxy", dest="proxy", help="Specifies the proxy contract to use."
+    )
+    parser.add_argument(
+        "-t", "--tokens", dest="tokens", help="Specifies the token contracts to use."
+    )
+    parser.add_argument(
+        "-T",
+        "--targets",
+        dest="targets",
+        help="Specifies the additional contracts to target.",
+    )
+    parser.add_argument(
+        "-D",
+        "--deploy",
+        dest="deploy",
+        action="store_true",
+        help="Specifies if the test contract deploys the contracts under test in its constructor.",
+    )
+    parser.add_argument("-d", "--output-dir", dest="output_dir")
+    parser.add_argument(
+        "-A",
+        "--contract-addr",
+        dest="contract_addr",
+        help="Specifies the address to which to deploy the test contract.",
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        dest="version",
+        help="Specifies the solc version to use in the test contract (default is 0.8.0).",
+    )
 
     args = parser.parse_args()
 
@@ -771,16 +864,25 @@ def main():
     v2_contract_data = get_contract_data_from_path(args.v2_filename, suffix="V2")
 
     if args.proxy is not None:
-        crytic_print(PrintMode.INFORMATION, "\n* Proxy contract specified via command line parameter:")
+        crytic_print(
+            PrintMode.INFORMATION,
+            "\n* Proxy contract specified via command line parameter:",
+        )
         proxy = get_contract_data_from_path(args.proxy)
         if not proxy["is_proxy"]:
-            crytic_print(PrintMode.ERROR, f"\n  * {proxy['name']} does not appear to be a proxy. Ignoring...")
+            crytic_print(
+                PrintMode.ERROR,
+                f"\n  * {proxy['name']} does not appear to be a proxy. Ignoring...",
+            )
             proxy = None
     else:
         proxy = None
 
     if args.targets is not None:
-        crytic_print(PrintMode.INFORMATION, "\n* Additional targets specified via command line parameter:")
+        crytic_print(
+            PrintMode.INFORMATION,
+            "\n* Additional targets specified via command line parameter:",
+        )
         targets = get_contracts_from_comma_separated_paths(args.targets)
     else:
         targets = None
@@ -797,8 +899,11 @@ def main():
 
     if args.contract_addr:
         contract_addr = args.contract_addr
-        crytic_print(PrintMode.INFORMATION, f"\n* Exploit contract address specified via command line parameter: "
-                                            f"{contract_addr}")
+        crytic_print(
+            PrintMode.INFORMATION,
+            f"\n* Exploit contract address specified via command line parameter: "
+            f"{contract_addr}",
+        )
     else:
         contract_addr = ""
 
@@ -813,19 +918,42 @@ def main():
     #             elif isinstance(obj, Function):
     #                 crytic_print(PrintMode.WARNING, f'        * {obj.signature_str}')
 
-    contract = generate_test_contract(v1_contract_data, v2_contract_data, deploy, version, targets=targets, proxy=proxy)
+    contract = generate_test_contract(
+        v1_contract_data,
+        v2_contract_data,
+        deploy,
+        version,
+        targets=targets,
+        proxy=proxy,
+    )
     write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
-    crytic_print(PrintMode.SUCCESS, f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.")
+    crytic_print(
+        PrintMode.SUCCESS,
+        f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.",
+    )
 
-    config_file = generate_config_file(f"{output_dir}corpus", "1000000000000", contract_addr)
+    config_file = generate_config_file(
+        f"{output_dir}corpus", "1000000000000", contract_addr
+    )
     write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
-    crytic_print(PrintMode.SUCCESS,
-                 f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.")
+    crytic_print(
+        PrintMode.SUCCESS,
+        f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.",
+    )
 
-    crytic_print(PrintMode.MESSAGE, f"\n-----------------------------------------------------------")
-    crytic_print(PrintMode.MESSAGE, f"My work here is done. Thanks for using me, have a nice day!")
-    crytic_print(PrintMode.MESSAGE, f"-----------------------------------------------------------")
+    crytic_print(
+        PrintMode.MESSAGE,
+        f"\n-----------------------------------------------------------",
+    )
+    crytic_print(
+        PrintMode.MESSAGE,
+        f"My work here is done. Thanks for using me, have a nice day!",
+    )
+    crytic_print(
+        PrintMode.MESSAGE,
+        f"-----------------------------------------------------------",
+    )
+
 
 if __name__ == "__main__":
     main()
-
