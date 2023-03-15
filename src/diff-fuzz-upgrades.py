@@ -519,14 +519,14 @@ def wrap_diff_functions(v1, v2):
     for f in diff["modified-functions"]:
         if f.visibility in ["internal", "private"]:
             continue
-        func = next(func for func in v2["functions"] if func[0] == f.name)
+        func = next(func for func in v2["functions"] if func[0] == f.name and len(func[1]) == len(f.parameters))
         wrapped += wrap_diff_function(v1, v2, func)
 
     wrapped += "\n    /*** Tainted Functions ***/ \n\n"
     for f in diff["tainted-functions"]:
         if f.visibility in ["internal", "private"]:
             continue
-        func = next(func for func in v2["functions"] if func[0] == f.name)
+        func = next(func for func in v2["functions"] if func[0] == f.name and len(func[1]) == len(f.parameters))
         wrapped += wrap_diff_function(v1, v2, func)
 
     wrapped += "\n    /*** New Functions ***/ \n\n"
