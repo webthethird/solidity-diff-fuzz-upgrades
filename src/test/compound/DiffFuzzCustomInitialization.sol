@@ -37,3 +37,4 @@ contract DiffFuzzCustomInitialization is DiffFuzzUpgrades {
             8
         );
     }
+}
