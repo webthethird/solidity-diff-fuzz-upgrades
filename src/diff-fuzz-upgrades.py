@@ -17,8 +17,6 @@ from slither import Slither
 from slither.exceptions import SlitherError
 from slither.utils.upgradeability import compare, get_proxy_implementation_slot
 from slither.utils.type import convert_type_for_solidity_signature_to_string
-from slither.tools.read_storage.utils import get_storage_data
-from slither.tools.read_storage import SlitherReadStorage
 from eth_utils import to_checksum_address, is_address
 from slither.core.declarations.contract import Contract
 from slither.core.declarations.function import Function
@@ -211,7 +209,7 @@ def get_solidity_getter_outputs(getter):
 def get_contract_interface(contract_data, suffix=""):
     """Get contract ABI from Slither"""
 
-    contract = contract_data["contract_object"]
+    contract: Contract = contract_data["contract_object"]
     interface = ""
 
     if not contract.functions_entry_points:
@@ -625,6 +623,7 @@ def generate_test_contract(
     tokens: [dict] = None,
     targets: [dict] = None,
     proxy: dict = None,
+    upgrade: bool = False
 ):
 
     crytic_print(PrintMode.INFORMATION, f"\n* Generating exploit contract...")
@@ -718,7 +717,7 @@ def generate_test_contract(
     crytic_print(PrintMode.INFORMATION, f"  * Generating constructor.")
 
     if deploy:
-        final_contract += generate_deploy_constructor(v1, v2, tokens, targets, proxy)
+        final_contract += generate_deploy_constructor(v1, v2, tokens, targets, proxy, upgrade)
     else:
         final_contract += "\n    constructor() public {\n"
         final_contract += "        // TODO: Add any necessary initialization logic to the constructor here.\n"
@@ -742,6 +741,21 @@ def generate_test_contract(
         #                 final_contract +=  f"        {t['name']}.approve(address({t['name']}), type(uint256).max);\n"
         final_contract += f"    }}\n\n"
 
+    if upgrade and proxy is not None:
+        crytic_print(PrintMode.INFORMATION, f"  * Adding upgrade function.")
+        final_contract += "    /*** Upgrade Function ***/ \n\n"
+        final_contract += "    function upgradeV2() external {\n"
+        final_contract += f"        hevm.store(\n"
+        final_contract += f"            address({camel_case(proxy['name'])}V2),\n"
+        final_contract += (
+            f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
+        )
+        final_contract += (
+            f"            bytes32(uint256(uint160(address({camel_case(v2['name'])}V2))))\n"
+        )
+        final_contract += f"        );\n"
+        final_contract += "    }\n\n"
+
     # Wrapper functions
     crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions.")
 
@@ -758,13 +772,14 @@ def generate_test_contract(
     return final_contract
 
 
-def generate_deploy_constructor(v1, v2, tokens=None, targets=None, proxy=None):
+def generate_deploy_constructor(v1, v2, tokens=None, targets=None, proxy=None, upgrade=False):
     constructor = "\n    constructor() public {\n"
     constructor += f"        {camel_case(v1['name'])}V1 = {v1['interface_name']}(address(new {v1['name']}_V1()));\n"
     constructor += f"        {camel_case(v2['name'])}V2 = {v2['interface_name']}(address(new {v2['name']}_V2()));\n"
     if proxy:
         constructor += f"        {camel_case(proxy['name'])}V1 = {proxy['interface_name']}(address(new {proxy['name']}()));\n"
         constructor += f"        {camel_case(proxy['name'])}V2 = {proxy['interface_name']}(address(new {proxy['name']}()));\n"
+        constructor += "        // Store the implementation addresses in the proxy.\n"
         constructor += f"        hevm.store(\n"
         constructor += f"            address({camel_case(proxy['name'])}V1),\n"
         constructor += (
@@ -780,7 +795,7 @@ def generate_deploy_constructor(v1, v2, tokens=None, targets=None, proxy=None):
             f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
         )
         constructor += (
-            f"            bytes32(uint256(uint160(address({camel_case(v2['name'])}V2))))\n"
+            f"            bytes32(uint256(uint160(address({camel_case(v2['name'])}{'V1' if upgrade else 'V2'}))))\n"
         )
         constructor += f"        );\n"
     if tokens is not None:
@@ -859,6 +874,13 @@ def main():
         help="Specifies the solc version to use in the test contract (default is 0.8.0).",
     )
 
+    parser.add_argument(
+        "-u",
+        "--fuzz-upgrade",
+        dest="fuzz_upgrade",
+        help="Specifies whether to upgrade the proxy to the V2 during fuzzing (default is False). Requires a proxy."
+    )
+
     args = parser.parse_args()
 
     crytic_print(PrintMode.MESSAGE, "\nWelcome to diff-fuzz-upgrades, enjoy your stay!")
@@ -889,6 +911,11 @@ def main():
             proxy = None
     else:
         proxy = None
+
+    if args.fuzz_upgrade:
+        upgrade = True
+    else:
+        upgrade = False
 
     if args.targets is not None:
         crytic_print(
@@ -937,6 +964,7 @@ def main():
         version,
         targets=targets,
         proxy=proxy,
+        upgrade=upgrade
     )
     write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
     crytic_print(
