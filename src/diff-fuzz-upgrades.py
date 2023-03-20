@@ -878,6 +878,7 @@ def main():
         "-u",
         "--fuzz-upgrade",
         dest="fuzz_upgrade",
+        action="store_true",
         help="Specifies whether to upgrade the proxy to the V2 during fuzzing (default is False). Requires a proxy."
     )
 
