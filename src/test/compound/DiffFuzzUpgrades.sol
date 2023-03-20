@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPLv3
 pragma solidity ^0.5.16;
 
-import { Comptroller as Comptroller_V1 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/src/implementation/compound/Comptroller-before/contracts/Comptroller.sol";
-import { Comptroller as Comptroller_V2 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/src/implementation/compound/Comptroller-after/contracts/Comptroller.sol";
-import { Unitroller } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/src/implementation/compound/Comptroller-after/contracts/Unitroller.sol";
-import { CErc20 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/src/implementation/compound/Comptroller-after/contracts/CErc20.sol";
-import { Comp } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/src/implementation/compound/Comptroller-after/contracts/Governance/Comp.sol";
+import { Comptroller as Comptroller_V1 } from "../../implementation/compound/Comptroller-before/contracts/Comptroller.sol";
+import { Comptroller as Comptroller_V2 } from "../../implementation/compound/Comptroller-after/contracts/Comptroller.sol";
+import { Unitroller } from "../../implementation/compound/Comptroller-after/contracts/Unitroller.sol";
+import { CErc20 } from "../../implementation/compound/Comptroller-after/contracts/CErc20.sol";
+import { Comp } from "../../implementation/compound/Comptroller-after/contracts/Governance/Comp.sol";
 
 interface IComptrollerV1 {
     function getAssetsIn(address) external returns (address[] memory);
@@ -245,10 +245,16 @@ interface IComp {
     function decimals() external returns (uint8);
     function totalSupply() external returns (uint256);
     function delegates(address) external returns (address);
+    function checkpoints(address,uint32) external returns (Checkpoint memory);
     function numCheckpoints(address) external returns (uint32);
     function DOMAIN_TYPEHASH() external returns (bytes32);
     function DELEGATION_TYPEHASH() external returns (bytes32);
     function nonces(address) external returns (uint256);
+}
+
+struct Checkpoint {
+    uint32 fromBlock;
+    uint96 votes;
 }
 
 interface IUnitroller {
@@ -300,12 +306,22 @@ contract DiffFuzzUpgrades {
         hevm.store(
             address(unitrollerV2),
             bytes32(uint(2)),
-            bytes32(uint256(uint160(address(comptrollerV2))))
+            bytes32(uint256(uint160(address(comptrollerV1))))
         );
         cErc20V1 = ICErc20(address(new CErc20()));
         cErc20V2 = ICErc20(address(new CErc20()));
         compV1 = IComp(address(new Comp()));
         compV2 = IComp(address(new Comp()));
+    }
+
+    /*** Upgrade Function ***/ 
+
+    function upgradeV2() external {
+        hevm.store(
+            address(unitrollerV2),
+            bytes32(uint(2)),
+            bytes32(uint256(uint160(address(comptrollerV2))))
+        );
     }
 
 
@@ -744,7 +760,7 @@ contract DiffFuzzUpgrades {
         );
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
-                comptrollerV1._setCompSpeed.selector, a, b
+                comptrollerV1._setCompSpeed.selector, a[0], b[0]
             )
         );
         assert(success1 == success2); 
@@ -770,9 +786,9 @@ contract DiffFuzzUpgrades {
         assert(comptrollerV1.allMarkets[i] == comptrollerV2.allMarkets[i]);
     }
 
-    function Comptroller_compSpeeds(address a) public {
-        assert(comptrollerV1.compSpeeds(a) == comptrollerV2.compSpeeds(a));
-    }
+//    function Comptroller_compSpeeds(address a) public {
+//        assert(comptrollerV1.compSpeeds(a) == comptrollerV2.compSpeeds(a));
+//    }
 
     function Comptroller_compSupplyState(address a) public {
         assert(comptrollerV1.compSupplyState(a) == comptrollerV2.compSupplyState(a));
