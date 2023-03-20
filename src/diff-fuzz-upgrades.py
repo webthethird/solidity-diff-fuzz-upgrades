@@ -240,13 +240,14 @@ def get_contract_interface(contract_data, suffix=""):
             additional_interfaces.update(additional)
 
         outputs = get_solidity_function_returns(i.return_type)
+        protected = i.is_protected()
 
         # Only wrap state-modifying, not protected functions
         # Might wrap protected functions anyway, as the modifiers can have any other name
         # modifiers = list(map(str,i.modifiers))
         # protected_mods = ["onlyAdmin", "onlyGov", "onlyOwner"]
         # if not i.pure and not i.view and not set(modifiers).intersection(set(protected_mods)):
-        contract_info["functions"].append((name, inputs, outputs))
+        contract_info["functions"].append((name, inputs, outputs, protected))
 
         interface += get_interface_function_signature(name, inputs, outputs)
 
@@ -487,13 +488,15 @@ def wrap_diff_function(v1, v2, func, func2=None):
     ) = get_args_and_returns_for_wrapping(func2)
 
     wrapped += f"    function {v2['name']}_{func2[0]}{args} public {{\n"
-    wrapped += "        hevm.prank(msg.sender);\n"
+    if len(func2) < 4 or not func2[3]:
+        wrapped += "        hevm.prank(msg.sender);\n"
     wrapped += wrap_low_level_call(v2, func2, call_args, "2")
     # if len(return_vals) > 0:
     #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
     # else:
     #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
-    wrapped += "        hevm.prank(msg.sender);\n"
+    if len(func) < 4 or not func[3]:
+        wrapped += "        hevm.prank(msg.sender);\n"
     if func == func2:
         wrapped += wrap_low_level_call(v1, func, call_args, "1")
     else:
