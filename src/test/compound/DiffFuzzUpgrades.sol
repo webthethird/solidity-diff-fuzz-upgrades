@@ -85,11 +85,6 @@ interface IComptrollerV1 {
     function compInitialIndex() external returns (uint224);
 }
 
-struct CompMarketState {
-    uint224 index;
-    uint32 block;
-}
-
 interface IComptrollerV2 {
     function getAssetsIn(address) external returns (address[] memory);
     function checkMembership(address,address) external returns (bool);
