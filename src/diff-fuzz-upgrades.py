@@ -559,7 +559,7 @@ def wrap_diff_functions(v1, v2):
                 wrapped += "    }\n\n"
             elif isinstance(v.type, ArrayType):
                 wrapped += f"    function {v1['name']}_{v.name}(uint i) public {{\n"
-                wrapped += f"        assert({camel_case(v1['name'])}V1.{v.name}[i] == {camel_case(v2['name'])}V2.{v.name}[i]);\n"
+                wrapped += f"        assert({camel_case(v1['name'])}V1.{v.name}(i) == {camel_case(v2['name'])}V2.{v.name}(i));\n"
                 wrapped += "    }\n\n"
         else:
             wrapped += f"    function {v1['name']}_{v.full_name} public {{\n"
