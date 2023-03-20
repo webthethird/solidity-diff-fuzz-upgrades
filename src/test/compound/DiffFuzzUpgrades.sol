@@ -85,6 +85,11 @@ interface IComptrollerV1 {
     function compInitialIndex() external returns (uint224);
 }
 
+struct CompMarketState {
+    uint224 index;
+    uint32 block;
+}
+
 interface IComptrollerV2 {
     function getAssetsIn(address) external returns (address[] memory);
     function checkMembership(address,address) external returns (bool);
@@ -286,6 +291,7 @@ contract DiffFuzzUpgrades {
         comptrollerV2 = IComptrollerV2(address(new Comptroller_V2()));
         unitrollerV1 = IUnitroller(address(new Unitroller()));
         unitrollerV2 = IUnitroller(address(new Unitroller()));
+        // Store the implementation addresses in the proxy.
         hevm.store(
             address(unitrollerV1),
             bytes32(uint(2)),
@@ -306,13 +312,11 @@ contract DiffFuzzUpgrades {
     /*** Modified Functions ***/ 
 
     function Comptroller__supportMarket(address a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._supportMarket.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._supportMarket.selector, a
@@ -343,13 +347,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller_exitMarket(address a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.exitMarket.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.exitMarket.selector, a
@@ -394,13 +396,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller_borrowAllowed(address a, address b, uint256 c) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.borrowAllowed.selector, a, b, c
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.borrowAllowed.selector, a, b, c
@@ -479,13 +479,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setPriceOracle(address a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setPriceOracle.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setPriceOracle.selector, a
@@ -496,13 +494,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setCloseFactor(uint256 a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setCloseFactor.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setCloseFactor.selector, a
@@ -513,13 +509,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setCollateralFactor(address a, uint256 b) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setCollateralFactor.selector, a, b
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setCollateralFactor.selector, a, b
@@ -530,13 +524,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setLiquidationIncentive(uint256 a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setLiquidationIncentive.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setLiquidationIncentive.selector, a
@@ -547,13 +539,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setMarketBorrowCaps(address[] calldata a, uint256[] calldata b) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setMarketBorrowCaps.selector, a, b
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setMarketBorrowCaps.selector, a, b
@@ -564,13 +554,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setBorrowCapGuardian(address a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setBorrowCapGuardian.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setBorrowCapGuardian.selector, a
@@ -581,13 +569,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setPauseGuardian(address a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setPauseGuardian.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setPauseGuardian.selector, a
@@ -598,13 +584,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setMintPaused(address a, bool b) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setMintPaused.selector, a, b
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setMintPaused.selector, a, b
@@ -615,13 +599,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setBorrowPaused(address a, bool b) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setBorrowPaused.selector, a, b
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setBorrowPaused.selector, a, b
@@ -632,13 +614,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setTransferPaused(bool a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setTransferPaused.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setTransferPaused.selector, a
@@ -649,13 +629,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setSeizePaused(bool a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setSeizePaused.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setSeizePaused.selector, a
@@ -759,13 +737,11 @@ contract DiffFuzzUpgrades {
     // Comptroller._setCompSpeed(CToken,uint256).
     // If these functions have different arguments, this function may be incorrect.
     function Comptroller__setCompSpeeds(address[] memory a, uint256[] memory b, uint256[] memory c) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(ComptrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setCompSpeeds.selector, a, b, c
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(ComptrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setCompSpeed.selector, a, b
@@ -822,13 +798,11 @@ contract DiffFuzzUpgrades {
     /*** Additional Targets ***/ 
 
     function CErc20_initialize(address a, address b, uint256 c, string memory d, string memory e, uint8 f) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.initialize.selector, a, b, c, d, e, f
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.initialize.selector, a, b, c, d, e, f
@@ -839,13 +813,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20_transfer(address a, uint256 b) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.transfer.selector, a, b
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.transfer.selector, a, b
@@ -856,13 +828,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20_transferFrom(address a, address b, uint256 c) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.transferFrom.selector, a, b, c
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.transferFrom.selector, a, b, c
@@ -1111,13 +1081,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20_seize(address a, address b, uint256 c) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.seize.selector, a, b, c
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.seize.selector, a, b, c
@@ -1128,13 +1096,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20__setPendingAdmin(address a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2._setPendingAdmin.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1._setPendingAdmin.selector, a
@@ -1145,13 +1111,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20__acceptAdmin() public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2._acceptAdmin.selector
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1._acceptAdmin.selector
@@ -1162,13 +1126,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20__setComptroller(address a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2._setComptroller.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1._setComptroller.selector, a
@@ -1179,13 +1141,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20__setReserveFactor(uint256 a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2._setReserveFactor.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1._setReserveFactor.selector, a
@@ -1196,13 +1156,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20__reduceReserves(uint256 a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2._reduceReserves.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1._reduceReserves.selector, a
@@ -1213,13 +1171,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20__setInterestRateModel(address a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2._setInterestRateModel.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1._setInterestRateModel.selector, a
@@ -1230,13 +1186,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20_initialize(address a, address b, address c, uint256 d, string memory e, string memory f, uint8 g) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.initialize.selector, a, b, c, d, e, f, g
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.initialize.selector, a, b, c, d, e, f, g
@@ -1247,13 +1201,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20_mint(uint256 a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.mint.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.mint.selector, a
@@ -1264,13 +1216,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20_redeem(uint256 a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.redeem.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.redeem.selector, a
@@ -1281,13 +1231,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20_redeemUnderlying(uint256 a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.redeemUnderlying.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.redeemUnderlying.selector, a
@@ -1298,13 +1246,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20_borrow(uint256 a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.borrow.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.borrow.selector, a
@@ -1315,13 +1261,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20_repayBorrow(uint256 a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.repayBorrow.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.repayBorrow.selector, a
@@ -1332,13 +1276,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20_repayBorrowBehalf(address a, uint256 b) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.repayBorrowBehalf.selector, a, b
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.repayBorrowBehalf.selector, a, b
@@ -1349,13 +1291,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20_liquidateBorrow(address a, uint256 b, address c) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.liquidateBorrow.selector, a, b, c
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.liquidateBorrow.selector, a, b, c
@@ -1383,13 +1323,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20__addReserves(uint256 a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2._addReserves.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1._addReserves.selector, a
@@ -1400,13 +1338,11 @@ contract DiffFuzzUpgrades {
     }
 
     function CErc20__delegateCompLikeTo(address a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2._delegateCompLikeTo.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1._delegateCompLikeTo.selector, a
@@ -1468,13 +1404,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comp_transfer(address a, uint256 b) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CompV2).call(
             abi.encodeWithSelector(
                 compV2.transfer.selector, a, b
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CompV1).call(
             abi.encodeWithSelector(
                 compV1.transfer.selector, a, b
@@ -1502,13 +1436,11 @@ contract DiffFuzzUpgrades {
     }
 
     function Comp_delegate(address a) public {
-        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(CompV2).call(
             abi.encodeWithSelector(
                 compV2.delegate.selector, a
             )
         );
-        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(CompV1).call(
             abi.encodeWithSelector(
                 compV1.delegate.selector, a
