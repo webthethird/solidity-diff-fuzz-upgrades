@@ -469,7 +469,7 @@ def wrap_low_level_call(c: dict, func: Function, call_args: str, version: str):
     wrapped = ""
     wrapped += f"        (bool success{version}, bytes memory output{version}) = address({c['name']}V{version}).call(\n"
     wrapped += f"            abi.encodeWithSelector(\n"
-    wrapped += f"                {c['name']}V{version}.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
+    wrapped += f"                {camel_case(c['name'])}V{version}.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
     wrapped += f"            )\n"
     wrapped += f"        );\n"
     return wrapped
@@ -554,15 +554,15 @@ def wrap_diff_functions(v1, v2):
                 wrapped += (
                     f"    function {v1['name']}_{v.name}({type_from} a) public {{\n"
                 )
-                wrapped += f"        assert({v1['name']}V1.{v.name}(a) == {v2['name']}V2.{v.name}(a));\n"
+                wrapped += f"        assert({camel_case(v1['name'])}V1.{v.name}(a) == {camel_case(v2['name'])}V2.{v.name}(a));\n"
                 wrapped += "    }\n\n"
             elif isinstance(v.type, ArrayType):
                 wrapped += f"    function {v1['name']}_{v.name}(uint i) public {{\n"
-                wrapped += f"        assert({v1['name']}V1.{v.name}[i] == {v2['name']}V2.{v.name}[i]);\n"
+                wrapped += f"        assert({camel_case(v1['name'])}V1.{v.name}[i] == {camel_case(v2['name'])}V2.{v.name}[i]);\n"
                 wrapped += "    }\n\n"
         else:
             wrapped += f"    function {v1['name']}_{v.full_name} public {{\n"
-            wrapped += f"        assert({v1['name']}V1.{v.full_name} == {v2['name']}V2.{v.full_name});\n"
+            wrapped += f"        assert({camel_case(v1['name'])}V1.{v.full_name} == {camel_case(v2['name'])}V2.{v.full_name});\n"
             wrapped += "    }\n\n"
 
     return wrapped
@@ -597,6 +597,15 @@ def similar(name1: str, name2: str) -> bool:
     val = difflib.SequenceMatcher(a=name1.lower(), b=name2.lower()).ratio()
     ret = val > 0.90
     return ret
+
+
+def camel_case(name: str) -> str:
+    parts = name.replace("_", " ").replace("-", " ").split()
+    name = parts[0][0].lower() + parts[0][1:]
+    if len(parts) > 1:
+        for i in range(1, len(parts)):
+            name += parts[i][0].upper() + parts[i][1:]
+    return name
 
 
 def write_to_file(filename, content):
@@ -685,22 +694,22 @@ def generate_test_contract(
     final_contract += (
         "    // TODO: Deploy the contracts and put their addresses below\n"
     )
-    final_contract += f"    {v1['interface_name']} {v1['name']}V1;\n"
-    final_contract += f"    {v2['interface_name']} {v2['name']}V2;\n"
+    final_contract += f"    {v1['interface_name']} {camel_case(v1['name'])}V1;\n"
+    final_contract += f"    {v2['interface_name']} {camel_case(v2['name'])}V2;\n"
 
     if proxy is not None:
-        final_contract += f"    {proxy['interface_name']} {proxy['name']}V1;\n"
-        final_contract += f"    {proxy['interface_name']} {proxy['name']}V2;\n"
+        final_contract += f"    {proxy['interface_name']} {camel_case(proxy['name'])}V1;\n"
+        final_contract += f"    {proxy['interface_name']} {camel_case(proxy['name'])}V2;\n"
 
     if tokens is not None:
         for t in tokens:
-            final_contract += f"    {t['interface_name']} {t['name']}V1;\n"
-            final_contract += f"    {t['interface_name']} {t['name']}V2;\n"
+            final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V1;\n"
+            final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V2;\n"
 
     if targets is not None:
         for t in targets:
-            final_contract += f"    {t['interface_name']} {t['name']}V1;\n"
-            final_contract += f"    {t['interface_name']} {t['name']}V2;\n"
+            final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V1;\n"
+            final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V2;\n"
 
     # Constructor
     crytic_print(PrintMode.INFORMATION, f"  * Generating constructor.")
@@ -748,37 +757,37 @@ def generate_test_contract(
 
 def generate_deploy_constructor(v1, v2, tokens=None, targets=None, proxy=None):
     constructor = "\n    constructor() public {\n"
-    constructor += f"        {v1['name']}V1 = {v1['interface_name']}(address(new {v1['name']}_V1()));\n"
-    constructor += f"        {v2['name']}V2 = {v2['interface_name']}(address(new {v2['name']}_V2()));\n"
+    constructor += f"        {camel_case(v1['name'])}V1 = {v1['interface_name']}(address(new {v1['name']}_V1()));\n"
+    constructor += f"        {camel_case(v2['name'])}V2 = {v2['interface_name']}(address(new {v2['name']}_V2()));\n"
     if proxy:
-        constructor += f"        {proxy['name']}V1 = {proxy['interface_name']}(address(new {proxy['name']}()));\n"
-        constructor += f"        {proxy['name']}V2 = {proxy['interface_name']}(address(new {proxy['name']}()));\n"
+        constructor += f"        {camel_case(proxy['name'])}V1 = {proxy['interface_name']}(address(new {proxy['name']}()));\n"
+        constructor += f"        {camel_case(proxy['name'])}V2 = {proxy['interface_name']}(address(new {proxy['name']}()));\n"
         constructor += f"        hevm.store(\n"
-        constructor += f"            address({proxy['name']}V1),\n"
+        constructor += f"            address({camel_case(proxy['name'])}V1),\n"
         constructor += (
             f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
         )
         constructor += (
-            f"            bytes32(uint256(uint160(address({v1['name']}V1))))\n"
+            f"            bytes32(uint256(uint160(address({camel_case(v1['name'])}V1))))\n"
         )
         constructor += f"        );\n"
         constructor += f"        hevm.store(\n"
-        constructor += f"            address({proxy['name']}V2),\n"
+        constructor += f"            address({camel_case(proxy['name'])}V2),\n"
         constructor += (
             f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
         )
         constructor += (
-            f"            bytes32(uint256(uint160(address({v2['name']}V2))))\n"
+            f"            bytes32(uint256(uint160(address({camel_case(v2['name'])}V2))))\n"
         )
         constructor += f"        );\n"
     if tokens is not None:
         for t in tokens:
-            constructor += f"        {t['name']}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
-            constructor += f"        {t['name']}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
+            constructor += f"        {camel_case(t['name'])}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
+            constructor += f"        {camel_case(t['name'])}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
     if targets is not None:
         for t in targets:
-            constructor += f"        {t['name']}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
-            constructor += f"        {t['name']}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
+            constructor += f"        {camel_case(t['name'])}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
+            constructor += f"        {camel_case(t['name'])}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
     constructor += "    }\n\n"
     return constructor
 
