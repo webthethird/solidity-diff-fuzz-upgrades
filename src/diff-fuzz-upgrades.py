@@ -466,7 +466,7 @@ def wrap_additional_target_functions(targets):
 
 def wrap_low_level_call(c: dict, func: Function, call_args: str, version: str):
     wrapped = ""
-    wrapped += f"        (bool success{version}, bytes memory output{version}) = address({c['name']}V{version}).call(\n"
+    wrapped += f"        (bool success{version}, bytes memory output{version}) = address({camel_case(c['name'])}V{version}).call(\n"
     wrapped += f"            abi.encodeWithSelector(\n"
     wrapped += f"                {camel_case(c['name'])}V{version}.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
     wrapped += f"            )\n"
