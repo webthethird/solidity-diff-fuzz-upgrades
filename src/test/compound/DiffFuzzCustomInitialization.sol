@@ -4,7 +4,7 @@ pragma solidity ^0.5.16;
 import { Comptroller as Comptroller_V1 } from "../../implementation/compound/Comptroller-before/contracts/Comptroller.sol";
 import { Comptroller as Comptroller_V2 } from "../../implementation/compound/Comptroller-after/contracts/Comptroller.sol";
 import "./DiffFuzzUpgrades.sol";
-import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol";
+import "../../implementation/compound/Comptroller-before/contracts/ERC20PresetFixedSupply.sol";
 import "../../implementation/compound/Comptroller-before/contracts/WhitePaperInterestRateModel.sol";
 
 contract DiffFuzzCustomInitialization is DiffFuzzUpgrades {
