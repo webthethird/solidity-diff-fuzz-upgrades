@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPLv3
-pragma solidity ^0.5.16;
+pragma solidity ^0.8.10;
 
 import "./DiffFuzzUpgrades.sol";
-import "../../implementation/compound/Comptroller-before/contracts/ERC20PresetFixedSupply.sol";
-import "../../implementation/compound/Comptroller-before/contracts/WhitePaperInterestRateModel.sol";
+import "../../implementation/@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol";
+import "../../implementation/compound/master-contracts/WhitePaperInterestRateModel.sol";
 
 contract DiffFuzzCustomInitialization is DiffFuzzUpgrades {
 
@@ -11,15 +11,12 @@ contract DiffFuzzCustomInitialization is DiffFuzzUpgrades {
         // Below is custom, not auto-generated
         compV1 = IComp(address(new Comp(address(unitrollerV1))));
         compV2 = IComp(address(new Comp(address(unitrollerV2))));
-    }
-
-    function deployCErc20() external {
-        super.deployCErc20();
 
         ERC20PresetFixedSupply underlyingV1 = new ERC20PresetFixedSupply("UnderlyingV1", "UV1", 10e18, address(this));
         ERC20PresetFixedSupply underlyingV2 = new ERC20PresetFixedSupply("UnderlyingV2", "UV2", 10e18, address(this));
         InterestRateModel interestModel = new WhitePaperInterestRateModel(0, 5e16);
 
+        hevm.prank(cErc20V1.admin());
         cErc20V1.initialize(
             address(underlyingV1),
             address(comptrollerV1),
@@ -29,6 +26,7 @@ contract DiffFuzzCustomInitialization is DiffFuzzUpgrades {
             "CV1",
             8
         );
+        hevm.prank(cErc20V2.admin());
         cErc20V2.initialize(
             address(underlyingV2),
             address(comptrollerV2),
