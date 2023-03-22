@@ -1019,7 +1019,7 @@ def main():
     )
 
     config_file = generate_config_file(
-        f"{output_dir}corpus", "1000000000000", contract_addr
+        f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
     )
     write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
     crytic_print(
