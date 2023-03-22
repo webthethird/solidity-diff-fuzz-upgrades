@@ -349,7 +349,10 @@ def get_contract_data_from_path(filepath, suffix=""):
     if contract_data["valid_data"]:
         slither_object = contract_data["slither"]
         contract_name = get_compilation_unit_name(slither_object)
-        contract = slither_object.get_contract_from_name(contract_name)[0]
+        try:
+            contract = slither_object.get_contract_from_name(contract_name)[0]
+        except IndexError:
+            contract = slither_object.get_contract_from_name(contract_name.replace("V1", "").replace("V2", ""))[0]
         contract_data["contract_object"] = contract
         if contract.is_upgradeable_proxy:
             contract_data["is_proxy"] = True
