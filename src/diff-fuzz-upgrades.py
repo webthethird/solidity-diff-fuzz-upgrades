@@ -772,7 +772,7 @@ def generate_test_contract(
     # Wrapper functions
     crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions.")
 
-    final_contract += wrap_diff_functions(v1, v2)
+    final_contract += wrap_diff_functions(v1, v2, proxy)
 
     if targets is not None:
         final_contract += wrap_additional_target_functions(targets)
