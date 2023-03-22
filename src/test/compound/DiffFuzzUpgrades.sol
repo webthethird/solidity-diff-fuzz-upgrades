@@ -311,7 +311,7 @@ contract DiffFuzzUpgrades {
 
     /*** Upgrade Function ***/ 
 
-    function upgradeV2() external {
+    function upgradeV2() external virtual {
         hevm.store(
             address(unitrollerV2),
             bytes32(uint(2)),
@@ -322,8 +322,8 @@ contract DiffFuzzUpgrades {
 
     /*** Modified Functions ***/ 
 
-    function Comptroller__supportMarket(address a) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+    function Comptroller__supportMarket(address a) public virtual {
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._supportMarket.selector, a
             )
@@ -342,13 +342,13 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_checkMembership(address a, address b) public {
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.checkMembership.selector, a, b
             )
         );
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.checkMembership.selector, a, b
             )
@@ -358,12 +358,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller_exitMarket(address a) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.exitMarket.selector, a
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.exitMarket.selector, a
             )
@@ -374,13 +374,13 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_mintAllowed(address a, address b, uint256 c) public {
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.mintAllowed.selector, a, b, c
             )
         );
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.mintAllowed.selector, a, b, c
             )
@@ -391,13 +391,13 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_redeemAllowed(address a, address b, uint256 c) public {
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.redeemAllowed.selector, a, b, c
             )
         );
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.redeemAllowed.selector, a, b, c
             )
@@ -407,12 +407,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller_borrowAllowed(address a, address b, uint256 c) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.borrowAllowed.selector, a, b, c
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.borrowAllowed.selector, a, b, c
             )
@@ -423,13 +423,13 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_repayBorrowAllowed(address a, address b, address c, uint256 d) public {
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.repayBorrowAllowed.selector, a, b, c, d
             )
         );
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.repayBorrowAllowed.selector, a, b, c, d
             )
@@ -440,13 +440,13 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_liquidateBorrowAllowed(address a, address b, address c, address d, uint256 e) public {
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.liquidateBorrowAllowed.selector, a, b, c, d, e
             )
         );
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.liquidateBorrowAllowed.selector, a, b, c, d, e
             )
@@ -457,13 +457,13 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_seizeAllowed(address a, address b, address c, address d, uint256 e) public {
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.seizeAllowed.selector, a, b, c, d, e
             )
         );
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.seizeAllowed.selector, a, b, c, d, e
             )
@@ -474,13 +474,13 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_transferAllowed(address a, address b, address c, uint256 d) public {
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.transferAllowed.selector, a, b, c, d
             )
         );
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.transferAllowed.selector, a, b, c, d
             )
@@ -490,12 +490,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setPriceOracle(address a) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setPriceOracle.selector, a
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setPriceOracle.selector, a
             )
@@ -505,12 +505,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setCloseFactor(uint256 a) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setCloseFactor.selector, a
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setCloseFactor.selector, a
             )
@@ -520,12 +520,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setCollateralFactor(address a, uint256 b) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setCollateralFactor.selector, a, b
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setCollateralFactor.selector, a, b
             )
@@ -535,12 +535,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setLiquidationIncentive(uint256 a) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setLiquidationIncentive.selector, a
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setLiquidationIncentive.selector, a
             )
@@ -550,12 +550,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setMarketBorrowCaps(address[] calldata a, uint256[] calldata b) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setMarketBorrowCaps.selector, a, b
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setMarketBorrowCaps.selector, a, b
             )
@@ -565,12 +565,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setBorrowCapGuardian(address a) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setBorrowCapGuardian.selector, a
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setBorrowCapGuardian.selector, a
             )
@@ -580,12 +580,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setPauseGuardian(address a) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setPauseGuardian.selector, a
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setPauseGuardian.selector, a
             )
@@ -595,12 +595,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setMintPaused(address a, bool b) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setMintPaused.selector, a, b
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setMintPaused.selector, a, b
             )
@@ -610,12 +610,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setBorrowPaused(address a, bool b) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setBorrowPaused.selector, a, b
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setBorrowPaused.selector, a, b
             )
@@ -625,12 +625,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setTransferPaused(bool a) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setTransferPaused.selector, a
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setTransferPaused.selector, a
             )
@@ -640,12 +640,12 @@ contract DiffFuzzUpgrades {
     }
 
     function Comptroller__setSeizePaused(bool a) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2._setSeizePaused.selector, a
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._setSeizePaused.selector, a
             )
@@ -656,13 +656,13 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_updateContributorRewards(address a) public {
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.updateContributorRewards.selector, a
             )
         );
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.updateContributorRewards.selector, a
             )
@@ -673,13 +673,13 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_claimComp() public {
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.claimComp.selector, msg.sender
             )
         );
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.claimComp.selector, msg.sender
             )
@@ -690,13 +690,13 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_isDeprecated(address a) public {
         hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
                 comptrollerV2.isDeprecated.selector, a
             )
         );
         hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1.isDeprecated.selector, a
             )

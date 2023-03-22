@@ -464,9 +464,13 @@ def wrap_additional_target_functions(targets):
     return wrapped
 
 
-def wrap_low_level_call(c: dict, func: Function, call_args: str, version: str):
+def wrap_low_level_call(c: dict, func: Function, call_args: str, version: str, proxy=None):
+    if proxy is None:
+        target = camel_case(c['name'])
+    else:
+        target = camel_case(proxy['name'])
     wrapped = ""
-    wrapped += f"        (bool success{version}, bytes memory output{version}) = address({camel_case(c['name'])}V{version}).call(\n"
+    wrapped += f"        (bool success{version}, bytes memory output{version}) = address({target}V{version}).call(\n"
     wrapped += f"            abi.encodeWithSelector(\n"
     wrapped += f"                {camel_case(c['name'])}V{version}.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
     wrapped += f"            )\n"
@@ -474,7 +478,7 @@ def wrap_low_level_call(c: dict, func: Function, call_args: str, version: str):
     return wrapped
 
 
-def wrap_diff_function(v1, v2, func, func2=None):
+def wrap_diff_function(v1, v2, func, func2=None, proxy=None):
     wrapped = ""
     if func2 is None:
         func2 = func
@@ -488,7 +492,7 @@ def wrap_diff_function(v1, v2, func, func2=None):
     wrapped += f"    function {v2['name']}_{func2[0]}{args} public {{\n"
     if len(func2) < 4 or not func2[3]:
         wrapped += "        hevm.prank(msg.sender);\n"
-    wrapped += wrap_low_level_call(v2, func2, call_args, "2")
+    wrapped += wrap_low_level_call(v2, func2, call_args, "2", proxy)
     # if len(return_vals) > 0:
     #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
     # else:
@@ -496,10 +500,10 @@ def wrap_diff_function(v1, v2, func, func2=None):
     if len(func) < 4 or not func[3]:
         wrapped += "        hevm.prank(msg.sender);\n"
     if func == func2:
-        wrapped += wrap_low_level_call(v1, func, call_args, "1")
+        wrapped += wrap_low_level_call(v1, func, call_args, "1", proxy)
     else:
         _, call_args, _, _ = get_args_and_returns_for_wrapping(func)
-        wrapped += wrap_low_level_call(v1, func, call_args, "1")
+        wrapped += wrap_low_level_call(v1, func, call_args, "1", proxy)
     wrapped += f"        assert(success1 == success2); \n"
     wrapped += f"        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));\n"
     # if len(return_vals) > 0:
@@ -511,7 +515,7 @@ def wrap_diff_function(v1, v2, func, func2=None):
     return wrapped
 
 
-def wrap_diff_functions(v1, v2):
+def wrap_diff_functions(v1, v2, proxy=None):
     wrapped = ""
 
     diff = do_diff(v1, v2)
@@ -521,14 +525,20 @@ def wrap_diff_functions(v1, v2):
         if f.visibility in ["internal", "private"]:
             continue
         func = next(func for func in v2["functions"] if func[0] == f.name and len(func[1]) == len(f.parameters))
-        wrapped += wrap_diff_function(v1, v2, func)
+        if proxy is not None:
+            wrapped += wrap_diff_function(v1, v2, func, proxy=proxy)
+        else:
+            wrapped += wrap_diff_function(v1, v2, func)
 
     wrapped += "\n    /*** Tainted Functions ***/ \n\n"
     for f in diff["tainted-functions"]:
         if f.visibility in ["internal", "private"]:
             continue
         func = next(func for func in v2["functions"] if func[0] == f.name and len(func[1]) == len(f.parameters))
-        wrapped += wrap_diff_function(v1, v2, func)
+        if proxy is not None:
+            wrapped += wrap_diff_function(v1, v2, func, proxy=proxy)
+        else:
+            wrapped += wrap_diff_function(v1, v2, func)
 
     wrapped += "\n    /*** New Functions ***/ \n\n"
     for f in diff["new-functions"]:
@@ -543,7 +553,10 @@ def wrap_diff_functions(v1, v2):
                 wrapped += "    // If these functions have different arguments, this function may be incorrect.\n"
                 func = next(func for func in v1["functions"] if func[0] == f0.name)
                 func2 = next(func for func in v2["functions"] if func[0] == f.name)
-                wrapped += wrap_diff_function(v1, v2, func, func2)
+                if proxy is not None:
+                    wrapped += wrap_diff_function(v1, v2, func, func2, proxy=proxy)
+                else:
+                    wrapped += wrap_diff_function(v1, v2, func, func2)
 
     wrapped += "\n    /*** Tainted Variables ***/ \n\n"
     for v in diff["tainted-variables"]:
