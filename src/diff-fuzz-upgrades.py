@@ -835,7 +835,7 @@ def generate_deploy_constructor(v1, v2, tokens=None, targets=None, proxy=None, u
 
 
 def generate_config_file(
-    corpus_dir: str, campaign_length: str, contract_addr: str
+    corpus_dir: str, campaign_length: str, contract_addr: str, seq_len: int
 ) -> str:
     crytic_print(
         PrintMode.INFORMATION,
@@ -845,6 +845,8 @@ def generate_config_file(
     config_file = f"testMode: assertion\n"
     config_file += f"testLimit: {campaign_length}\n"
     config_file += f"corpusDir: {corpus_dir}\n"
+    config_file += "codeSize: 0xffff\n"
+    config_file += f"seqLen: {seq_len}\n"
     if contract_addr != "":
         config_file += f"contractAddr: '{contract_addr}'\n"
 
@@ -906,6 +908,13 @@ def main():
         help="Specifies whether to upgrade the proxy to the V2 during fuzzing (default is False). Requires a proxy."
     )
 
+    parser.add_argument(
+        "-l",
+        "--seq-length",
+        dest="seq_len",
+        help="Specifies the sequence length to use with Slither. Default is 100."
+    )
+
     args = parser.parse_args()
 
     crytic_print(PrintMode.MESSAGE, "\nWelcome to diff-fuzz-upgrades, enjoy your stay!")
@@ -955,6 +964,18 @@ def main():
         deploy = True
     else:
         deploy = False
+
+    if args.seq_len:
+        if str(args.seq_len).isnumeric():
+            seq_len = int(args.seq_len)
+        else:
+            crytic_print(
+                PrintMode.ERROR,
+                "\n* Sequence length provided is not numeric. Defaulting to 100.",
+            )
+            seq_len = 100
+    else:
+        seq_len = 100
 
     if args.version:
         version = args.version
