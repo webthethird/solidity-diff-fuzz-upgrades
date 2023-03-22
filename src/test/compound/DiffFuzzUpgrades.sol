@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPLv3
 pragma solidity ^0.8.10;
 
-import { Comptroller as Comptroller_V1 } from "./simplified-compound/ComptrollerV1.sol";
-import { Comptroller as Comptroller_V2 } from "./simplified-compound/ComptrollerV2.sol";
+import { ComptrollerHarness as Comptroller_V1 } from "./simplified-compound/ComptrollerV1.sol";
+import { ComptrollerHarness as Comptroller_V2 } from "./simplified-compound/ComptrollerV2.sol";
 import { Unitroller } from "./simplified-compound/Unitroller.sol";
 import { CErc20 } from "./simplified-compound/CErc20.sol";
 import { Comp } from "./simplified-compound/Comp.sol";
@@ -69,6 +69,7 @@ interface IComptrollerV1 {
     function seizeGuardianPaused() external returns (bool);
     function mintGuardianPaused(address) external returns (bool);
     function borrowGuardianPaused(address) external returns (bool);
+    function markets(address) external returns (Market memory);
     function allMarkets(uint256) external returns (address[] memory);
     function compRate() external returns (uint256);
     function compSpeeds(address) external returns (uint256);
@@ -83,7 +84,20 @@ interface IComptrollerV1 {
     function lastContributorBlock(address) external returns (uint256);
     function isComptroller() external returns (bool);
     function compInitialIndex() external returns (uint224);
+    function setCompAddress(address) external;
 }
+
+struct CompMarketState {
+    uint224 index;
+    uint32 block;
+}
+
+struct Market {
+        bool isListed;
+        uint collateralFactorMantissa;
+//        mapping(address => bool) accountMembership;
+        bool isComped;
+    }
 
 interface IComptrollerV2 {
     function getAssetsIn(address) external returns (address[] memory);
@@ -120,6 +134,7 @@ interface IComptrollerV2 {
     function _setTransferPaused(bool) external returns (bool);
     function _setSeizePaused(bool) external returns (bool);
     function _become(address) external;
+    function _upgradeSplitCompRewards() external;
     function updateContributorRewards(address) external;
     function claimComp(address) external;
 //    function claimComp(address,address[] memory) external;
@@ -147,6 +162,7 @@ interface IComptrollerV2 {
     function seizeGuardianPaused() external returns (bool);
     function mintGuardianPaused(address) external returns (bool);
     function borrowGuardianPaused(address) external returns (bool);
+    function markets(address) external returns (Market memory);
     function allMarkets(uint256) external returns (address[] memory);
     function compRate() external returns (uint256);
     function compSpeeds(address) external returns (uint256);
@@ -163,11 +179,7 @@ interface IComptrollerV2 {
     function compSupplySpeeds(address) external returns (uint256);
     function isComptroller() external returns (bool);
     function compInitialIndex() external returns (uint224);
-}
-
-struct CompMarketState {
-    uint224 index;
-    uint32 block;
+    function setCompAddress(address) external;
 }
 
 interface ICErc20 {
@@ -334,6 +346,21 @@ contract DiffFuzzUpgrades {
             )
         );
         assert(success1 == success2); 
+        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+    function Comptroller__become(address a) public {
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+            abi.encodeWithSelector(
+                comptrollerV2._become.selector, a
+            )
+        );
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+            abi.encodeWithSelector(
+                comptrollerV1._become.selector, a
+            )
+        );
+        assert(success1 == success2);
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
@@ -671,17 +698,51 @@ contract DiffFuzzUpgrades {
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller_claimComp() public {
+    function Comptroller_claimComp(address a) public {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
-                comptrollerV2.claimComp.selector, msg.sender
+                comptrollerV2.claimComp.selector, a
             )
         );
         hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
-                comptrollerV1.claimComp.selector, msg.sender
+                comptrollerV1.claimComp.selector, a
+            )
+        );
+        assert(success1 == success2); 
+        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+    }
+
+//    function Comptroller_claimComp(address[] memory a, address[] memory b, bool c, bool d) public {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.claimComp.selector, a, b, c, d
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.claimComp.selector, a, b, c, d
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+
+    function Comptroller_getAllMarkets() public {
+        hevm.prank(msg.sender);
+        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+            abi.encodeWithSelector(
+                comptrollerV2.getAllMarkets.selector
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+            abi.encodeWithSelector(
+                comptrollerV1.getAllMarkets.selector
             )
         );
         assert(success1 == success2); 
@@ -713,20 +774,20 @@ contract DiffFuzzUpgrades {
     // is a new function, which appears to replace a function with a similar name,
     // Comptroller._setCompSpeed(CToken,uint256).
     // If these functions have different arguments, this function may be incorrect.
-    function Comptroller__setCompSpeeds(address[] memory a, uint256[] memory b, uint256[] memory c) public {
-        (bool success2, bytes memory output2) = address(comptrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setCompSpeeds.selector, a, b, c
-            )
-        );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setCompSpeed.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
+//    function Comptroller__setCompSpeeds(address[] memory a, uint256[] memory b, uint256[] memory c) public {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setCompSpeeds.selector, a, b, c
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setCompSpeed.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
 
 
     /*** Tainted Variables ***/ 
@@ -735,10 +796,58 @@ contract DiffFuzzUpgrades {
 //        assert(comptrollerV1.admin() == comptrollerV2.admin());
 //    }
 //
+//    function Comptroller_comptrollerImplementation() public {
+//        assert(comptrollerV1.comptrollerImplementation() == comptrollerV2.comptrollerImplementation());
+//    }
+//
+//    function Comptroller_oracle() public {
+//        assert(comptrollerV1.oracle() == comptrollerV2.oracle());
+//    }
+//
+//    function Comptroller_closeFactorMantissa() public {
+//        assert(comptrollerV1.closeFactorMantissa() == comptrollerV2.closeFactorMantissa());
+//    }
+//
+//    function Comptroller_liquidationIncentiveMantissa() public {
+//        assert(comptrollerV1.liquidationIncentiveMantissa() == comptrollerV2.liquidationIncentiveMantissa());
+//    }
+//
+//    function Comptroller_accountAssets(address a) public {
+//        assert(comptrollerV1.accountAssets(a) == comptrollerV2.accountAssets(a));
+//    }
+//
 //    function Comptroller_markets(address a) public {
 //        assert(comptrollerV1.markets(a) == comptrollerV2.markets(a));
 //    }
 
+//    function Comptroller_pauseGuardian() public {
+//        assert(comptrollerV1.pauseGuardian() == comptrollerV2.pauseGuardian());
+//    }
+//
+//    function Comptroller_transferGuardianPaused() public {
+//        assert(comptrollerV1.transferGuardianPaused() == comptrollerV2.transferGuardianPaused());
+//    }
+//
+//    function Comptroller_seizeGuardianPaused() public {
+//        assert(comptrollerV1.seizeGuardianPaused() == comptrollerV2.seizeGuardianPaused());
+//    }
+//
+//    function Comptroller_mintGuardianPaused(address a) public {
+//        assert(comptrollerV1.mintGuardianPaused(a) == comptrollerV2.mintGuardianPaused(a));
+//    }
+//
+//    function Comptroller_borrowGuardianPaused(address a) public {
+//        assert(comptrollerV1.borrowGuardianPaused(a) == comptrollerV2.borrowGuardianPaused(a));
+//    }
+//
+//    function Comptroller_allMarkets(uint i) public {
+//        assert(comptrollerV1.allMarkets(i) == comptrollerV2.allMarkets(i));
+//    }
+//
+//    function Comptroller_compSpeeds(address a) public {
+//        assert(comptrollerV1.compSpeeds(a) == comptrollerV2.compSpeeds(a));
+//    }
+//
 //    function Comptroller_compSupplyState(address a) public {
 //        assert(comptrollerV1.compSupplyState(a) == comptrollerV2.compSupplyState(a));
 //    }
@@ -746,22 +855,38 @@ contract DiffFuzzUpgrades {
 //    function Comptroller_compBorrowState(address a) public {
 //        assert(comptrollerV1.compBorrowState(a) == comptrollerV2.compBorrowState(a));
 //    }
-
-    function Comptroller_compSupplierIndex(address a, address b) public {
-        assert(comptrollerV1.compSupplierIndex(a, b) == comptrollerV2.compSupplierIndex(a, b));
-    }
-
-    function Comptroller_compBorrowerIndex(address a, address b) public {
-        assert(comptrollerV1.compBorrowerIndex(a, b) == comptrollerV2.compBorrowerIndex(a, b));
-    }
+//
+//    function Comptroller_compSupplierIndex(address a) public {
+//        assert(comptrollerV1.compSupplierIndex(a) == comptrollerV2.compSupplierIndex(a));
+//    }
+//
+//    function Comptroller_compBorrowerIndex(address a) public {
+//        assert(comptrollerV1.compBorrowerIndex(a) == comptrollerV2.compBorrowerIndex(a));
+//    }
 
     function Comptroller_compAccrued(address a) public {
         assert(comptrollerV1.compAccrued(a) == comptrollerV2.compAccrued(a));
     }
 
+//    function Comptroller_borrowCapGuardian() public {
+//        assert(comptrollerV1.borrowCapGuardian() == comptrollerV2.borrowCapGuardian());
+//    }
+//
+//    function Comptroller_borrowCaps(address a) public {
+//        assert(comptrollerV1.borrowCaps(a) == comptrollerV2.borrowCaps(a));
+//    }
+//
+//    function Comptroller_compContributorSpeeds(address a) public {
+//        assert(comptrollerV1.compContributorSpeeds(a) == comptrollerV2.compContributorSpeeds(a));
+//    }
+//
+//    function Comptroller_lastContributorBlock(address a) public {
+//        assert(comptrollerV1.lastContributorBlock(a) == comptrollerV2.lastContributorBlock(a));
+//    }
+
 
     /*** Additional Targets ***/ 
-//
+
 //    function CErc20_initialize(address a, address b, uint256 c, string memory d, string memory e, uint8 f) public {
 //        (bool success2, bytes memory output2) = address(cErc20V2).call(
 //            abi.encodeWithSelector(
@@ -1165,7 +1290,7 @@ contract DiffFuzzUpgrades {
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CErc20_mint(uint256 a) public {
+    function CErc20_mint(uint256 a) public virtual {
         (bool success2, bytes memory output2) = address(cErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.mint.selector, a
