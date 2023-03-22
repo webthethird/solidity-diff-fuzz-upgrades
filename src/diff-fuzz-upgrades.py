@@ -584,7 +584,15 @@ def wrap_diff_functions(v1, v2, proxy=None):
 
 def do_diff(v1: dict, v2: dict) -> dict:
     crytic_print(PrintMode.MESSAGE, "    * Performing diff of V1 and V2")
-    diff = compare(v1["contract_object"], v2["contract_object"])
+    missing_vars, new_vars, tainted_vars, new_funcs, modified_funcs, tainted_funcs = compare(v1["contract_object"], v2["contract_object"])
+    diff = {
+        "missing-variables": missing_vars,
+        "new-variables": new_vars,
+        "tainted-variables": tainted_vars,
+        "new-functions": new_funcs,
+        "modified-functions": modified_funcs,
+        "tainted-functions": tainted_funcs
+    }
     for key in diff.keys():
         if len(diff[key]) > 0:
             crytic_print(PrintMode.WARNING, f'      * {str(key).replace("-", " ")}:')
