@@ -492,7 +492,7 @@ def wrap_diff_function(v1, v2, func, func2=None, proxy=None):
         returns_to_compare,
     ) = get_args_and_returns_for_wrapping(func2)
 
-    wrapped += f"    function {v2['name']}_{func2[0]}{args} public {{\n"
+    wrapped += f"    function {v2['name']}_{func2[0]}{args} public virtual {{\n"
     if len(func2) < 4 or not func2[3]:
         wrapped += "        hevm.prank(msg.sender);\n"
     wrapped += wrap_low_level_call(v2, func2, call_args, "2", proxy)
@@ -768,7 +768,7 @@ def generate_test_contract(
     if upgrade and proxy is not None:
         crytic_print(PrintMode.INFORMATION, f"  * Adding upgrade function.")
         final_contract += "    /*** Upgrade Function ***/ \n\n"
-        final_contract += "    function upgradeV2() external {\n"
+        final_contract += "    function upgradeV2() external virtual {\n"
         final_contract += f"        hevm.store(\n"
         final_contract += f"            address({camel_case(proxy['name'])}V2),\n"
         final_contract += (
