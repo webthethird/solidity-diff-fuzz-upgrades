@@ -1,0 +1,5 @@
+testMode: assertion
+testLimit: 1000000000000
+corpusDir: /home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/src/test/compound/corpus
+codeSize: 0xffff
+seqLen: 10
