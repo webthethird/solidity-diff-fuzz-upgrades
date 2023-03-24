@@ -1088,6 +1088,39 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
     function _become(Unitroller unitroller) public {
         require(msg.sender == unitroller.admin(), "only unitroller admin can change brains");
         require(unitroller._acceptImplementation() == 0, "change not authorized");
+
+        // TODO: Remove this post upgrade
+        Comptroller(address(unitroller))._upgradeSplitCompRewards();
+    }
+
+    function _upgradeSplitCompRewards() public {
+        require(msg.sender == comptrollerImplementation, "only brains can become itself");
+
+        uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
+
+        // compSpeeds -> compBorrowSpeeds & compSupplySpeeds t
+        for (uint i = 0; i < allMarkets.length; i ++) {
+            compBorrowSpeeds[address(allMarkets[i])] = compSupplySpeeds[address(allMarkets[i])] = compSpeeds[address(allMarkets[i])];
+            delete compSpeeds[address(allMarkets[i])];
+
+            /*
+             * Ensure supply and borrow state indices are all set. If not set, update to default value
+             */
+            CompMarketState storage supplyState = compSupplyState[address(allMarkets[i])];
+            CompMarketState storage borrowState = compBorrowState[address(allMarkets[i])];
+
+            if (supplyState.index == 0) {
+                // Initialize supply state index with default value
+                supplyState.index = compInitialIndex;
+                supplyState.block = blockNumber;
+            }
+
+            if (borrowState.index == 0) {
+                // Initialize borrow state index with default value
+                borrowState.index = compInitialIndex;
+                borrowState.block = blockNumber;
+            }
+        }
     }
 
     /**
@@ -1420,5 +1453,17 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
      */
     function getCompAddress() virtual public view returns (address) {
         return 0xc00e94Cb662C3520282E6f5717214004A7f26888;
+    }
+}
+
+contract ComptrollerHarness is Comptroller {
+    address internal compAddress;
+
+    function getCompAddress() public view override returns (address) {
+        return compAddress;
+    }
+
+    function setCompAddress(address _comp) public {
+        compAddress = _comp;
     }
 }

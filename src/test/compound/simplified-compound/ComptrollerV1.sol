@@ -1353,3 +1353,15 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
         return 0xc00e94Cb662C3520282E6f5717214004A7f26888;
     }
 }
+
+contract ComptrollerHarness is Comptroller {
+    address internal compAddress;
+
+    function getCompAddress() public view override returns (address) {
+        return compAddress;
+    }
+
+    function setCompAddress(address _comp) public {
+        compAddress = _comp;
+    }
+}
