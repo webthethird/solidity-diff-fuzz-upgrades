@@ -886,7 +886,12 @@ def main():
         action="store_true",
         help="Specifies if the test contract deploys the contracts under test in its constructor.",
     )
-    parser.add_argument("-d", "--output-dir", dest="output_dir")
+    parser.add_argument(
+        "-d",
+        "--output-dir",
+        dest="output_dir",
+        help="Specifies the directory where the generated test contract and config file are saved."
+    )
     parser.add_argument(
         "-A",
         "--contract-addr",
