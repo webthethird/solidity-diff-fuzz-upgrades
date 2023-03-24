@@ -22,6 +22,10 @@ interface CheatCodes {
     function addr(uint sk) external returns (address addr);
     // Sets the msg.sender to sender for the following call
     function prank(address sender) external;
+    // Saves the current global state and creates a new fork, returning an identifier to use with selectFork(forkId)
+    function createFork() external returns (uint256 forkId);
+    // Sets the global state to that of the fork with the given forkId
+    function selectFork(uint256 forkId) external;
 }
 
 /**
