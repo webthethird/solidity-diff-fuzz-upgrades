@@ -63,11 +63,9 @@ contract TestComptroller is Test {
         // Read pre-defined list of known Compound users from file (first line is the number of addresses)
         num_users = vm.parseUint(vm.readLine(USERS_FILE));
         users = new address[](num_users);
-        // users_tested = new address[](num_users);
         console2.log("Number of addresses: %s", num_users);
         for(uint i = 0; i < num_users; i++) {
             address user_addr = vm.parseAddress(vm.readLine(USERS_FILE));
-            // console.log(i, user_addr);
             users[i] = user_addr;
         }
         vm.closeFile(USERS_FILE);
@@ -85,34 +83,21 @@ contract TestComptroller is Test {
      * 
      * Uses a pre-defined list of known participant addresses to choose randomly from.
      */
-    function test_claimComp_diff_before_after(uint16 _index) public { //, bool _double, bool _fromRear) public {
+    function test_claimComp_diff_before_after(uint16 _index) public {
         uint index = uint(_index) % num_users;
         address holder = users[index];
-
-        vm.assume(users_tested[holder] == false);
-        users_tested[holder] = true;
-
-        console2.log("Index %s", index);
-        console2.log("Address %s", holder);
 
         vm.writeLine(LOG_FILE, string.concat("index:  ", vm.toString(index)));
         vm.writeLine(LOG_FILE, string.concat("holder: ", vm.toString(holder)));
 
         vm.selectFork(after_fork_id);
 
-        // Disregard test run if the given address is not a participant in any Compound markets
-        // CToken[] memory assetsIn = unitroller.getAssetsIn(holder);
-        // vm.assume(assetsIn.length > 0);
-
         // Check the COMP balance of the holder before and after claiming from the upgraded Comptroller
         Multicall2.Call[] memory calls = new Multicall2.Call[](3);
-        // uint256 balance_before = comp.balanceOf(holder);
         calls[0].target = address(COMP);
         calls[0].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
-        // unitroller.claimComp(holder);
         calls[1].target = address(UNITROLLER);
         calls[1].callData = abi.encodeWithSignature("claimComp(address)", holder);
-        // uint256 new_balance_before = comp.balanceOf(holder);
         calls[2].target = address(COMP);
         calls[2].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
         
@@ -126,13 +111,11 @@ contract TestComptroller is Test {
 
         // Switch to the fork from before the upgrade, then perform the same calls
         vm.selectFork(before_fork_id);
+
         Multicall2.Result[] memory results_before = MULTI.tryAggregate(true, calls);
         uint256 balance_before = abi.decode(results_before[0].returnData, (uint256));
         uint256 new_balance_before = abi.decode(results_before[2].returnData, (uint256));
         uint256 delta_before = new_balance_before - balance_before;
-
-        console2.log("Delta before = %s", delta_before);
-        console2.log("Delta after = %s", delta_after);
 
         vm.writeLine(LOG_FILE, string.concat("Delta before: ", vm.toString(delta_before)));
         vm.writeLine(LOG_FILE, string.concat("Delta after:  ", vm.toString(delta_after)));
@@ -155,9 +138,6 @@ contract TestComptroller is Test {
         vm.assume(users_tested[holder] == false);
         users_tested[holder] = true;
 
-        console2.log("Index %s", index);
-        console2.log("Address %s", holder);
-
         vm.writeLine(LOG_FILE, string.concat("index:  ", vm.toString(index)));
         vm.writeLine(LOG_FILE, string.concat("holder: ", vm.toString(holder)));
 
@@ -165,13 +145,10 @@ contract TestComptroller is Test {
 
         // Check the COMP balance of the holder before and after claiming from the upgraded Comptroller
         Multicall2.Call[] memory calls = new Multicall2.Call[](3);
-        // uint256 balance_before = comp.balanceOf(holder);
         calls[0].target = address(COMP);
         calls[0].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
-        // unitroller.claimComp(holder);
         calls[1].target = address(UNITROLLER);
         calls[1].callData = abi.encodeWithSignature("claimComp(address)", holder);
-        // uint256 new_balance_before = comp.balanceOf(holder);
         calls[2].target = address(COMP);
         calls[2].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
         
@@ -197,9 +174,6 @@ contract TestComptroller is Test {
 
         // Discard test if any of the calls reverted
         vm.assume(results_before[0].success && results_before[1].success && results_before[2].success);
-
-        console2.log("Delta before = %s", delta_before);
-        console2.log("Delta after = %s", delta_after);
 
         vm.writeLine(LOG_FILE, string.concat("Delta before: ", vm.toString(delta_before)));
         vm.writeLine(LOG_FILE, string.concat("Delta after:  ", vm.toString(delta_after)));
@@ -224,19 +198,14 @@ contract TestComptroller is Test {
         CToken[] memory assetsIn = UNITROLLER.getAssetsIn(holder);
         vm.assume(assetsIn.length > 0);
 
-        console2.log("Address %s", holder);
-
         vm.writeLine(LOG_FILE, string.concat("holder: ", vm.toString(holder)));
 
         // Check the COMP balance of the holder before and after claiming from the upgraded Comptroller
         Multicall2.Call[] memory calls = new Multicall2.Call[](3);
-        // uint256 balance_before = comp.balanceOf(holder);
         calls[0].target = address(COMP);
         calls[0].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
-        // unitroller.claimComp(holder);
         calls[1].target = address(UNITROLLER);
         calls[1].callData = abi.encodeWithSignature("claimComp(address)", holder);
-        // uint256 new_balance_before = comp.balanceOf(holder);
         calls[2].target = address(COMP);
         calls[2].callData = abi.encodeWithSelector(COMP.balanceOf.selector, holder);
         
@@ -263,9 +232,6 @@ contract TestComptroller is Test {
         // Discard test if any of the calls reverted
         vm.assume(results_before[0].success && results_before[1].success && results_before[2].success);
 
-        console2.log("Delta before = %s", delta_before);
-        console2.log("Delta after = %s", delta_after);
-
         vm.writeLine(LOG_FILE, string.concat("Delta before: ", vm.toString(delta_before)));
         vm.writeLine(LOG_FILE, string.concat("Delta after:  ", vm.toString(delta_after)));
         vm.writeLine(LOG_FILE, "");
@@ -273,12 +239,4 @@ contract TestComptroller is Test {
         // Assert that the change in COMP balance is approximately equal on both forks (max delta of 5%)
         assertApproxEqRel(delta_before, delta_after, 5e16, "COMP balance deltas vary by more than 5%");
     }
-
-    // function test_changed_impl() public {
-    //     vm.selectFork(before_fork_id);
-    //     address impl_before = unitroller.comptrollerImplementation();
-    //     vm.rollFork(after_block);
-    //     address impl_after = unitroller.comptrollerImplementation();
-    //     assertFalse(impl_before == impl_after);
-    // }
 }
