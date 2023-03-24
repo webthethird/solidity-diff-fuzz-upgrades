@@ -340,7 +340,7 @@ contract DiffFuzzUpgrades {
                 comptrollerV2._supportMarket.selector, a
             )
         );
-        (bool success1, bytes memory output1) = address(comptrollerV1).call(
+        (bool success1, bytes memory output1) = address(unitrollerV1).call(
             abi.encodeWithSelector(
                 comptrollerV1._supportMarket.selector, a
             )
@@ -349,356 +349,356 @@ contract DiffFuzzUpgrades {
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comptroller__become(address a) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._become.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._become.selector, a
-            )
-        );
-        assert(success1 == success2);
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
+//    function Comptroller__become(address a) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._become.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._become.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
 
 
     /*** Tainted Functions ***/ 
 
-    function Comptroller_checkMembership(address a, address b) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.checkMembership.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.checkMembership.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
+//    function Comptroller_checkMembership(address a, address b) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.checkMembership.selector, a, b
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.checkMembership.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller_exitMarket(address a) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.exitMarket.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.exitMarket.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller_mintAllowed(address a, address b, uint256 c) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.mintAllowed.selector, a, b, c
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.mintAllowed.selector, a, b, c
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller_redeemAllowed(address a, address b, uint256 c) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.redeemAllowed.selector, a, b, c
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.redeemAllowed.selector, a, b, c
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller_borrowAllowed(address a, address b, uint256 c) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.borrowAllowed.selector, a, b, c
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.borrowAllowed.selector, a, b, c
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller_repayBorrowAllowed(address a, address b, address c, uint256 d) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.repayBorrowAllowed.selector, a, b, c, d
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.repayBorrowAllowed.selector, a, b, c, d
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller_liquidateBorrowAllowed(address a, address b, address c, address d, uint256 e) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.liquidateBorrowAllowed.selector, a, b, c, d, e
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.liquidateBorrowAllowed.selector, a, b, c, d, e
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller_seizeAllowed(address a, address b, address c, address d, uint256 e) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.seizeAllowed.selector, a, b, c, d, e
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.seizeAllowed.selector, a, b, c, d, e
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller_transferAllowed(address a, address b, address c, uint256 d) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.transferAllowed.selector, a, b, c, d
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.transferAllowed.selector, a, b, c, d
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller__setPriceOracle(address a) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setPriceOracle.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setPriceOracle.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller__setCloseFactor(uint256 a) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setCloseFactor.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setCloseFactor.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller__setCollateralFactor(address a, uint256 b) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setCollateralFactor.selector, a, b
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setCollateralFactor.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller__setLiquidationIncentive(uint256 a) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setLiquidationIncentive.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setLiquidationIncentive.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller__setMarketBorrowCaps(address[] calldata a, uint256[] calldata b) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setMarketBorrowCaps.selector, a, b
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setMarketBorrowCaps.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller__setBorrowCapGuardian(address a) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setBorrowCapGuardian.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setBorrowCapGuardian.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller__setPauseGuardian(address a) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setPauseGuardian.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setPauseGuardian.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller__setMintPaused(address a, bool b) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setMintPaused.selector, a, b
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setMintPaused.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller__setBorrowPaused(address a, bool b) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setBorrowPaused.selector, a, b
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setBorrowPaused.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller__setTransferPaused(bool a) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setTransferPaused.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setTransferPaused.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller__setSeizePaused(bool a) public virtual {
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setSeizePaused.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setSeizePaused.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller_updateContributorRewards(address a) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.updateContributorRewards.selector, a
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.updateContributorRewards.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
 
-    function Comptroller_exitMarket(address a) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.exitMarket.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.exitMarket.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_mintAllowed(address a, address b, uint256 c) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.mintAllowed.selector, a, b, c
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.mintAllowed.selector, a, b, c
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_redeemAllowed(address a, address b, uint256 c) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.redeemAllowed.selector, a, b, c
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.redeemAllowed.selector, a, b, c
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_borrowAllowed(address a, address b, uint256 c) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.borrowAllowed.selector, a, b, c
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.borrowAllowed.selector, a, b, c
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_repayBorrowAllowed(address a, address b, address c, uint256 d) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.repayBorrowAllowed.selector, a, b, c, d
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.repayBorrowAllowed.selector, a, b, c, d
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_liquidateBorrowAllowed(address a, address b, address c, address d, uint256 e) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.liquidateBorrowAllowed.selector, a, b, c, d, e
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.liquidateBorrowAllowed.selector, a, b, c, d, e
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_seizeAllowed(address a, address b, address c, address d, uint256 e) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.seizeAllowed.selector, a, b, c, d, e
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.seizeAllowed.selector, a, b, c, d, e
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_transferAllowed(address a, address b, address c, uint256 d) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.transferAllowed.selector, a, b, c, d
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.transferAllowed.selector, a, b, c, d
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setPriceOracle(address a) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setPriceOracle.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setPriceOracle.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setCloseFactor(uint256 a) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setCloseFactor.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setCloseFactor.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setCollateralFactor(address a, uint256 b) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setCollateralFactor.selector, a, b
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setCollateralFactor.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setLiquidationIncentive(uint256 a) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setLiquidationIncentive.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setLiquidationIncentive.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setMarketBorrowCaps(address[] calldata a, uint256[] calldata b) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setMarketBorrowCaps.selector, a, b
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setMarketBorrowCaps.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setBorrowCapGuardian(address a) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setBorrowCapGuardian.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setBorrowCapGuardian.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setPauseGuardian(address a) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setPauseGuardian.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setPauseGuardian.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setMintPaused(address a, bool b) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setMintPaused.selector, a, b
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setMintPaused.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setBorrowPaused(address a, bool b) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setBorrowPaused.selector, a, b
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setBorrowPaused.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setTransferPaused(bool a) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setTransferPaused.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setTransferPaused.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller__setSeizePaused(bool a) public {
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setSeizePaused.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setSeizePaused.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_updateContributorRewards(address a) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.updateContributorRewards.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.updateContributorRewards.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_claimComp(address a) public {
+    function Comptroller_claimComp(address a) public virtual {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(unitrollerV2).call(
             abi.encodeWithSelector(
@@ -715,7 +715,7 @@ contract DiffFuzzUpgrades {
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-//    function Comptroller_claimComp(address[] memory a, address[] memory b, bool c, bool d) public {
+//    function Comptroller_claimComp(address[] memory a, address[] memory b, bool c, bool d) public virtual {
 //        hevm.prank(msg.sender);
 //        (bool success2, bytes memory output2) = address(unitrollerV2).call(
 //            abi.encodeWithSelector(
@@ -732,39 +732,39 @@ contract DiffFuzzUpgrades {
 //        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
 //    }
 
-    function Comptroller_getAllMarkets() public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.getAllMarkets.selector
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.getAllMarkets.selector
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comptroller_isDeprecated(address a) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(unitrollerV2).call(
-            abi.encodeWithSelector(
-                comptrollerV2.isDeprecated.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(unitrollerV1).call(
-            abi.encodeWithSelector(
-                comptrollerV1.isDeprecated.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
+//    function Comptroller_getAllMarkets() public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.getAllMarkets.selector
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.getAllMarkets.selector
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comptroller_isDeprecated(address a) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(unitrollerV2).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.isDeprecated.selector, a
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(unitrollerV1).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.isDeprecated.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
 
 
     /*** New Functions ***/ 
@@ -774,7 +774,7 @@ contract DiffFuzzUpgrades {
     // is a new function, which appears to replace a function with a similar name,
     // Comptroller._setCompSpeed(CToken,uint256).
     // If these functions have different arguments, this function may be incorrect.
-//    function Comptroller__setCompSpeeds(address[] memory a, uint256[] memory b, uint256[] memory c) public {
+//    function Comptroller__setCompSpeeds(address[] memory a, uint256[] memory b, uint256[] memory c) public virtual {
 //        (bool success2, bytes memory output2) = address(unitrollerV2).call(
 //            abi.encodeWithSelector(
 //                comptrollerV2._setCompSpeeds.selector, a, b, c
@@ -901,259 +901,259 @@ contract DiffFuzzUpgrades {
 //        assert(success1 == success2);
 //        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
 //    }
+//
+//    function CErc20_transfer(address a, uint256 b) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.transfer.selector, a, b
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.transfer.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_transferFrom(address a, address b, uint256 c) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.transferFrom.selector, a, b, c
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.transferFrom.selector, a, b, c
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_approve(address a, uint256 b) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.approve.selector, a, b
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.approve.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_allowance(address a, address b) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.allowance.selector, a, b
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.allowance.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_balanceOf(address a) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.balanceOf.selector, a
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.balanceOf.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_balanceOfUnderlying(address a) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.balanceOfUnderlying.selector, a
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.balanceOfUnderlying.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_getAccountSnapshot(address a) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.getAccountSnapshot.selector, a
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.getAccountSnapshot.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_borrowRatePerBlock() public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.borrowRatePerBlock.selector
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.borrowRatePerBlock.selector
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_supplyRatePerBlock() public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.supplyRatePerBlock.selector
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.supplyRatePerBlock.selector
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_totalBorrowsCurrent() public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.totalBorrowsCurrent.selector
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.totalBorrowsCurrent.selector
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_borrowBalanceCurrent(address a) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.borrowBalanceCurrent.selector, a
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.borrowBalanceCurrent.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_borrowBalanceStored(address a) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.borrowBalanceStored.selector, a
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.borrowBalanceStored.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_exchangeRateCurrent() public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.exchangeRateCurrent.selector
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.exchangeRateCurrent.selector
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_exchangeRateStored() public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.exchangeRateStored.selector
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.exchangeRateStored.selector
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_getCash() public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.getCash.selector
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.getCash.selector
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
 
-    function CErc20_transfer(address a, uint256 b) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.transfer.selector, a, b
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.transfer.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_transferFrom(address a, address b, uint256 c) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.transferFrom.selector, a, b, c
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.transferFrom.selector, a, b, c
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_approve(address a, uint256 b) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.approve.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.approve.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_allowance(address a, address b) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.allowance.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.allowance.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_balanceOf(address a) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.balanceOf.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.balanceOf.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_balanceOfUnderlying(address a) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.balanceOfUnderlying.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.balanceOfUnderlying.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_getAccountSnapshot(address a) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.getAccountSnapshot.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.getAccountSnapshot.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_borrowRatePerBlock() public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.borrowRatePerBlock.selector
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.borrowRatePerBlock.selector
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_supplyRatePerBlock() public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.supplyRatePerBlock.selector
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.supplyRatePerBlock.selector
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_totalBorrowsCurrent() public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.totalBorrowsCurrent.selector
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.totalBorrowsCurrent.selector
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_borrowBalanceCurrent(address a) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.borrowBalanceCurrent.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.borrowBalanceCurrent.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_borrowBalanceStored(address a) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.borrowBalanceStored.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.borrowBalanceStored.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_exchangeRateCurrent() public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.exchangeRateCurrent.selector
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.exchangeRateCurrent.selector
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_exchangeRateStored() public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.exchangeRateStored.selector
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.exchangeRateStored.selector
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_getCash() public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.getCash.selector
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.getCash.selector
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_accrueInterest() public {
+    function CErc20_accrueInterest() public virtual {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(cErc20V2).call(
             abi.encodeWithSelector(
@@ -1170,132 +1170,134 @@ contract DiffFuzzUpgrades {
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CErc20_seize(address a, address b, uint256 c) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.seize.selector, a, b, c
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.seize.selector, a, b, c
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20__setPendingAdmin(address a) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2._setPendingAdmin.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1._setPendingAdmin.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20__acceptAdmin() public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2._acceptAdmin.selector
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1._acceptAdmin.selector
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20__setComptroller(address a) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2._setComptroller.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1._setComptroller.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20__setReserveFactor(uint256 a) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2._setReserveFactor.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1._setReserveFactor.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20__reduceReserves(uint256 a) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2._reduceReserves.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1._reduceReserves.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20__setInterestRateModel(address a) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2._setInterestRateModel.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1._setInterestRateModel.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_initialize(address a, address b, address c, uint256 d, string memory e, string memory f, uint8 g) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.initialize.selector, a, b, c, d, e, f, g
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.initialize.selector, a, b, c, d, e, f, g
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
+//    function CErc20_seize(address a, address b, uint256 c) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.seize.selector, a, b, c
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.seize.selector, a, b, c
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20__setPendingAdmin(address a) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2._setPendingAdmin.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1._setPendingAdmin.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20__acceptAdmin() public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2._acceptAdmin.selector
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1._acceptAdmin.selector
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20__setComptroller(address a) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2._setComptroller.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1._setComptroller.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20__setReserveFactor(uint256 a) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2._setReserveFactor.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1._setReserveFactor.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20__reduceReserves(uint256 a) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2._reduceReserves.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1._reduceReserves.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20__setInterestRateModel(address a) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2._setInterestRateModel.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1._setInterestRateModel.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_initialize(address a, address b, address c, uint256 d, string memory e, string memory f, uint8 g) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.initialize.selector, a, b, c, d, e, f, g
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.initialize.selector, a, b, c, d, e, f, g
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
 
     function CErc20_mint(uint256 a) public virtual {
+        hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(cErc20V2).call(
             abi.encodeWithSelector(
                 cErc20V2.mint.selector, a
             )
         );
+        hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(cErc20V1).call(
             abi.encodeWithSelector(
                 cErc20V1.mint.selector, a
@@ -1305,7 +1307,7 @@ contract DiffFuzzUpgrades {
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CErc20_redeem(uint256 a) public {
+    function CErc20_redeem(uint256 a) public virtual {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(cErc20V2).call(
             abi.encodeWithSelector(
@@ -1322,277 +1324,277 @@ contract DiffFuzzUpgrades {
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function CErc20_redeemUnderlying(uint256 a) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.redeemUnderlying.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.redeemUnderlying.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
+//    function CErc20_redeemUnderlying(uint256 a) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.redeemUnderlying.selector, a
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.redeemUnderlying.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_borrow(uint256 a) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.borrow.selector, a
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.borrow.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_repayBorrow(uint256 a) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.repayBorrow.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.repayBorrow.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_repayBorrowBehalf(address a, uint256 b) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.repayBorrowBehalf.selector, a, b
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.repayBorrowBehalf.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_liquidateBorrow(address a, uint256 b, address c) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.liquidateBorrow.selector, a, b, c
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.liquidateBorrow.selector, a, b, c
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20_sweepToken(address a) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2.sweepToken.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1.sweepToken.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20__addReserves(uint256 a) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2._addReserves.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1._addReserves.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function CErc20__delegateCompLikeTo(address a) public virtual {
+//        (bool success2, bytes memory output2) = address(cErc20V2).call(
+//            abi.encodeWithSelector(
+//                cErc20V2._delegateCompLikeTo.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(cErc20V1).call(
+//            abi.encodeWithSelector(
+//                cErc20V1._delegateCompLikeTo.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comp_allowance(address a, address b) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(compV2).call(
+//            abi.encodeWithSelector(
+//                compV2.allowance.selector, a, b
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(compV1).call(
+//            abi.encodeWithSelector(
+//                compV1.allowance.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comp_approve(address a, uint256 b) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(compV2).call(
+//            abi.encodeWithSelector(
+//                compV2.approve.selector, a, b
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(compV1).call(
+//            abi.encodeWithSelector(
+//                compV1.approve.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
 
-    function CErc20_borrow(uint256 a) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.borrow.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.borrow.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_repayBorrow(uint256 a) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.repayBorrow.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.repayBorrow.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_repayBorrowBehalf(address a, uint256 b) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.repayBorrowBehalf.selector, a, b
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.repayBorrowBehalf.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_liquidateBorrow(address a, uint256 b, address c) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.liquidateBorrow.selector, a, b, c
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.liquidateBorrow.selector, a, b, c
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20_sweepToken(address a) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2.sweepToken.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1.sweepToken.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20__addReserves(uint256 a) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2._addReserves.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1._addReserves.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function CErc20__delegateCompLikeTo(address a) public {
-        (bool success2, bytes memory output2) = address(cErc20V2).call(
-            abi.encodeWithSelector(
-                cErc20V2._delegateCompLikeTo.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(cErc20V1).call(
-            abi.encodeWithSelector(
-                cErc20V1._delegateCompLikeTo.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comp_allowance(address a, address b) public {
+    function Comp_balanceOf() public virtual {
         hevm.prank(msg.sender);
         (bool success2, bytes memory output2) = address(compV2).call(
             abi.encodeWithSelector(
-                compV2.allowance.selector, a, b
+                compV2.balanceOf.selector, msg.sender
             )
         );
         hevm.prank(msg.sender);
         (bool success1, bytes memory output1) = address(compV1).call(
             abi.encodeWithSelector(
-                compV1.allowance.selector, a, b
+                compV1.balanceOf.selector, msg.sender
             )
         );
         assert(success1 == success2); 
         assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
     }
 
-    function Comp_approve(address a, uint256 b) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(compV2).call(
-            abi.encodeWithSelector(
-                compV2.approve.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(compV1).call(
-            abi.encodeWithSelector(
-                compV1.approve.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comp_balanceOf(address a) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(compV2).call(
-            abi.encodeWithSelector(
-                compV2.balanceOf.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(compV1).call(
-            abi.encodeWithSelector(
-                compV1.balanceOf.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comp_transfer(address a, uint256 b) public {
-        (bool success2, bytes memory output2) = address(compV2).call(
-            abi.encodeWithSelector(
-                compV2.transfer.selector, a, b
-            )
-        );
-        (bool success1, bytes memory output1) = address(compV1).call(
-            abi.encodeWithSelector(
-                compV1.transfer.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comp_transferFrom(address a, address b, uint256 c) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(compV2).call(
-            abi.encodeWithSelector(
-                compV2.transferFrom.selector, a, b, c
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(compV1).call(
-            abi.encodeWithSelector(
-                compV1.transferFrom.selector, a, b, c
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comp_delegate(address a) public {
-        (bool success2, bytes memory output2) = address(compV2).call(
-            abi.encodeWithSelector(
-                compV2.delegate.selector, a
-            )
-        );
-        (bool success1, bytes memory output1) = address(compV1).call(
-            abi.encodeWithSelector(
-                compV1.delegate.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comp_delegateBySig(address a, uint256 b, uint256 c, uint8 d, bytes32 e, bytes32 f) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(compV2).call(
-            abi.encodeWithSelector(
-                compV2.delegateBySig.selector, a, b, c, d, e, f
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(compV1).call(
-            abi.encodeWithSelector(
-                compV1.delegateBySig.selector, a, b, c, d, e, f
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comp_getCurrentVotes(address a) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(compV2).call(
-            abi.encodeWithSelector(
-                compV2.getCurrentVotes.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(compV1).call(
-            abi.encodeWithSelector(
-                compV1.getCurrentVotes.selector, a
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
-
-    function Comp_getPriorVotes(address a, uint256 b) public {
-        hevm.prank(msg.sender);
-        (bool success2, bytes memory output2) = address(compV2).call(
-            abi.encodeWithSelector(
-                compV2.getPriorVotes.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool success1, bytes memory output1) = address(compV1).call(
-            abi.encodeWithSelector(
-                compV1.getPriorVotes.selector, a, b
-            )
-        );
-        assert(success1 == success2); 
-        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
-    }
+//    function Comp_transfer(address a, uint256 b) public virtual {
+//        (bool success2, bytes memory output2) = address(compV2).call(
+//            abi.encodeWithSelector(
+//                compV2.transfer.selector, a, b
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(compV1).call(
+//            abi.encodeWithSelector(
+//                compV1.transfer.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comp_transferFrom(address a, address b, uint256 c) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(compV2).call(
+//            abi.encodeWithSelector(
+//                compV2.transferFrom.selector, a, b, c
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(compV1).call(
+//            abi.encodeWithSelector(
+//                compV1.transferFrom.selector, a, b, c
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comp_delegate(address a) public virtual {
+//        (bool success2, bytes memory output2) = address(compV2).call(
+//            abi.encodeWithSelector(
+//                compV2.delegate.selector, a
+//            )
+//        );
+//        (bool success1, bytes memory output1) = address(compV1).call(
+//            abi.encodeWithSelector(
+//                compV1.delegate.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comp_delegateBySig(address a, uint256 b, uint256 c, uint8 d, bytes32 e, bytes32 f) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(compV2).call(
+//            abi.encodeWithSelector(
+//                compV2.delegateBySig.selector, a, b, c, d, e, f
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(compV1).call(
+//            abi.encodeWithSelector(
+//                compV1.delegateBySig.selector, a, b, c, d, e, f
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comp_getCurrentVotes(address a) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(compV2).call(
+//            abi.encodeWithSelector(
+//                compV2.getCurrentVotes.selector, a
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(compV1).call(
+//            abi.encodeWithSelector(
+//                compV1.getCurrentVotes.selector, a
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
+//
+//    function Comp_getPriorVotes(address a, uint256 b) public virtual {
+//        hevm.prank(msg.sender);
+//        (bool success2, bytes memory output2) = address(compV2).call(
+//            abi.encodeWithSelector(
+//                compV2.getPriorVotes.selector, a, b
+//            )
+//        );
+//        hevm.prank(msg.sender);
+//        (bool success1, bytes memory output1) = address(compV1).call(
+//            abi.encodeWithSelector(
+//                compV1.getPriorVotes.selector, a, b
+//            )
+//        );
+//        assert(success1 == success2);
+//        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));
+//    }
 
 }
