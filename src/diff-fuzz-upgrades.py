@@ -6,7 +6,7 @@ import time
 import os
 import subprocess
 import difflib
-from typing import Any, TypedDict, List, Tuple, None
+from typing import Any, TypedDict, List, Tuple
 from solc_select.solc_select import (
     switch_global_version,
     installed_versions,
