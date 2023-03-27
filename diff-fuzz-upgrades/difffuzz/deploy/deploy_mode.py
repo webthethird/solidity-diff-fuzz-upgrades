@@ -611,7 +611,14 @@ def deploy_mode(args: argparse.Namespace):
         proxy = None
 
     if args.fuzz_upgrade:
-        upgrade = True
+        if args.proxy:
+            upgrade = True
+        else:
+            crytic_print(
+                PrintMode.WARNING, 
+                "  * Upgrade during fuzz sequence specified via command line parameter, but no proxy was specified. Ignoring..."
+            )
+            upgrade = False
     else:
         upgrade = False
 
