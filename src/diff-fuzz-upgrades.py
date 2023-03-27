@@ -425,14 +425,14 @@ def wrap_diff_function(v1: ContractData, v2: ContractData, func: FunctionInfo, f
     ) = get_args_and_returns_for_wrapping(func2)
 
     wrapped += f"    function {v2['name']}_{func2['name']}{args} public virtual {{\n"
-    if func2['protected']:
+    if not func2['protected']:
         wrapped += "        hevm.prank(msg.sender);\n"
     wrapped += wrap_low_level_call(v2, func2, call_args, "V2", proxy)
     # if len(return_vals) > 0:
     #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
     # else:
     #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
-    if func['protected']:
+    if not func['protected']:
         wrapped += "        hevm.prank(msg.sender);\n"
     if func != func2:
         _, call_args, _, _ = get_args_and_returns_for_wrapping(func)
