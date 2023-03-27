@@ -1108,6 +1108,8 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
         }
     }
 
+    event DoingMath(string operation, uint num1, uint num2);
+
     /**
      * @notice Accrue COMP to the market by updating the supply index
      * @param cToken The market whose supply index to update
@@ -1116,12 +1118,15 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
     function updateCompSupplyIndex(address cToken) internal {
         CompMarketState storage supplyState = compSupplyState[cToken];
         uint supplySpeed = compSpeeds[cToken];
+        emit DoingMath("safe32, sub", uint(getBlockNumber()), uint(supplyState.block));
         uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
         uint deltaBlocks = sub_(uint(blockNumber), uint(supplyState.block));
         if (deltaBlocks > 0 && supplySpeed > 0) {
             uint supplyTokens = CToken(cToken).totalSupply();
+            emit DoingMath("mul", deltaBlocks, supplySpeed);
             uint compAccrued = mul_(deltaBlocks, supplySpeed);
             Double memory ratio = supplyTokens > 0 ? fraction(compAccrued, supplyTokens) : Double({mantissa: 0});
+            emit DoingMath("updateCompSupplyIndex: safe224, add", supplyState.index, ratio.mantissa);
             supplyState.index = safe224(add_(Double({mantissa: supplyState.index}), ratio).mantissa, "new index exceeds 224 bits");
             supplyState.block = blockNumber;
         } else if (deltaBlocks > 0) {
@@ -1137,12 +1142,16 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
     function updateCompBorrowIndex(address cToken, Exp memory marketBorrowIndex) internal {
         CompMarketState storage borrowState = compBorrowState[cToken];
         uint borrowSpeed = compSpeeds[cToken];
+        emit DoingMath("safe32, sub", uint(getBlockNumber()), uint(borrowState.block));
         uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
         uint deltaBlocks = sub_(uint(blockNumber), uint(borrowState.block));
         if (deltaBlocks > 0 && borrowSpeed > 0) {
+            emit DoingMath("div", CToken(cToken).totalBorrows(), marketBorrowIndex.mantissa);
             uint borrowAmount = div_(CToken(cToken).totalBorrows(), marketBorrowIndex);
+            emit DoingMath("mul", deltaBlocks, borrowSpeed);
             uint compAccrued = mul_(deltaBlocks, borrowSpeed);
             Double memory ratio = borrowAmount > 0 ? fraction(compAccrued, borrowAmount) : Double({mantissa: 0});
+            emit DoingMath("updateCompBorrowIndex: safe224, add", borrowState.index, ratio.mantissa);
             borrowState.index = safe224(add_(Double({mantissa: borrowState.index}), ratio).mantissa, "new index exceeds 224 bits");
             borrowState.block = blockNumber;
         } else if (deltaBlocks > 0) {

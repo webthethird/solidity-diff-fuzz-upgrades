@@ -49,7 +49,10 @@ interface CToken {
     /*** User Interface ***/
 
     function admin() external returns (address);
+    function comptroller() external returns (ComptrollerInterface);
+    function interestRateModel() external returns (InterestRateModel);
     function isCToken() external returns (bool);
+    function initialExchangeRateMantissa() external view returns (uint);
     function reserveFactorMantissa() external view returns (uint);
     function collateralFactorMantissa() external view returns (uint);
     function transfer(address dst, uint amount) external returns (bool);
@@ -77,6 +80,45 @@ interface CToken {
     function _acceptAdmin() external returns (uint);
     function _setReserveFactor(uint newReserveFactorMantissa) external returns (uint);
     function _reduceReserves(uint reduceAmount) external returns (uint);
+}
+
+interface EIP20NonStandardInterface {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address owner) external view returns (uint256 balance);
+    function transfer(address dst, uint256 amount) external;
+    function transferFrom(address src, address dst, uint256 amount) external;
+    function approve(address spender, uint256 amount) external returns (bool success);
+    function allowance(address owner, address spender) external view returns (uint256 remaining);
+
+    event Transfer(address indexed from, address indexed to, uint256 amount);
+    event Approval(address indexed owner, address indexed spender, uint256 amount);
+}
+
+abstract contract InterestRateModel {
+    bool public constant isInterestRateModel = true;
+
+    function getBorrowRate(uint cash, uint borrows, uint reserves) virtual external view returns (uint);
+    function getSupplyRate(uint cash, uint borrows, uint reserves, uint reserveFactorMantissa) virtual external view returns (uint);
+}
+
+interface Fauceteer {
+    function drip(EIP20NonStandardInterface token) external;
+}
+
+interface CErc20Storage {
+    function underlying() external returns (address);
+}
+
+interface CErc20Interface is CToken, CErc20Storage {
+    function mint(uint mintAmount) external returns (uint);
+    function redeem(uint redeemTokens) external returns (uint);
+    function redeemUnderlying(uint redeemAmount) external returns (uint);
+    function borrow(uint borrowAmount) external returns (uint);
+    function repayBorrow(uint repayAmount) external returns (uint);
+    function repayBorrowBehalf(address borrower, uint repayAmount) external returns (uint);
+    function liquidateBorrow(address borrower, uint repayAmount, CToken cTokenCollateral) external returns (uint);
+    function sweepToken(EIP20NonStandardInterface token) external;
+    function _addReserves(uint addAmount) external returns (uint);
 }
 
 interface PriceOracle {
