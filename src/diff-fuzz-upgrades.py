@@ -6,6 +6,7 @@ import time
 import os
 import subprocess
 import difflib
+from typing import Any, TypedDict, List, Tuple, None
 from solc_select.solc_select import (
     switch_global_version,
     installed_versions,
@@ -17,21 +18,59 @@ from slither import Slither
 from slither.exceptions import SlitherError
 from slither.utils.upgradeability import compare, get_proxy_implementation_slot
 from slither.utils.type import convert_type_for_solidity_signature_to_string
-from eth_utils import to_checksum_address, is_address
+from slither.utils.code_generation import generate_interface
 from slither.core.declarations.contract import Contract
 from slither.core.declarations.function import Function
 from slither.core.variables.state_variable import StateVariable
+from slither.core.variables.local_variable import LocalVariable
 from slither.core.declarations.enum import Enum
-from slither.core.solidity_types.elementary_type import ElementaryType
-from slither.core.solidity_types.user_defined_type import UserDefinedType
-from slither.core.solidity_types.array_type import ArrayType
-from slither.core.solidity_types.mapping_type import MappingType
+from slither.core.solidity_types import (
+    Type,
+    ElementaryType,
+    UserDefinedType,
+    ArrayType,
+    MappingType
+)
 from slither.core.declarations.structure import Structure
 from slither.core.declarations.structure_contract import StructureContract
 from crytic_compile import InvalidCompilation
 from eth_utils import to_checksum_address, is_address
 from eth_typing.evm import ChecksumAddress
 from colorama import Back, Fore, Style, init as colorama_init
+
+
+SUPPORTED_NETWORKS = [ "mainet","optim","ropsten","kovan","rinkeby","goerli","tobalaba","bsc","testnet.bsc","arbi","testnet.arbi","poly","mumbai","avax","testnet.avax","ftm"]
+WEB3_RPC_ENV_VARS  = [ "WEB3_PROVIDER_URI", "ECHIDNA_RPC_URL", "RPC_URL" ]
+
+class FunctionInfo(TypedDict):
+    name: str
+    function: Function
+    inputs: List[str]
+    outputs: List[str]
+    protected: bool
+
+class ContractData(TypedDict):
+    # Blockchain info
+    address: str
+    block: str
+    prefix: str
+    valid_data: bool
+    web3_provider: Web3
+    # File info
+    path: str
+    solc_version: str
+    suffix: str
+    # Contract info
+    name: str
+    interface: str
+    interface_name: str
+    functions: List[FunctionInfo]
+    slither: Slither
+    contract_object: Contract
+    # Proxy info
+    is_proxy: bool    
+    implementation_object: Contract
+    implementation_slither: Slither
 
 
 class PrintMode(Enum):
@@ -42,7 +81,7 @@ class PrintMode(Enum):
     ERROR = 4
 
 
-def crytic_print(mode, message):
+def crytic_print(mode, message) -> None:
     if mode is PrintMode.MESSAGE:
         print(Style.BRIGHT + Fore.LIGHTBLUE_EX + message + Style.RESET_ALL)
     elif mode is PrintMode.SUCCESS:
@@ -55,7 +94,7 @@ def crytic_print(mode, message):
         print(Style.BRIGHT + Fore.LIGHTRED_EX + message + Style.RESET_ALL)
 
 
-def get_compilation_unit_name(slither_object):
+def get_compilation_unit_name(slither_object) -> str:
     name = list(slither_object.crytic_compile.compilation_units.keys())[0]
     if os.path.sep in name:
         name = name.rsplit(os.path.sep, maxsplit=1)[1]
@@ -64,12 +103,11 @@ def get_compilation_unit_name(slither_object):
     return name
 
 
-def get_solidity_function_parameters(parameters):
+def get_solidity_function_parameters(parameters: List[LocalVariable]) -> List[str]:
     """Get function parameters as solidity types.
     It can return additional interfaces/structs if parameter types are tupes
     """
     inputs = []
-    additional_interfaces = set()
 
     if len(parameters) > 0:
         for inp in parameters:
@@ -81,12 +119,6 @@ def get_solidity_function_parameters(parameters):
             elif isinstance(inp.type, UserDefinedType):
                 if isinstance(inp.type.type, Structure):
                     base_type = f"{inp.type.type.name} {inp.location}"
-
-                    new_type = f"struct {inp.type.type.name} {{\n"
-                    for t in inp.type.type.elems_ordered:
-                        new_type += f"    {convert_type_for_solidity_signature_to_string(t.type)} {t.name};\n"
-                    new_type += f"}}"
-                    additional_interfaces.add(new_type)
                 elif isinstance(inp.type.type, Contract):
                     base_type = convert_type_for_solidity_signature_to_string(inp.type)
 
@@ -97,11 +129,13 @@ def get_solidity_function_parameters(parameters):
 
             inputs.append(base_type)
 
-    return inputs, additional_interfaces
+    return inputs
 
 
-def get_solidity_function_returns(return_type):
-    """Get function return types as solidity types."""
+def get_solidity_function_returns(return_type: Type) -> List[str]:
+    """Get function return types as solidity types.
+    It can return additional interfaces/structs if parameter types are tupes
+    """
     outputs = []
 
     if not return_type:
@@ -109,120 +143,36 @@ def get_solidity_function_returns(return_type):
 
     if len(return_type) > 0:
         for out in return_type:
-            if (
-                isinstance(out, ElementaryType)
-                or isinstance(out, ArrayType)
-                or isinstance(out, UserDefinedType)
-            ):
+            if isinstance(out, ElementaryType):
                 base_type = convert_type_for_solidity_signature_to_string(out)
-                if out.is_dynamic or isinstance(out, ArrayType):
-                    base_type += f" memory"
-        outputs.append(base_type)
+                if out.is_dynamic:
+                    base_type += " memory"
+            elif isinstance(out, ArrayType):
+                if isinstance(out.type, UserDefinedType) and isinstance(out.type.type, Structure):
+                    base_type = f"{out.type.type.name}[] memory"
+                else:
+                    base_type = convert_type_for_solidity_signature_to_string(out)
+                    base_type += " memory"
+            elif isinstance(out, UserDefinedType):
+                if isinstance(out.type, Structure):
+                    base_type = f"{out.type.name} memory"
+                elif isinstance(out.type, (Contract, Enum)):
+                    base_type = convert_type_for_solidity_signature_to_string(out)
+            outputs.append(base_type)
 
     return outputs
 
 
-def get_interface_function_signature(name, inputs, outputs):
-    interface = f"    function {name}("
-
-    if inputs:
-        for i in inputs:
-            interface += f"{i},"
-        interface = f"{interface[0:-1]}"
-    interface += ") external"
-
-    if outputs:
-        interface += f" returns ("
-        for i in outputs:
-            interface += f"{i},"
-        interface = f"{interface[0:-1]})"
-    interface += ";\n"
-
-    return interface
-
-
-def structure_to_interface(structure):
-    nested = False
-
-    if isinstance(structure, Structure):
-        new_type = f"struct {structure.name} {{\n"
-        for t in structure.elems_ordered:
-            new_type += f"    {convert_type_for_solidity_signature_to_string(t.type)} {t.name};\n"
-        new_type += f"}}"
-        if "mapping(" in new_type:
-            # Nested mapping in structure, mark it
-            nested = True
-        return [new_type], nested
-    else:
-        return "", nested
-
-
-def get_solidity_getter_outputs(getter):
-    additional_interfaces = None
-    nested = False
-    itype = None
-
-    if isinstance(getter.type, MappingType):
-        itype = getter.type
-        while isinstance(itype.type_to, MappingType):
-            itype = itype.type_to
-        itype = itype.type_to
-        if isinstance(itype, ElementaryType) or isinstance(itype, ArrayType):
-            outputs = convert_type_for_solidity_signature_to_string(itype)
-        else:
-            outputs = str(itype.type)
-            additional_interfaces, nested = structure_to_interface(itype.type)
-        if itype.is_dynamic or isinstance(itype.type, Structure):
-            outputs += " memory"
-    elif isinstance(getter.type, ArrayType):
-        if isinstance(getter.type.type, UserDefinedType):
-            if isinstance(getter.type.type.type, StructureContract):
-                itype = getter.type.type.type
-                additional_interfaces, nested = structure_to_interface(itype)
-                outputs = f"{str(itype)}[] memory"
-            elif isinstance(getter.type.type.type, Contract):
-                outputs = f"address[] memory"
-        else:
-            outputs = convert_type_for_solidity_signature_to_string(getter.type.type)
-    elif isinstance(getter.type, UserDefinedType):
-        if isinstance(getter.type.type, StructureContract):
-            itype = getter.type.type
-            additional_interfaces, nested = structure_to_interface(itype)
-            outputs = f"{str(itype)} memory"
-        else:
-            outputs = convert_type_for_solidity_signature_to_string(getter.type)
-    else:
-        itype = getter.type
-        outputs = convert_type_for_solidity_signature_to_string(itype)
-
-    if (
-        outputs == "string" or outputs == "bytes" or "[]" in outputs
-    ) and not "memory" in outputs:
-        outputs += f" memory"
-
-    if isinstance(itype, UserDefinedType):
-        additional_interfaces, nested = structure_to_interface(itype.type)
-
-    return outputs, additional_interfaces, nested
-
-
-def get_contract_interface(contract_data, suffix=""):
+def get_contract_interface(contract_data: ContractData, suffix: str = "") -> dict:
     """Get contract ABI from Slither"""
 
     contract: Contract = contract_data["contract_object"]
-    interface = ""
 
     if not contract.functions_entry_points:
         raise ValueError("Contract has no public or external functions")
-    interface += f"interface I{contract.name}{suffix} {{\n"
 
     contract_info = dict()
     contract_info["functions"] = []
-    additional_interfaces = set()
-
-    entry_points_signatures = [
-        n.signature[0:2] for n in contract.functions_entry_points
-    ]
 
     for i in contract.functions_entry_points:
 
@@ -232,45 +182,25 @@ def get_contract_interface(contract_data, suffix=""):
 
         # Get info for interface and wrapper
         name = i.name
-
-        [inputs, additional] = get_solidity_function_parameters(i.parameters)
-        if additional:
-            additional_interfaces.update(additional)
-
+        inputs = get_solidity_function_parameters(i.parameters)
         outputs = get_solidity_function_returns(i.return_type)
         protected = i.is_protected()
 
-        # Only wrap state-modifying, not protected functions
-        # Might wrap protected functions anyway, as the modifiers can have any other name
-        # modifiers = list(map(str,i.modifiers))
-        # protected_mods = ["onlyAdmin", "onlyGov", "onlyOwner"]
-        # if not i.pure and not i.view and not set(modifiers).intersection(set(protected_mods)):
-        contract_info["functions"].append((name, inputs, outputs, protected))
-
-        interface += get_interface_function_signature(name, inputs, outputs)
-
-    for i in contract.state_variables_entry_points:
-        [name, inputs, _] = i.signature
-
-        # Avoid duplications from functions
-        if (name, inputs) in entry_points_signatures:
-            continue
-
-        [outputs, new_interfaces, nested] = get_solidity_getter_outputs(i)
-
-        if not nested:
-            if new_interfaces:
-                additional_interfaces.update(new_interfaces)
-
-            interface += get_interface_function_signature(name, inputs, [outputs])
-
-    interface += "}\n\n"
-
-    for ai in list(additional_interfaces):
-        interface += f"{ai}\n\n"
+        contract_info["functions"].append(
+            FunctionInfo(
+                name=name,
+                function=i,
+                inputs=inputs,
+                outputs=outputs,
+                protected=protected
+            )
+        )
 
     contract_info["name"] = contract.name
-    contract_info["interface"] = interface
+    contract_info["interface"] = generate_interface(contract, unroll_structs=False, skip_errors=True, skip_events=True).replace(
+        f"interface I{contract.name}",
+        f"interface I{contract.name}{suffix}"
+    )
     contract_info["interface_name"] = f"I{contract.name}{suffix}"
 
     return contract_info
@@ -319,7 +249,7 @@ def get_pragma_version_from_file(filepath: str) -> str:
     return ".".join(high_version)
 
 
-def get_contracts_from_comma_separated_paths(paths_string: str, suffix=""):
+def get_contracts_from_comma_separated_paths(paths_string: str, suffix: str = "") -> List[ContractData]:
     contracts = []
     filepaths = paths_string.split(",")
 
@@ -329,13 +259,15 @@ def get_contracts_from_comma_separated_paths(paths_string: str, suffix=""):
     return contracts
 
 
-def get_contract_data_from_path(filepath, suffix=""):
-    contract_data = dict()
+def get_contract_data_from_path(filepath: str, suffix: str = "") -> ContractData:
+    contract_data = ContractData()
 
     crytic_print(PrintMode.MESSAGE, f"* Getting contract data from {filepath}")
 
     contract_data["path"] = filepath
+    contract_data["suffix"] = suffix
     version = get_pragma_version_from_file(filepath)
+    contract_data["solc_version"] = version
     if version in installed_versions() or version in get_installable_versions():
         switch_global_version(version, True)
 
@@ -373,7 +305,7 @@ def get_contract_data_from_path(filepath, suffix=""):
     return contract_data
 
 
-def get_slither_object_from_path(filepath):
+def get_slither_object_from_path(filepath: str) -> Slither:
     if not os.path.exists(filepath):
         raise ValueError("File path does not exist!")
     try:
@@ -387,64 +319,64 @@ def get_slither_object_from_path(filepath):
         raise SlitherError(str(e))
 
 
-def wrap_functions(target):
+def wrap_functions(target: List[ContractData]) -> str:
     wrapped = ""
 
     if len(target) == 0:
         return wrapped
 
     for t in target:
-        functions_to_wrap = t["functions"]
+        functions_to_wrap: List[FunctionInfo] = t["functions"]
         for f in functions_to_wrap:
             args = "("
             call_args = "("
             counter = 0
-            if len(f[1]) == 0:
+            if len(f["inputs"]) == 0:
                 args += ")"
                 call_args += ")"
             else:
-                for i in f[1]:
+                for i in f["inputs"]:
                     args += f"{i} {chr(ord('a')+counter)}, "
                     call_args += f"{chr(ord('a')+counter)}, "
                     counter += 1
                 args = f"{args[0:-2]})"
                 call_args = f"{call_args[0:-2]})"
 
-            wrapped += f"    function {t['name']}_{f[0]}{args} public {{\n"
+            wrapped += f"    function {t['name']}_{f['name']}{args} public {{\n"
             wrapped += "        hevm.prank(msg.sender);\n"
             wrapped += f"        {t['name']}.{f[0]}{call_args};\n    }}\n\n"
 
     return wrapped
 
 
-def get_args_and_returns_for_wrapping(func):
+def get_args_and_returns_for_wrapping(func: FunctionInfo) -> Tuple[str, str, List[str], List[str]]:
     args = "("
     call_args = "("
     return_vals = []
     returns_to_compare = []
     counter = 0
-    if len(func[1]) == 0:
+    if len(func["inputs"]) == 0:
         args += ")"
         call_args += ")"
     else:
-        for i in func[1]:
+        for i in func["inputs"]:
             args += f"{i} {chr(ord('a') + counter)}, "
             call_args += f"{chr(ord('a') + counter)}, "
             counter += 1
         args = f"{args[0:-2]})"
         call_args = f"{call_args[0:-2]})"
-    if len(func[2]) == 0:
+    if len(func['outputs']) == 0:
         return_vals = ""
-    elif len(func[2]) == 1:
+    elif len(func['outputs']) == 1:
         for j in range(0, 2):
-            return_vals.append(f"{func[2][0]} {chr(ord('a') + counter)}")
+            return_vals.append(f"{func['outputs'][0]} {chr(ord('a') + counter)}")
             returns_to_compare.append(f"{chr(ord('a') + counter)}")
             counter += 1
     else:
         for j in range(0, 2):
             return_vals.append("(")
             returns_to_compare.append("(")
-            for i in func[2]:
+            for i in func['outputs']:
                 return_vals[j] += f"{i} {chr(ord('a') + counter)}, "
                 returns_to_compare[j] += f"{chr(ord('a') + counter)}, "
                 counter += 1
@@ -453,7 +385,7 @@ def get_args_and_returns_for_wrapping(func):
     return args, call_args, return_vals, returns_to_compare
 
 
-def wrap_additional_target_functions(targets):
+def wrap_additional_target_functions(targets: List[ContractData]) -> str:
     wrapped = ""
 
     if len(targets) == 0:
@@ -467,21 +399,21 @@ def wrap_additional_target_functions(targets):
     return wrapped
 
 
-def wrap_low_level_call(c: dict, func: Function, call_args: str, version: str, proxy=None):
+def wrap_low_level_call(c: ContractData, func: FunctionInfo, call_args: str, suffix: str, proxy=None) -> str:
     if proxy is None:
         target = camel_case(c['name'])
     else:
         target = camel_case(proxy['name'])
     wrapped = ""
-    wrapped += f"        (bool success{version}, bytes memory output{version}) = address({target}V{version}).call(\n"
+    wrapped += f"        (bool success{suffix}, bytes memory output{suffix}) = address({target}{suffix}).call(\n"
     wrapped += f"            abi.encodeWithSelector(\n"
-    wrapped += f"                {camel_case(c['name'])}V{version}.{func[0]}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
+    wrapped += f"                {camel_case(c['name'])}{suffix}.{func['name']}.selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
     wrapped += f"            )\n"
     wrapped += f"        );\n"
     return wrapped
 
 
-def wrap_diff_function(v1, v2, func, func2=None, proxy=None):
+def wrap_diff_function(v1: ContractData, v2: ContractData, func: FunctionInfo, func2: FunctionInfo = None, proxy: ContractData = None) -> str:
     wrapped = ""
     if func2 is None:
         func2 = func
@@ -492,23 +424,21 @@ def wrap_diff_function(v1, v2, func, func2=None, proxy=None):
         returns_to_compare,
     ) = get_args_and_returns_for_wrapping(func2)
 
-    wrapped += f"    function {v2['name']}_{func2[0]}{args} public virtual {{\n"
-    if len(func2) < 4 or not func2[3]:
+    wrapped += f"    function {v2['name']}_{func2['name']}{args} public virtual {{\n"
+    if func2['protected']:
         wrapped += "        hevm.prank(msg.sender);\n"
-    wrapped += wrap_low_level_call(v2, func2, call_args, "2", proxy)
+    wrapped += wrap_low_level_call(v2, func2, call_args, "V2", proxy)
     # if len(return_vals) > 0:
     #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
     # else:
     #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
-    if len(func) < 4 or not func[3]:
+    if func['protected']:
         wrapped += "        hevm.prank(msg.sender);\n"
-    if func == func2:
-        wrapped += wrap_low_level_call(v1, func, call_args, "1", proxy)
-    else:
+    if func != func2:
         _, call_args, _, _ = get_args_and_returns_for_wrapping(func)
-        wrapped += wrap_low_level_call(v1, func, call_args, "1", proxy)
-    wrapped += f"        assert(success1 == success2); \n"
-    wrapped += f"        assert((!success1 && !success2) || keccak256(output1) == keccak256(output2));\n"
+    wrapped += wrap_low_level_call(v1, func, call_args, "V1", proxy)
+    wrapped += f"        assert(successV1 == successV2); \n"
+    wrapped += f"        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));\n"
     # if len(return_vals) > 0:
     #     wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"
     #     wrapped +=  f"        return {returns_to_compare[0]} == {returns_to_compare [1]};\n"
@@ -518,7 +448,7 @@ def wrap_diff_function(v1, v2, func, func2=None, proxy=None):
     return wrapped
 
 
-def wrap_diff_functions(v1, v2, proxy=None):
+def wrap_diff_functions(v1: ContractData, v2: ContractData, proxy: ContractData = None) -> str:
     wrapped = ""
 
     diff = do_diff(v1, v2)
@@ -527,7 +457,7 @@ def wrap_diff_functions(v1, v2, proxy=None):
     for f in diff["modified-functions"]:
         if f.visibility in ["internal", "private"]:
             continue
-        func = next(func for func in v2["functions"] if func[0] == f.name and len(func[1]) == len(f.parameters))
+        func = next(func for func in v2["functions"] if func['name'] == f.name and len(func['inputs']) == len(f.parameters))
         if proxy is not None:
             wrapped += wrap_diff_function(v1, v2, func, proxy=proxy)
         else:
@@ -537,7 +467,7 @@ def wrap_diff_functions(v1, v2, proxy=None):
     for f in diff["tainted-functions"]:
         if f.visibility in ["internal", "private"]:
             continue
-        func = next(func for func in v2["functions"] if func[0] == f.name and len(func[1]) == len(f.parameters))
+        func = next(func for func in v2["functions"] if func['name'] == f.name and len(func['inputs']) == len(f.parameters))
         if proxy is not None:
             wrapped += wrap_diff_function(v1, v2, func, proxy=proxy)
         else:
@@ -554,8 +484,8 @@ def wrap_diff_functions(v1, v2, proxy=None):
                 wrapped += f"    // is a new function, which appears to replace a function with a similar name,\n"
                 wrapped += f"    // {f0.canonical_name}.\n"
                 wrapped += "    // If these functions have different arguments, this function may be incorrect.\n"
-                func = next(func for func in v1["functions"] if func[0] == f0.name)
-                func2 = next(func for func in v2["functions"] if func[0] == f.name)
+                func = next(func for func in v1["functions"] if func['name'] == f0.name)
+                func2 = next(func for func in v2["functions"] if func['name'] == f.name)
                 if proxy is not None:
                     wrapped += wrap_diff_function(v1, v2, func, func2, proxy=proxy)
                 else:
@@ -590,7 +520,7 @@ def wrap_diff_functions(v1, v2, proxy=None):
     return wrapped
 
 
-def do_diff(v1: dict, v2: dict) -> dict:
+def do_diff(v1: ContractData, v2: ContractData) -> dict:
     crytic_print(PrintMode.MESSAGE, "    * Performing diff of V1 and V2")
     missing_vars, new_vars, tainted_vars, new_funcs, modified_funcs, tainted_funcs = compare(v1["contract_object"], v2["contract_object"])
     diff = {
@@ -638,22 +568,22 @@ def camel_case(name: str) -> str:
     return name
 
 
-def write_to_file(filename, content):
+def write_to_file(filename: str, content: str) -> None:
     out_file = open(filename, "wt")
     out_file.write(content)
     out_file.close()
 
 
 def generate_test_contract(
-    v1: dict,
-    v2: dict,
+    v1: ContractData,
+    v2: ContractData,
     deploy: bool,
     version: str,
-    tokens: [dict] = None,
-    targets: [dict] = None,
-    proxy: dict = None,
+    tokens: List[ContractData] = None,
+    targets: List[ContractData] = None,
+    proxy: ContractData = None,
     upgrade: bool = False
-):
+) -> str:
 
     crytic_print(PrintMode.INFORMATION, f"\n* Generating exploit contract...")
 
@@ -801,7 +731,14 @@ def generate_test_contract(
     return final_contract
 
 
-def generate_deploy_constructor(v1, v2, tokens=None, targets=None, proxy=None, upgrade=False):
+def generate_deploy_constructor(
+    v1: ContractData, 
+    v2: ContractData, 
+    tokens: List[ContractData] = None, 
+    targets: List[ContractData] = None, 
+    proxy: ContractData = None, 
+    upgrade: bool = False
+) -> str:
     constructor = "\n    constructor() public {\n"
     constructor += f"        {camel_case(v1['name'])}V1 = {v1['interface_name']}(address(new {v1['name']}_V1()));\n"
     constructor += f"        {camel_case(v2['name'])}V2 = {v2['interface_name']}(address(new {v2['name']}_V2()));\n"
@@ -867,10 +804,10 @@ def main():
     )
 
     parser.add_argument(
-        "v1_filename", help="The path to the original version of the contract."
+        "v1", help="The original version of the contract."
     )
     parser.add_argument(
-        "v2_filename", help="The path to the upgraded version of the contract."
+        "v2", help="The upgraded version of the contract."
     )
     parser.add_argument(
         "-p", "--proxy", dest="proxy", help="Specifies the proxy contract to use."
@@ -930,6 +867,9 @@ def main():
     crytic_print(PrintMode.MESSAGE, "\nWelcome to diff-fuzz-upgrades, enjoy your stay!")
     crytic_print(PrintMode.MESSAGE, "===============================================\n")
 
+    # Silence Slither Read Storage
+    logging.getLogger("Slither-read-storage").setLevel(logging.CRITICAL)
+
     if args.output_dir is not None:
         output_dir = args.output_dir
         if not str(output_dir).endswith(os.path.sep):
@@ -938,8 +878,18 @@ def main():
         output_dir = "./"
 
     crytic_print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
-    v1_contract_data = get_contract_data_from_path(args.v1_filename, suffix="V1")
-    v2_contract_data = get_contract_data_from_path(args.v2_filename, suffix="V2")
+    if is_address(args.v1) and is_address(args.v2):
+        crytic_print(PrintMode.ERROR, "\nFork mode coming soon...")
+        raise NotImplementedError()
+    if os.path.exists(args.v1) and os.path.exists(args.v2):
+        v1_contract_data = get_contract_data_from_path(args.v1, suffix="V1")
+        v2_contract_data = get_contract_data_from_path(args.v2, suffix="V2")
+    elif not os.path.exists(args.v1):
+        crytic_print(PrintMode.ERROR, f"\nFile not found: {args.v1}")
+        raise FileNotFoundError(args.v1)
+    else:
+        crytic_print(PrintMode.ERROR, f"\nFile not found: {args.v2}")
+        raise FileNotFoundError(args.v2)
 
     if args.proxy is not None:
         crytic_print(
@@ -1001,17 +951,6 @@ def main():
         )
     else:
         contract_addr = ""
-
-    # crytic_print(PrintMode.MESSAGE, "Performing diff of V1 and V2")
-    # diff = compare(v1_contract_data["contract_object"], v2_contract_data["contract_object"])
-    # for key in diff.keys():
-    #     if len(diff[key]) > 0:
-    #         crytic_print(PrintMode.WARNING, f'    * {str(key).replace("-", " ")}:')
-    #         for obj in diff[key]:
-    #             if isinstance(obj, StateVariable):
-    #                 crytic_print(PrintMode.WARNING, f'        * {obj.full_name}')
-    #             elif isinstance(obj, Function):
-    #                 crytic_print(PrintMode.WARNING, f'        * {obj.signature_str}')
 
     contract = generate_test_contract(
         v1_contract_data,
