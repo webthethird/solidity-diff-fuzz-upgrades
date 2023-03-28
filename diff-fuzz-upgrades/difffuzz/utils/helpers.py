@@ -174,49 +174,6 @@ def get_pragma_version_from_file(filepath: str) -> str:
     return ".".join(high_version)
 
 
-def get_pragma_version_from_file(filepath: str) -> str:
-    try:
-        f = open(filepath, "r")
-        lines = f.readlines()
-        f.close()
-    except FileNotFoundError:
-        return "0.0.0"
-    versions = [
-        line.split("solidity")[1].split(";")[0].replace(" ", "")
-        for line in lines
-        if "pragma solidity" in line
-    ]
-    imports = [line for line in lines if "import" in line]
-    files = [
-        line.split()[1].split(";")[0].replace('"', "").replace("'", "")
-        if line.startswith("import")
-        else line.split()[1].replace('"', "").replace("'", "")
-        for line in imports
-    ]
-    for file in files:
-        if file.startswith("./"):
-            file = file.replace("./", filepath.rsplit("/", maxsplit=1)[0] + "/")
-        elif file.startswith("../"):
-            file = file.replace("../", filepath.rsplit("/", maxsplit=2)[0] + "/")
-        versions.append(get_pragma_version_from_file(file))
-    high_version = ["0", "0", "0"]
-    for v in versions:
-        vers = v.split(".")
-        vers[0] = "0"
-        if int(vers[1]) > int(high_version[1]) or (
-            int(vers[1]) == int(high_version[1]) and int(vers[2]) > int(high_version[2])
-        ):
-            high_version = vers
-            if v.startswith(">") and not v.startswith(">="):
-                vers[2] = str(int(vers[2]) + 1)
-                if not ".".join(vers) in get_installable_versions():
-                    vers[1] = str(int(vers[1]) + 1)
-                    vers[2] = "0"
-                if ".".join(vers) in get_installable_versions():
-                    high_version = vers
-    return ".".join(high_version)
-
-
 def generate_config_file(
     corpus_dir: str, campaign_length: str, contract_addr: str, seq_len: int
 ) -> str:
@@ -234,6 +191,7 @@ def generate_config_file(
         config_file += f"contractAddr: '{contract_addr}'\n"
 
     return config_file
+
 
 def similar(name1: str, name2: str) -> bool:
     """
