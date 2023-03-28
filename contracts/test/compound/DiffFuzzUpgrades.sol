@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPLv3
 pragma solidity ^0.8.10;
 
-import { Comptroller as Comptroller_V1 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/src/test/compound/simplified-compound/ComptrollerV1.sol";
-import { Comptroller as Comptroller_V2 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/src/test/compound/simplified-compound/ComptrollerV2.sol";
-import { Unitroller } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/src/test/compound/simplified-compound/Unitroller.sol";
-import { CErc20 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/src/test/compound/simplified-compound/CErc20.sol";
-import { Comp } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/src/test/compound/simplified-compound/Comp.sol";
+import { Comptroller as Comptroller_V1 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/simplified-compound/ComptrollerV1.sol";
+import { Comptroller as Comptroller_V2 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/simplified-compound/ComptrollerV2.sol";
+import { Unitroller } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/simplified-compound/Unitroller.sol";
+import { CErc20 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/simplified-compound/CErc20.sol";
+import { Comp } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/simplified-compound/Comp.sol";
 
 interface IComptrollerV1 {
     enum Error { NO_ERROR, UNAUTHORIZED, COMPTROLLER_MISMATCH, INSUFFICIENT_SHORTFALL, INSUFFICIENT_LIQUIDITY, INVALID_CLOSE_FACTOR, INVALID_COLLATERAL_FACTOR, INVALID_LIQUIDATION_INCENTIVE, MARKET_NOT_ENTERED, MARKET_NOT_LISTED, MARKET_ALREADY_LISTED, MATH_ERROR, NONZERO_BORROW_BALANCE, PRICE_ERROR, REJECTION, SNAPSHOT_ERROR, TOO_MANY_ASSETS, TOO_MUCH_REPAY }
@@ -239,8 +239,8 @@ interface ICErc20 {
     struct Double {
         uint256 mantissa;
     }
-    function name() external returns (string);
-    function symbol() external returns (string);
+    function name() external returns (string memory);
+    function symbol() external returns (string memory);
     function decimals() external returns (uint8);
     function admin() external returns (address);
     function pendingAdmin() external returns (address);
@@ -256,7 +256,7 @@ interface ICErc20 {
     function isCToken() external returns (bool);
     function NO_ERROR() external returns (uint256);
     function underlying() external returns (address);
-    function initialize(address,address,uint256,string,string,uint8) external;
+    function initialize(address,address,uint256,string memory,string memory,uint8) external;
     function transfer(address,uint256) external returns (bool);
     function transferFrom(address,address,uint256) external returns (bool);
     function approve(address,uint256) external returns (bool);
@@ -280,7 +280,7 @@ interface ICErc20 {
     function _setReserveFactor(uint256) external returns (uint256);
     function _reduceReserves(uint256) external returns (uint256);
     function _setInterestRateModel(address) external returns (uint256);
-    function initialize(address,address,address,uint256,string,string,uint8) external;
+    function initialize(address,address,address,uint256,string memory,string memory,uint8) external;
     function mint(uint256) external returns (uint256);
     function redeem(uint256) external returns (uint256);
     function redeemUnderlying(uint256) external returns (uint256);
@@ -298,8 +298,8 @@ interface IComp {
         uint32 fromBlock;
         uint96 votes;
     }
-    function name() external returns (string);
-    function symbol() external returns (string);
+    function name() external returns (string memory);
+    function symbol() external returns (string memory);
     function decimals() external returns (uint8);
     function totalSupply() external returns (uint256);
     function delegates(address) external returns (address);
@@ -850,95 +850,95 @@ contract DiffFuzzUpgrades {
     /*** Tainted Variables ***/ 
 
     function Comptroller_admin() public {
-        assert(unitrollerV1.admin() == unitrollerV2.admin());
+        assert(IComptrollerV1(address(unitrollerV1)).admin() == IComptrollerV2(address(unitrollerV2)).admin());
     }
 
     function Comptroller_comptrollerImplementation() public {
-        assert(unitrollerV1.comptrollerImplementation() == unitrollerV2.comptrollerImplementation());
+        assert(IComptrollerV1(address(unitrollerV1)).comptrollerImplementation() == IComptrollerV2(address(unitrollerV2)).comptrollerImplementation());
     }
 
     function Comptroller_oracle() public {
-        assert(unitrollerV1.oracle() == unitrollerV2.oracle());
+        assert(IComptrollerV1(address(unitrollerV1)).oracle() == IComptrollerV2(address(unitrollerV2)).oracle());
     }
 
     function Comptroller_closeFactorMantissa() public {
-        assert(unitrollerV1.closeFactorMantissa() == unitrollerV2.closeFactorMantissa());
+        assert(IComptrollerV1(address(unitrollerV1)).closeFactorMantissa() == IComptrollerV2(address(unitrollerV2)).closeFactorMantissa());
     }
 
     function Comptroller_liquidationIncentiveMantissa() public {
-        assert(unitrollerV1.liquidationIncentiveMantissa() == unitrollerV2.liquidationIncentiveMantissa());
+        assert(IComptrollerV1(address(unitrollerV1)).liquidationIncentiveMantissa() == IComptrollerV2(address(unitrollerV2)).liquidationIncentiveMantissa());
     }
 
     function Comptroller_accountAssets(address a) public {
-        assert(unitrollerV1.accountAssets(a) == unitrollerV2.accountAssets(a));
+        assert(IComptrollerV1(address(unitrollerV1)).accountAssets(a) == IComptrollerV2(address(unitrollerV2)).accountAssets(a));
     }
 
     function Comptroller_markets(address a) public {
-        assert(unitrollerV1.markets(a) == unitrollerV2.markets(a));
+        assert(IComptrollerV1(address(unitrollerV1)).markets(a) == IComptrollerV2(address(unitrollerV2)).markets(a));
     }
 
     function Comptroller_pauseGuardian() public {
-        assert(unitrollerV1.pauseGuardian() == unitrollerV2.pauseGuardian());
+        assert(IComptrollerV1(address(unitrollerV1)).pauseGuardian() == IComptrollerV2(address(unitrollerV2)).pauseGuardian());
     }
 
     function Comptroller_transferGuardianPaused() public {
-        assert(unitrollerV1.transferGuardianPaused() == unitrollerV2.transferGuardianPaused());
+        assert(IComptrollerV1(address(unitrollerV1)).transferGuardianPaused() == IComptrollerV2(address(unitrollerV2)).transferGuardianPaused());
     }
 
     function Comptroller_seizeGuardianPaused() public {
-        assert(unitrollerV1.seizeGuardianPaused() == unitrollerV2.seizeGuardianPaused());
+        assert(IComptrollerV1(address(unitrollerV1)).seizeGuardianPaused() == IComptrollerV2(address(unitrollerV2)).seizeGuardianPaused());
     }
 
     function Comptroller_mintGuardianPaused(address a) public {
-        assert(unitrollerV1.mintGuardianPaused(a) == unitrollerV2.mintGuardianPaused(a));
+        assert(IComptrollerV1(address(unitrollerV1)).mintGuardianPaused(a) == IComptrollerV2(address(unitrollerV2)).mintGuardianPaused(a));
     }
 
     function Comptroller_borrowGuardianPaused(address a) public {
-        assert(unitrollerV1.borrowGuardianPaused(a) == unitrollerV2.borrowGuardianPaused(a));
+        assert(IComptrollerV1(address(unitrollerV1)).borrowGuardianPaused(a) == IComptrollerV2(address(unitrollerV2)).borrowGuardianPaused(a));
     }
 
     function Comptroller_allMarkets(uint i) public {
-        assert(unitrollerV1.allMarkets(i) == unitrollerV2.allMarkets(i));
+        assert(IComptrollerV1(address(unitrollerV1)).allMarkets(i) == IComptrollerV2(address(unitrollerV2)).allMarkets(i));
     }
 
     function Comptroller_compSpeeds(address a) public {
-        assert(unitrollerV1.compSpeeds(a) == unitrollerV2.compSpeeds(a));
+        assert(IComptrollerV1(address(unitrollerV1)).compSpeeds(a) == IComptrollerV2(address(unitrollerV2)).compSpeeds(a));
     }
 
     function Comptroller_compSupplyState(address a) public {
-        assert(unitrollerV1.compSupplyState(a) == unitrollerV2.compSupplyState(a));
+        assert(IComptrollerV1(address(unitrollerV1)).compSupplyState(a) == IComptrollerV2(address(unitrollerV2)).compSupplyState(a));
     }
 
     function Comptroller_compBorrowState(address a) public {
-        assert(unitrollerV1.compBorrowState(a) == unitrollerV2.compBorrowState(a));
+        assert(IComptrollerV1(address(unitrollerV1)).compBorrowState(a) == IComptrollerV2(address(unitrollerV2)).compBorrowState(a));
     }
 
     function Comptroller_compSupplierIndex(address a) public {
-        assert(unitrollerV1.compSupplierIndex(a) == unitrollerV2.compSupplierIndex(a));
+        assert(IComptrollerV1(address(unitrollerV1)).compSupplierIndex(a) == IComptrollerV2(address(unitrollerV2)).compSupplierIndex(a));
     }
 
     function Comptroller_compBorrowerIndex(address a) public {
-        assert(unitrollerV1.compBorrowerIndex(a) == unitrollerV2.compBorrowerIndex(a));
+        assert(IComptrollerV1(address(unitrollerV1)).compBorrowerIndex(a) == IComptrollerV2(address(unitrollerV2)).compBorrowerIndex(a));
     }
 
     function Comptroller_compAccrued(address a) public {
-        assert(unitrollerV1.compAccrued(a) == unitrollerV2.compAccrued(a));
+        assert(IComptrollerV1(address(unitrollerV1)).compAccrued(a) == IComptrollerV2(address(unitrollerV2)).compAccrued(a));
     }
 
     function Comptroller_borrowCapGuardian() public {
-        assert(unitrollerV1.borrowCapGuardian() == unitrollerV2.borrowCapGuardian());
+        assert(IComptrollerV1(address(unitrollerV1)).borrowCapGuardian() == IComptrollerV2(address(unitrollerV2)).borrowCapGuardian());
     }
 
     function Comptroller_borrowCaps(address a) public {
-        assert(unitrollerV1.borrowCaps(a) == unitrollerV2.borrowCaps(a));
+        assert(IComptrollerV1(address(unitrollerV1)).borrowCaps(a) == IComptrollerV2(address(unitrollerV2)).borrowCaps(a));
     }
 
     function Comptroller_compContributorSpeeds(address a) public {
-        assert(unitrollerV1.compContributorSpeeds(a) == unitrollerV2.compContributorSpeeds(a));
+        assert(IComptrollerV1(address(unitrollerV1)).compContributorSpeeds(a) == IComptrollerV2(address(unitrollerV2)).compContributorSpeeds(a));
     }
 
     function Comptroller_lastContributorBlock(address a) public {
-        assert(unitrollerV1.lastContributorBlock(a) == unitrollerV2.lastContributorBlock(a));
+        assert(IComptrollerV1(address(unitrollerV1)).lastContributorBlock(a) == IComptrollerV2(address(unitrollerV2)).lastContributorBlock(a));
     }
 
 
