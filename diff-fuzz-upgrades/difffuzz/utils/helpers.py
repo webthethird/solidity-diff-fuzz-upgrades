@@ -3,19 +3,10 @@ import difflib
 from typing import List
 
 from solc_select.solc_select import get_installable_versions
-from slither.utils.type import convert_type_for_solidity_signature_to_string
-from slither.utils.code_generation import generate_interface
-from slither.core.declarations.contract import Contract
-from slither.core.variables.local_variable import LocalVariable
-from slither.core.declarations.enum import Enum
-from slither.core.solidity_types import (
-    Type,
-    ElementaryType,
-    UserDefinedType,
-    ArrayType
-)
-from slither.core.declarations.structure import Structure
-from difffuzz.classes import FunctionInfo, ContractData
+from slither.utils.upgradeability import compare
+from slither.core.declarations import Function
+from slither.core.variables.state_variable import StateVariable
+from difffuzz.classes import FunctionInfo, ContractData, Diff
 from difffuzz.utils.printer import PrintMode, crytic_print
 
 
@@ -26,109 +17,6 @@ def get_compilation_unit_name(slither_object) -> str:
     if name.endswith(".sol"):
         name = os.path.splitext(name)[0]
     return name
-
-
-def get_solidity_function_parameters(parameters: List[LocalVariable]) -> List[str]:
-    """Get function parameters as solidity types.
-    It can return additional interfaces/structs if parameter types are tupes
-    """
-    inputs = []
-
-    if len(parameters) > 0:
-        for inp in parameters:
-            if isinstance(inp.type, ElementaryType):
-                base_type = inp.type.name
-                if inp.type.is_dynamic:
-                    base_type += f" {inp.location}"
-
-            elif isinstance(inp.type, UserDefinedType):
-                if isinstance(inp.type.type, Structure):
-                    base_type = f"{inp.type.type.name} {inp.location}"
-                elif isinstance(inp.type.type, Contract):
-                    base_type = convert_type_for_solidity_signature_to_string(inp.type)
-
-            elif isinstance(inp.type, ArrayType):
-                base_type = convert_type_for_solidity_signature_to_string(inp.type)
-                if inp.type.is_dynamic:
-                    base_type += f" {inp.location}"
-
-            inputs.append(base_type)
-
-    return inputs
-
-
-def get_solidity_function_returns(return_type: Type) -> List[str]:
-    """Get function return types as solidity types.
-    It can return additional interfaces/structs if parameter types are tupes
-    """
-    outputs = []
-
-    if not return_type:
-        return outputs
-
-    if len(return_type) > 0:
-        for out in return_type:
-            if isinstance(out, ElementaryType):
-                base_type = convert_type_for_solidity_signature_to_string(out)
-                if out.is_dynamic:
-                    base_type += " memory"
-            elif isinstance(out, ArrayType):
-                if isinstance(out.type, UserDefinedType) and isinstance(out.type.type, Structure):
-                    base_type = f"{out.type.type.name}[] memory"
-                else:
-                    base_type = convert_type_for_solidity_signature_to_string(out)
-                    base_type += " memory"
-            elif isinstance(out, UserDefinedType):
-                if isinstance(out.type, Structure):
-                    base_type = f"{out.type.name} memory"
-                elif isinstance(out.type, (Contract, Enum)):
-                    base_type = convert_type_for_solidity_signature_to_string(out)
-            outputs.append(base_type)
-
-    return outputs
-
-
-def get_contract_interface(contract_data: ContractData, suffix: str = "") -> dict:
-    """Get contract ABI from Slither"""
-
-    contract: Contract = contract_data["contract_object"]
-
-    if not contract.functions_entry_points:
-        raise ValueError("Contract has no public or external functions")
-
-    contract_info = dict()
-    contract_info["functions"] = []
-
-    for i in contract.functions_entry_points:
-
-        # Interface won't need constructor or fallbacks
-        if i.is_constructor or i.is_fallback or i.is_receive:
-            continue
-
-        # Get info for interface and wrapper
-        name = i.name
-        inputs = get_solidity_function_parameters(i.parameters)
-        outputs = get_solidity_function_returns(i.return_type)
-        protected = i.is_protected()
-
-        contract_info["functions"].append(
-            FunctionInfo(
-                name=name,
-                function=i,
-                inputs=inputs,
-                outputs=outputs,
-                protected=protected
-            )
-        )
-
-    contract_info["name"] = contract.name
-    contract_info["interface"] = generate_interface(contract, unroll_structs=False, skip_errors=True, skip_events=True).replace(
-        f"interface I{contract.name}",
-        f"interface I{contract.name}{suffix}"
-    )
-    contract_info["interface_name"] = f"I{contract.name}{suffix}"
-
-    return contract_info
 
 
 def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
@@ -178,23 +66,26 @@ def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
     return ".".join(high_version)
 
 
-def generate_config_file(
-    corpus_dir: str, campaign_length: str, contract_addr: str, seq_len: int
-) -> str:
-    crytic_print(
-        PrintMode.INFORMATION,
-        f"* Generating Echidna configuration file with campaign limit {campaign_length}"
-        f" and corpus directory {corpus_dir}",
+def do_diff(v1: ContractData, v2: ContractData) -> Diff:
+    crytic_print(PrintMode.MESSAGE, "    * Performing diff of V1 and V2")
+    missing_vars, new_vars, tainted_vars, new_funcs, modified_funcs, tainted_funcs = compare(v1["contract_object"], v2["contract_object"])
+    diff = Diff(
+        missing_variables=missing_vars,
+        new_variables=new_vars,
+        tainted_variables=tainted_vars,
+        new_functions=new_funcs,
+        modified_functions=modified_funcs,
+        tainted_functions=tainted_funcs
     )
-    config_file = f"testMode: assertion\n"
-    config_file += f"testLimit: {campaign_length}\n"
-    config_file += f"corpusDir: {corpus_dir}\n"
-    config_file += "codeSize: 0xffff\n"
-    config_file += f"seqLen: {seq_len}\n"
-    if contract_addr != "":
-        config_file += f"contractAddr: '{contract_addr}'\n"
-
-    return config_file
+    for key in diff.keys():
+        if len(diff[key]) > 0:
+            crytic_print(PrintMode.WARNING, f'      * {str(key).replace("-", " ")}:')
+            for obj in diff[key]:
+                if isinstance(obj, StateVariable):
+                    crytic_print(PrintMode.WARNING, f"          * {obj.full_name}")
+                elif isinstance(obj, Function):
+                    crytic_print(PrintMode.WARNING, f"          * {obj.signature_str}")
+    return diff
 
 
 def similar(name1: str, name2: str) -> bool:

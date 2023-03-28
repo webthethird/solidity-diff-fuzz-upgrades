@@ -4,6 +4,7 @@ from web3 import Web3
 from slither import Slither
 from slither.core.declarations.contract import Contract
 from slither.core.declarations.function import Function
+from slither.core.variables.variable import Variable
 
 class FunctionInfo(TypedDict):
     name: str
@@ -34,3 +35,11 @@ class ContractData(TypedDict):
     is_proxy: bool    
     implementation_object: Contract
     implementation_slither: Slither
+
+class Diff(TypedDict):
+    missing_variables: List[Variable]
+    new_variables: List[Variable]
+    tainted_variables: List[Variable]
+    new_functions: List[Function]
+    modified_functions: List[Function]
+    tainted_functions: List[Function]
