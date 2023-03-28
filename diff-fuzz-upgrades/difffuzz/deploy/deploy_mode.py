@@ -43,7 +43,10 @@ from difffuzz.utils.helpers import (
     get_pragma_version_from_file,
     get_compilation_unit_name,
     get_contract_interface,
-    generate_config_file
+    generate_config_file,
+    similar,
+    camel_case,
+    write_to_file
 )
 
 
@@ -338,38 +341,6 @@ def do_diff(v1: ContractData, v2: ContractData) -> dict:
                 elif isinstance(obj, Function):
                     crytic_print(PrintMode.WARNING, f"          * {obj.signature_str}")
     return diff
-
-
-def similar(name1: str, name2: str) -> bool:
-    """
-    Test the name similarity
-    Two names are similar if difflib.SequenceMatcher on the lowercase
-    version of the name is greater than 0.90
-    See: https://docs.python.org/2/library/difflib.html
-    Args:
-        name1 (str): first name
-        name2 (str): second name
-    Returns:
-        bool: true if names are similar
-    """
-    val = difflib.SequenceMatcher(a=name1.lower(), b=name2.lower()).ratio()
-    ret = val > 0.90
-    return ret
-
-
-def camel_case(name: str) -> str:
-    parts = name.replace("_", " ").replace("-", " ").split()
-    name = parts[0][0].lower() + parts[0][1:]
-    if len(parts) > 1:
-        for i in range(1, len(parts)):
-            name += parts[i][0].upper() + parts[i][1:]
-    return name
-
-
-def write_to_file(filename: str, content: str) -> None:
-    out_file = open(filename, "wt")
-    out_file.write(content)
-    out_file.close()
 
 
 def generate_test_contract(
