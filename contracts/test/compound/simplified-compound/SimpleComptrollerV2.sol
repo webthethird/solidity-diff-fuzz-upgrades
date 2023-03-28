@@ -1,25 +1,25 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./CToken.sol";
+import { SimpleCToken as CToken } from "./SimpleCToken.sol";
 import "./ErrorReporter.sol";
 import "./ExponentialNoError.sol";
-import "./PriceOracle.sol";
-import "./Unitroller.sol";
-import "./Comp.sol";
+import { PriceOracle as Oracle } from "./PriceOracle.sol";
+import "./SimpleUnitroller.sol";
+import { SimpleComp as Comp } from "./SimpleComp.sol";
 
 
 /**
  * @title Compound's Comptroller Contract
  * @author Compound
  */
-contract SimpleComptroller is ComptrollerErrorReporter, ExponentialNoError {
+contract SimpleComptrollerV2 is ComptrollerErrorReporter, ExponentialNoError {
     // ComptrollerStorage
     address public admin;
     address public compAddress;
     address public comptrollerImplementation;
     address public pendingComptrollerImplementation;
-    PriceOracle public oracle;
+    Oracle public oracle;
 //    uint public closeFactorMantissa;
 //    uint public liquidationIncentiveMantissa;
     uint public maxAssets;
@@ -67,7 +67,7 @@ contract SimpleComptroller is ComptrollerErrorReporter, ExponentialNoError {
     event NewCollateralFactor(CToken cToken, uint oldCollateralFactorMantissa, uint newCollateralFactorMantissa);
 
     /// @notice Emitted when price oracle is changed
-    event NewPriceOracle(PriceOracle oldPriceOracle, PriceOracle newPriceOracle);
+    event NewPriceOracle(Oracle oldPriceOracle, Oracle newPriceOracle);
 
     /// @notice Emitted when a new COMP speed is calculated for a market
     event CompSpeedUpdated(CToken indexed cToken, uint newSpeed);
@@ -204,6 +204,59 @@ contract SimpleComptroller is ComptrollerErrorReporter, ExponentialNoError {
         return uint(Error.NO_ERROR);
     }
 
+    /**
+     * @notice Checks if the account should be allowed to redeem tokens in the given market
+     * @param cToken The market to verify the redeem against
+     * @param redeemer The account which would redeem the tokens
+     * @param redeemTokens The number of cTokens to exchange for the underlying asset in the market
+     * @return 0 if the redeem is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
+     */
+    function redeemAllowed(address cToken, address redeemer, uint redeemTokens) external returns (uint) {
+        uint allowed = redeemAllowedInternal(cToken, redeemer, redeemTokens);
+        if (allowed != uint(Error.NO_ERROR)) {
+            return allowed;
+        }
+
+        // Keep the flywheel moving
+        updateCompSupplyIndex(cToken);
+        distributeSupplierComp(cToken, redeemer);
+
+        return uint(Error.NO_ERROR);
+    }
+
+    function redeemAllowedInternal(address cToken, address redeemer, uint redeemTokens) internal view returns (uint) {
+        if (!markets[cToken].isListed) {
+            return uint(Error.MARKET_NOT_LISTED);
+        }
+
+        /* If the redeemer is not 'in' the market, then we can bypass the liquidity check */
+        if (!markets[cToken].accountMembership[redeemer]) {
+            return uint(Error.NO_ERROR);
+        }
+
+        /* Otherwise, perform a hypothetical liquidity check to guard against shortfall */
+//        (Error err, , uint shortfall) = getHypotheticalAccountLiquidityInternal(redeemer, CToken(cToken), redeemTokens, 0);
+//        if (err != Error.NO_ERROR) {
+//            return uint(err);
+//        }
+//        if (shortfall > 0) {
+//            return uint(Error.INSUFFICIENT_LIQUIDITY);
+//        }
+
+        return uint(Error.NO_ERROR);
+    }
+
+    function redeemVerify(address cToken, address redeemer, uint redeemAmount, uint redeemTokens) external {
+        // Shh - currently unused
+        cToken;
+        redeemer;
+
+        // Require tokens is zero or amount is also zero
+        if (redeemTokens == 0 && redeemAmount > 0) {
+            revert("redeemTokens zero");
+        }
+    }
+
     /*** Admin Functions ***/
 
     /**
@@ -211,14 +264,14 @@ contract SimpleComptroller is ComptrollerErrorReporter, ExponentialNoError {
       * @dev Admin function to set a new price oracle
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
-    function _setPriceOracle(PriceOracle newOracle) public returns (uint) {
+    function _setPriceOracle(Oracle newOracle) public returns (uint) {
         // Check caller is admin
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_PRICE_ORACLE_OWNER_CHECK);
         }
 
         // Track the old oracle for the comptroller
-        PriceOracle oldOracle = oracle;
+        Oracle oldOracle = oracle;
 
         // Set comptroller's oracle to newOracle
         oracle = newOracle;
@@ -334,11 +387,11 @@ contract SimpleComptroller is ComptrollerErrorReporter, ExponentialNoError {
          supplyState.block = blockNumber;
     }
 
-    function _become(Unitroller unitroller) public {
+    function _become(SimpleUnitroller unitroller) public {
         require(msg.sender == unitroller.admin(), "only unitroller admin can change brains");
         require(unitroller._acceptImplementation() == 0, "change not authorized");
 
-        SimpleComptroller(address(unitroller))._upgradeSplitCompRewards();
+        SimpleComptrollerV2(address(unitroller))._upgradeSplitCompRewards();
     }
 
     function _upgradeSplitCompRewards() public {
@@ -570,7 +623,7 @@ contract SimpleComptroller is ComptrollerErrorReporter, ExponentialNoError {
     }
 }
 
-contract ComptrollerHarness is SimpleComptroller {
+contract ComptrollerHarness is SimpleComptrollerV2 {
     function getCompAddress() public view override returns (address) {
         return compAddress;
     }

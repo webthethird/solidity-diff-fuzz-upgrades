@@ -2,13 +2,14 @@
 pragma solidity ^0.8.10;
 
 import "./SimpleCToken.sol";
+import "./EIP20NonStandardInterface.sol";
 
 /**
  * @title Compound's CErc20 Contract
  * @notice CTokens which wrap an EIP-20 underlying
  * @author Compound
  */
-contract CErc20 is CToken {
+contract SimpleCErc20 is SimpleCToken {
     address public underlying;
 
     /**
@@ -22,7 +23,7 @@ contract CErc20 is CToken {
      * @param decimals_ ERC-20 decimal precision of this token
      */
     function initialize(address underlying_,
-                        ComptrollerInterface comptroller_,
+                        SimpleComptroller comptroller_,
                         InterestRateModel interestRateModel_,
                         uint initialExchangeRateMantissa_,
                         string memory name_,
@@ -44,7 +45,7 @@ contract CErc20 is CToken {
      * @param mintAmount The amount of the underlying asset to supply
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function mint(uint mintAmount) override external returns (uint) {
+    function mint(uint mintAmount) external returns (uint) {
         mintInternal(mintAmount);
         return NO_ERROR;
     }
@@ -55,7 +56,7 @@ contract CErc20 is CToken {
      * @param redeemTokens The number of cTokens to redeem into underlying
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeem(uint redeemTokens) override external returns (uint) {
+    function redeem(uint redeemTokens) external returns (uint) {
         redeemInternal(redeemTokens);
         return NO_ERROR;
     }
@@ -66,7 +67,7 @@ contract CErc20 is CToken {
      * @param redeemAmount The amount of underlying to redeem
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemUnderlying(uint redeemAmount) override external returns (uint) {
+    function redeemUnderlying(uint redeemAmount) external returns (uint) {
         redeemUnderlyingInternal(redeemAmount);
         return NO_ERROR;
     }

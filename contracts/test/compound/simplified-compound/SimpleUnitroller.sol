@@ -8,7 +8,7 @@ import "./ErrorReporter.sol";
  * @dev Storage for the comptroller is at this address, while execution is delegated to the `comptrollerImplementation`.
  * CTokens should reference this contract as their comptroller.
  */
-contract Unitroller is ComptrollerErrorReporter {
+contract SimpleUnitroller is ComptrollerErrorReporter {
     address public admin;
     address public compAddress;
     address public comptrollerImplementation;

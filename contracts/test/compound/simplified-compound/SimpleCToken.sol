@@ -6,14 +6,13 @@ import "./ErrorReporter.sol";
 import "./EIP20Interface.sol";
 import "./InterestRateModel.sol";
 import "./ExponentialNoError.sol";
-import "../../example/SimpleComptroller.sol";
 
 /**
  * @title Compound's CToken Contract
  * @notice Abstract base for CTokens
  * @author Compound
  */
-abstract contract CToken is ExponentialNoError, TokenErrorReporter {
+abstract contract SimpleCToken is ExponentialNoError, TokenErrorReporter {
     // CTokenStorage
     /**
      * @dev Guard variable for re-entrancy checks
@@ -82,7 +81,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
     /**
      * @notice Total amount of outstanding borrows of the underlying in this market
      */
-//    uint public totalBorrows;
+    uint public totalBorrows;
 
     /**
      * @notice Total amount of reserves of the underlying held in this market
@@ -135,7 +134,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
     /*** Admin Events ***/
     event NewPendingAdmin(address oldPendingAdmin, address newPendingAdmin);
     event NewAdmin(address oldAdmin, address newAdmin);
-    event NewComptroller(ComptrollerInterface oldComptroller, ComptrollerInterface newComptroller);
+    event NewComptroller(SimpleComptroller oldComptroller, SimpleComptroller newComptroller);
     event NewMarketInterestRateModel(InterestRateModel oldInterestRateModel, InterestRateModel newInterestRateModel);
     event NewReserveFactor(uint oldReserveFactorMantissa, uint newReserveFactorMantissa);
     event ReservesAdded(address benefactor, uint addAmount, uint newTotalReserves);
@@ -195,11 +194,6 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @return 0 if the transfer succeeded, else revert
      */
     function transferTokens(address spender, address src, address dst, uint tokens) internal returns (uint) {
-        /* Fail if transfer not allowed */
-        uint allowed = comptroller.transferAllowed(address(this), src, dst, tokens);
-        if (allowed != 0) {
-            revert TransferComptrollerRejection(allowed);
-        }
 
         /* Do not allow self-transfers */
         if (src == dst) {
@@ -246,7 +240,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @param amount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transfer(address dst, uint256 amount) override external nonReentrant returns (bool) {
+    function transfer(address dst, uint256 amount) external nonReentrant returns (bool) {
         return transferTokens(msg.sender, msg.sender, dst, amount) == NO_ERROR;
     }
 
@@ -257,7 +251,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @param amount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transferFrom(address src, address dst, uint256 amount) override external nonReentrant returns (bool) {
+    function transferFrom(address src, address dst, uint256 amount) external nonReentrant returns (bool) {
         return transferTokens(msg.sender, src, dst, amount) == NO_ERROR;
     }
 
@@ -269,7 +263,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @param amount The number of tokens that are approved (uint256.max means infinite)
      * @return Whether or not the approval succeeded
      */
-    function approve(address spender, uint256 amount) override external returns (bool) {
+    function approve(address spender, uint256 amount) external returns (bool) {
         address src = msg.sender;
         transferAllowances[src][spender] = amount;
         emit Approval(src, spender, amount);
@@ -282,7 +276,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @param spender The address of the account which may transfer tokens
      * @return The number of tokens allowed to be spent (-1 means infinite)
      */
-    function allowance(address owner, address spender) override external view returns (uint256) {
+    function allowance(address owner, address spender) external view returns (uint256) {
         return transferAllowances[owner][spender];
     }
 
@@ -291,7 +285,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @param owner The address of the account to query
      * @return The number of tokens owned by `owner`
      */
-    function balanceOf(address owner) override external view returns (uint256) {
+    function balanceOf(address owner) external view returns (uint256) {
         return accountTokens[owner];
     }
 
@@ -301,7 +295,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @param owner The address of the account to query
      * @return The amount of underlying owned by `owner`
      */
-    function balanceOfUnderlying(address owner) override external returns (uint) {
+    function balanceOfUnderlying(address owner) external returns (uint) {
         Exp memory exchangeRate = Exp({mantissa: exchangeRateCurrent()});
         return mul_ScalarTruncate(exchangeRate, accountTokens[owner]);
     }
@@ -318,7 +312,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @notice Returns the current per-block supply interest rate for this cToken
      * @return The supply interest rate per block, scaled by 1e18
      */
-    function supplyRatePerBlock() override external view returns (uint) {
+    function supplyRatePerBlock() external view returns (uint) {
         return interestRateModel.getSupplyRate(getCashPrior(), totalBorrows, totalReserves, reserveFactorMantissa);
     }
 
@@ -326,7 +320,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @notice Accrue interest then return the up-to-date exchange rate
      * @return Calculated exchange rate scaled by 1e18
      */
-    function exchangeRateCurrent() override public nonReentrant returns (uint) {
+    function exchangeRateCurrent() public nonReentrant returns (uint) {
         accrueInterest();
         return exchangeRateStored();
     }
@@ -336,7 +330,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @dev This function does not accrue interest before calculating the exchange rate
      * @return Calculated exchange rate scaled by 1e18
      */
-    function exchangeRateStored() override public view returns (uint) {
+    function exchangeRateStored() public view returns (uint) {
         return exchangeRateStoredInternal();
     }
 
@@ -370,7 +364,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @notice Get cash balance of this cToken in the underlying asset
      * @return The quantity of underlying asset owned by this contract
      */
-    function getCash() override external view returns (uint) {
+    function getCash() external view returns (uint) {
         return getCashPrior();
     }
 
@@ -379,7 +373,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
      * @dev This calculates interest accrued from the last checkpointed block
      *   up to the current block and writes new checkpoint to storage.
      */
-    function accrueInterest() virtual override public returns (uint) {
+    function accrueInterest() virtual public returns (uint) {
         /* Remember the initial block number */
         uint currentBlockNumber = getBlockNumber();
         uint accrualBlockNumberPrior = accrualBlockNumber;
@@ -611,7 +605,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
       * @param newAdmin New admin.
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
-    function _setAdmin(address payable newAdmin) override external returns (uint) {
+    function _setAdmin(address payable newAdmin) external returns (uint) {
         // Check caller = admin
         if (msg.sender != admin) {
             revert SetPendingAdminOwnerCheck();
@@ -634,7 +628,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
       * @dev Admin function to set a new comptroller
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
-    function _setComptroller(SimpleComptroller newComptroller) override public returns (uint) {
+    function _setComptroller(SimpleComptroller newComptroller) public returns (uint) {
         // Check caller is admin
         if (msg.sender != admin) {
             revert SetComptrollerOwnerCheck();
@@ -658,7 +652,7 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
       * @dev Admin function to accrue interest and set a new reserve factor
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
-    function _setReserveFactor(uint newReserveFactorMantissa) override external nonReentrant returns (uint) {
+    function _setReserveFactor(uint newReserveFactorMantissa) external nonReentrant returns (uint) {
         accrueInterest();
         // _setReserveFactorFresh emits reserve-factor-specific logs on errors, so we don't need to.
         return _setReserveFactorFresh(newReserveFactorMantissa);
@@ -689,6 +683,36 @@ abstract contract CToken is ExponentialNoError, TokenErrorReporter {
         reserveFactorMantissa = newReserveFactorMantissa;
 
         emit NewReserveFactor(oldReserveFactorMantissa, newReserveFactorMantissa);
+
+        return NO_ERROR;
+    }
+
+    function _setInterestRateModelFresh(InterestRateModel newInterestRateModel) internal returns (uint) {
+
+        // Used to store old model for use in the event that is emitted on success
+        InterestRateModel oldInterestRateModel;
+
+        // Check caller is admin
+        if (msg.sender != admin) {
+            revert SetInterestRateModelOwnerCheck();
+        }
+
+        // We fail gracefully unless market's block number equals current block number
+        if (accrualBlockNumber != getBlockNumber()) {
+            revert SetInterestRateModelFreshCheck();
+        }
+
+        // Track the market's current interest rate model
+        oldInterestRateModel = interestRateModel;
+
+        // Ensure invoke newInterestRateModel.isInterestRateModel() returns true
+        require(newInterestRateModel.isInterestRateModel(), "marker method returned false");
+
+        // Set the interest rate model to newInterestRateModel
+        interestRateModel = newInterestRateModel;
+
+        // Emit NewMarketInterestRateModel(oldInterestRateModel, newInterestRateModel)
+        emit NewMarketInterestRateModel(oldInterestRateModel, newInterestRateModel);
 
         return NO_ERROR;
     }
