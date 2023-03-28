@@ -295,10 +295,11 @@ def wrap_diff_functions(v1: ContractData, v2: ContractData, proxy: ContractData 
     wrapped += "\n    /*** Tainted Variables ***/ \n\n"
     for v in diff["tainted-variables"]:
         if proxy is None:
-            target_v1 = camel_case(v1['name'])
-            target_v2 = camel_case(v2['name'])
+            target_v1 = camel_case(v1['name']) + "V1"
+            target_v2 = camel_case(v2['name']) + "V2"
         else:
-            target_v1 = target_v2 = camel_case(proxy['name'])
+            target_v1 = f"{v1['interface_name']}(address({camel_case(proxy['name'])}V1))"
+            target_v2 = f"{v2['interface_name']}(address({camel_case(proxy['name'])}V2))"
         if v.visibility in ["internal", "private"]:
             continue
         if v.type.is_dynamic:
@@ -307,15 +308,15 @@ def wrap_diff_functions(v1: ContractData, v2: ContractData, proxy: ContractData 
                 wrapped += (
                     f"    function {v1['name']}_{v.name}({type_from} a) public {{\n"
                 )
-                wrapped += f"        assert({target_v1}V1.{v.name}(a) == {target_v2}V2.{v.name}(a));\n"
+                wrapped += f"        assert({target_v1}.{v.name}(a) == {target_v2}.{v.name}(a));\n"
                 wrapped += "    }\n\n"
             elif isinstance(v.type, ArrayType):
                 wrapped += f"    function {v1['name']}_{v.name}(uint i) public {{\n"
-                wrapped += f"        assert({target_v1}V1.{v.name}(i) == {target_v2}V2.{v.name}(i));\n"
+                wrapped += f"        assert({target_v1}.{v.name}(i) == {target_v2}.{v.name}(i));\n"
                 wrapped += "    }\n\n"
         else:
             wrapped += f"    function {v1['name']}_{v.full_name} public {{\n"
-            wrapped += f"        assert({target_v1}V1.{v.full_name} == {target_v2}V2.{v.full_name});\n"
+            wrapped += f"        assert({target_v1}.{v.full_name} == {target_v2}.{v.full_name});\n"
             wrapped += "    }\n\n"
 
     return wrapped
