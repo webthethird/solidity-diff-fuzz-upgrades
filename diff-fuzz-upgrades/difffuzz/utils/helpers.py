@@ -6,7 +6,7 @@ from solc_select.solc_select import get_installable_versions
 from slither.utils.upgradeability import compare
 from slither.core.declarations import Function
 from slither.core.variables.state_variable import StateVariable
-from difffuzz.classes import FunctionInfo, ContractData, Diff
+from difffuzz.classes import ContractData, Diff
 from difffuzz.utils.printer import PrintMode, crytic_print
 
 

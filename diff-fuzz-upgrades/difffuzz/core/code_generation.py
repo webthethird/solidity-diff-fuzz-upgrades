@@ -1,10 +1,7 @@
-from typing import Any, TypedDict, List, Tuple
-from slither.utils.upgradeability import compare
+from typing import List, Tuple
 from slither.utils.type import convert_type_for_solidity_signature_to_string
 from slither.utils.code_generation import generate_interface
 from slither.core.declarations.contract import Contract
-from slither.core.declarations.function import Function
-from slither.core.variables.state_variable import StateVariable
 from slither.core.variables.local_variable import LocalVariable
 from slither.core.declarations.enum import Enum
 from slither.core.solidity_types import (

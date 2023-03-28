@@ -2,7 +2,7 @@
 
 import argparse
 import os
-from typing import Any, TypedDict, List, Tuple
+from typing import List
 from solc_select.solc_select import (
     switch_global_version,
     installed_versions,
@@ -11,7 +11,7 @@ from solc_select.solc_select import (
 from slither import Slither
 from slither.exceptions import SlitherError
 from slither.utils.upgradeability import get_proxy_implementation_slot
-from difffuzz.classes import FunctionInfo, ContractData
+from difffuzz.classes import ContractData
 from difffuzz.utils.printer import PrintMode, crytic_print
 from difffuzz.utils.helpers import (
     get_pragma_version_from_file,
