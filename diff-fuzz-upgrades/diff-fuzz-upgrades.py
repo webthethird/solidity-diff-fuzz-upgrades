@@ -38,8 +38,8 @@ from eth_utils import to_checksum_address, is_address
 from eth_typing.evm import ChecksumAddress
 from colorama import init as colorama_init
 from difffuzz.utils.printer import PrintMode, crytic_print
-from difffuzz.deploy.deploy_mode import deploy_mode
-from difffuzz.fork.fork_mode import fork_mode
+from difffuzz.core.deploy_mode import deploy_mode
+from difffuzz.core.fork_mode import fork_mode
 
 
 SUPPORTED_NETWORKS = [ "mainet","optim","ropsten","kovan","rinkeby","goerli","tobalaba","bsc","testnet.bsc","arbi","testnet.arbi","poly","mumbai","avax","testnet.avax","ftm"]
