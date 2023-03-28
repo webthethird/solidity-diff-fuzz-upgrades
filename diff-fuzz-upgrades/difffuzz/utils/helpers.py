@@ -131,7 +131,9 @@ def get_contract_interface(contract_data: ContractData, suffix: str = "") -> dic
     return contract_info
 
 
-def get_pragma_version_from_file(filepath: str) -> str:
+def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
+    if seen is None:
+        seen = list()
     try:
         f = open(filepath, "r")
         lines = f.readlines()
@@ -155,7 +157,9 @@ def get_pragma_version_from_file(filepath: str) -> str:
             file = file.replace("./", filepath.rsplit("/", maxsplit=1)[0] + "/")
         elif file.startswith("../"):
             file = file.replace("../", filepath.rsplit("/", maxsplit=2)[0] + "/")
-        versions.append(get_pragma_version_from_file(file))
+        if file not in seen:
+            seen.append(file)
+            versions.append(get_pragma_version_from_file(file, seen))
     high_version = ["0", "0", "0"]
     for v in versions:
         vers = v.split(".")
