@@ -295,6 +295,7 @@ contract SimpleComptroller is ComptrollerErrorReporter, ExponentialNoError {
         newMarket.collateralFactorMantissa = 0;
 
         _addMarketInternal(address(cToken));
+        _initializeMarket(address(cToken));
 
         emit MarketListed(cToken);
 
@@ -308,9 +309,65 @@ contract SimpleComptroller is ComptrollerErrorReporter, ExponentialNoError {
         allMarkets.push(CToken(cToken));
     }
 
+    function _initializeMarket(address cToken) internal {
+        uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
+
+        CompMarketState storage supplyState = compSupplyState[cToken];
+        // CompMarketState storage borrowState = compBorrowState[cToken];
+
+        /*
+         * Update market state indices
+         */
+        if (supplyState.index == 0) {
+            // Initialize supply state index with default value
+            supplyState.index = compInitialIndex;
+        }
+
+        // if (borrowState.index == 0) {
+        //     // Initialize borrow state index with default value
+        //     borrowState.index = compInitialIndex;
+        // }
+
+        /*
+         * Update market state block numbers
+         */
+         supplyState.block = blockNumber;
+    }
+
     function _become(Unitroller unitroller) public {
         require(msg.sender == unitroller.admin(), "only unitroller admin can change brains");
         require(unitroller._acceptImplementation() == 0, "change not authorized");
+
+        SimpleComptroller(address(unitroller))._upgradeSplitCompRewards();
+    }
+
+    function _upgradeSplitCompRewards() public {
+        require(msg.sender == comptrollerImplementation, "only brains can become itself");
+
+        uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
+
+        for (uint i = 0; i < allMarkets.length; i ++) {
+//            compBorrowSpeeds[address(allMarkets[i])] = compSupplySpeeds[address(allMarkets[i])] = compSpeeds[address(allMarkets[i])];
+//            delete compSpeeds[address(allMarkets[i])];
+
+            /*
+             * Ensure supply and borrow state indices are all set. If not set, update to default value
+             */
+            CompMarketState storage supplyState = compSupplyState[address(allMarkets[i])];
+            // CompMarketState storage borrowState = compBorrowState[address(allMarkets[i])];
+
+            if (supplyState.index == 0) {
+                // Initialize supply state index with default value
+                supplyState.index = compInitialIndex;
+                supplyState.block = blockNumber;
+            }
+
+            // if (borrowState.index == 0) {
+            //     // Initialize borrow state index with default value
+            //     borrowState.index = compInitialIndex;
+            //     borrowState.block = blockNumber;
+            // }
+        }
     }
 
     /**
