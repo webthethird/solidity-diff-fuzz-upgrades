@@ -498,58 +498,44 @@ contract SimpleComptrollerV2 is ComptrollerErrorReporter, ExponentialNoError {
      */
     function distributeSupplierComp(address cToken, address supplier) internal {
         CompMarketState storage supplyState = compSupplyState[cToken];
-        Double memory supplyIndex = Double({mantissa: supplyState.index});
-        Double memory supplierIndex = Double({mantissa: compSupplierIndex[cToken][supplier]});
-        compSupplierIndex[cToken][supplier] = supplyIndex.mantissa;
+        uint supplyIndex = supplyState.index;
+        uint supplierIndex = compSupplierIndex[cToken][supplier];
 
-        if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
-            supplierIndex.mantissa = compInitialIndex;
+        // Update supplier's index to the current index since we are distributing accrued COMP
+        compSupplierIndex[cToken][supplier] = supplyIndex;
+
+        if (supplierIndex == 0 && supplyIndex > compInitialIndex) {
+            // Covers the case where users supplied tokens before the market's supply state index was set.
+            // Rewards the user with COMP accrued from the start of when supplier rewards were first
+            // set for the market.
+            supplierIndex = compInitialIndex;
         }
 
-        Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
+        // Calculate change in the cumulative sum of the COMP per cToken accrued
+        Double memory deltaIndex = Double({mantissa: sub_(supplyIndex, supplierIndex)});
+
         uint supplierTokens = CToken(cToken).balanceOf(supplier);
+
+        // Calculate COMP accrued: cTokenAmount * accruedPerCToken
         uint supplierDelta = mul_(supplierTokens, deltaIndex);
+
         uint supplierAccrued = add_(compAccrued[supplier], supplierDelta);
         compAccrued[supplier] = supplierAccrued;
-        emit DistributedSupplierComp(CToken(cToken), supplier, supplierDelta, supplyIndex.mantissa);
+
+        emit DistributedSupplierComp(CToken(cToken), supplier, supplierDelta, supplyIndex);
     }
 
     /**
-     * @notice Claim all the comp accrued by holder in all markets
-     * @param holder The address to claim COMP for
+     * @notice Claim all the comp accrued by sender in all markets
      */
-    function claimComp(address holder) public {
-        return claimComp(holder, allMarkets);
-    }
-
-    /**
-     * @notice Claim all the comp accrued by holder in the specified markets
-     * @param holder The address to claim COMP for
-     * @param cTokens The list of markets to claim COMP in
-     */
-    function claimComp(address holder, CToken[] memory cTokens) public {
-        address[] memory holders = new address[](1);
-        holders[0] = holder;
-        claimComp(holders, cTokens);
-    }
-
-    /**
-     * @notice Claim all comp accrued by the holders
-     * @param holders The addresses to claim COMP for
-     * @param cTokens The list of markets to claim COMP in
-     */
-    function claimComp(address[] memory holders, CToken[] memory cTokens) public {
-        for (uint i = 0; i < cTokens.length; i++) {
-            CToken cToken = cTokens[i];
+    function claimComp() public {
+        for (uint i = 0; i < allMarkets.length; i++) {
+            CToken cToken = allMarkets[i];
             require(markets[address(cToken)].isListed, "market must be listed");
             updateCompSupplyIndex(address(cToken));
-            for (uint j = 0; j < holders.length; j++) {
-                distributeSupplierComp(address(cToken), holders[j]);
-            }
+            distributeSupplierComp(address(cToken), msg.sender);
         }
-        for (uint j = 0; j < holders.length; j++) {
-            compAccrued[holders[j]] = grantCompInternal(holders[j], compAccrued[holders[j]]);
-        }
+        compAccrued[msg.sender] = grantCompInternal(msg.sender, compAccrued[msg.sender]);
     }
 
     /**

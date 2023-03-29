@@ -458,41 +458,16 @@ contract SimpleComptroller is ComptrollerErrorReporter, ExponentialNoError {
     }
 
     /**
-     * @notice Claim all the comp accrued by holder in all markets
-     * @param holder The address to claim COMP for
+     * @notice Claim all the comp accrued by sender in all markets
      */
-    function claimComp(address holder) public {
-        return claimComp(holder, allMarkets);
-    }
-
-    /**
-     * @notice Claim all the comp accrued by holder in the specified markets
-     * @param holder The address to claim COMP for
-     * @param cTokens The list of markets to claim COMP in
-     */
-    function claimComp(address holder, CToken[] memory cTokens) public {
-        address[] memory holders = new address[](1);
-        holders[0] = holder;
-        claimComp(holders, cTokens);
-    }
-
-    /**
-     * @notice Claim all comp accrued by the holders
-     * @param holders The addresses to claim COMP for
-     * @param cTokens The list of markets to claim COMP in
-     */
-    function claimComp(address[] memory holders, CToken[] memory cTokens) public {
-        for (uint i = 0; i < cTokens.length; i++) {
-            CToken cToken = cTokens[i];
+    function claimComp() public {
+        for (uint i = 0; i < allMarkets.length; i++) {
+            CToken cToken = allMarkets[i];
             require(markets[address(cToken)].isListed, "market must be listed");
             updateCompSupplyIndex(address(cToken));
-            for (uint j = 0; j < holders.length; j++) {
-                distributeSupplierComp(address(cToken), holders[j]);
-            }
+            distributeSupplierComp(address(cToken), msg.sender);
         }
-        for (uint j = 0; j < holders.length; j++) {
-            compAccrued[holders[j]] = grantCompInternal(holders[j], compAccrued[holders[j]]);
-        }
+        compAccrued[msg.sender] = grantCompInternal(msg.sender, compAccrued[msg.sender]);
     }
 
     /**
