@@ -3,7 +3,7 @@ from typing import List, Tuple
 from slither import Slither
 from slither.utils.type import convert_type_for_solidity_signature_to_string
 from slither.utils.code_generation import generate_interface
-from slither.utils.upgradeability import get_proxy_implementation_slot, TaintedExternalContract
+from slither.utils.upgradeability import get_proxy_implementation_slot, tainted_inheriting_contracts, TaintedExternalContract
 from slither.core.declarations.contract import Contract
 from slither.core.variables.local_variable import LocalVariable
 from slither.core.declarations.enum import Enum
@@ -243,19 +243,27 @@ def get_args_and_returns_for_wrapping(func: FunctionInfo) -> Tuple[str, str, Lis
     return args, call_args, return_vals, returns_to_compare
 
 
-def wrap_additional_target_functions(targets: List[ContractData]) -> str:
+def wrap_additional_target_functions(targets: List[ContractData], tainted: List[TaintedExternalContract] = None) -> str:
     wrapped = ""
 
     if len(targets) == 0:
         return wrapped
-
+    if tainted is None:
+        tainted = []
+    contracts = [target['contract_object'] for target in targets]
+    tainted = tainted_inheriting_contracts(tainted, contracts)
     crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions for additional targets.")
 
     wrapped += "\n    /*** Additional Targets ***/ \n\n"
     for t in targets:
-        functions_to_wrap = t["functions"]
+        functions_to_wrap: List[FunctionInfo] = t["functions"]
         for func in functions_to_wrap:
-            wrapped += wrap_diff_function(t, t, func)
+            if len(tainted) > 0:
+                if any(func['function'].signature_str == f.signature_str
+                       for taint in tainted for f in taint['functions']):
+                    wrapped += wrap_diff_function(t, t, func)
+            else:
+                wrapped += wrap_diff_function(t, t, func)
     return wrapped
 
 
@@ -556,7 +564,7 @@ def generate_test_contract(
 
     # Wrapper functions for additional targets
     if targets is not None:
-        final_contract += wrap_additional_target_functions(targets)
+        final_contract += wrap_additional_target_functions(targets, tainted_contracts)
     if tokens is not None:
         final_contract += wrap_functions(tokens)
 
