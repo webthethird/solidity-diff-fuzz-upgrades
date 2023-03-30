@@ -5,6 +5,8 @@ from slither import Slither
 from slither.core.declarations.contract import Contract
 from slither.core.declarations.function import Function
 from slither.core.variables.variable import Variable
+from slither.utils.upgradeability import TaintedExternalContract
+
 
 class FunctionInfo(TypedDict):
     name: str
@@ -12,6 +14,7 @@ class FunctionInfo(TypedDict):
     inputs: List[str]
     outputs: List[str]
     protected: bool
+
 
 class ContractData(TypedDict):
     # Blockchain info
@@ -36,6 +39,7 @@ class ContractData(TypedDict):
     implementation_object: Contract
     implementation_slither: Slither
 
+
 class Diff(TypedDict):
     missing_variables: List[Variable]
     new_variables: List[Variable]
@@ -43,3 +47,4 @@ class Diff(TypedDict):
     new_functions: List[Function]
     modified_functions: List[Function]
     tainted_functions: List[Function]
+    tainted_contracts: List[TaintedExternalContract]
