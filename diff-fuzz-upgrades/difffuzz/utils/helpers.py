@@ -68,14 +68,17 @@ def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
 
 def do_diff(v1: ContractData, v2: ContractData) -> Diff:
     crytic_print(PrintMode.MESSAGE, "    * Performing diff of V1 and V2")
-    missing_vars, new_vars, tainted_vars, new_funcs, modified_funcs, tainted_funcs = compare(v1["contract_object"], v2["contract_object"])
+    (
+        missing_vars, new_vars, tainted_vars, new_funcs, modified_funcs, tainted_funcs, tainted_contracts
+    ) = compare(v1["contract_object"], v2["contract_object"])
     diff = Diff(
         missing_variables=missing_vars,
         new_variables=new_vars,
         tainted_variables=tainted_vars,
         new_functions=new_funcs,
         modified_functions=modified_funcs,
-        tainted_functions=tainted_funcs
+        tainted_functions=tainted_funcs,
+        tainted_contracts=tainted_contracts
     )
     for key in diff.keys():
         if len(diff[key]) > 0:
@@ -85,6 +88,12 @@ def do_diff(v1: ContractData, v2: ContractData) -> Diff:
                     crytic_print(PrintMode.WARNING, f"          * {obj.full_name}")
                 elif isinstance(obj, Function):
                     crytic_print(PrintMode.WARNING, f"          * {obj.signature_str}")
+                elif isinstance(obj, dict) and "contract" in obj:
+                    crytic_print(PrintMode.WARNING, f"          * {obj['contract'].name}")
+                    for f in obj['functions']:
+                        crytic_print(PrintMode.WARNING, f"            * {f.signature_str}")
+                    for v in obj['variables']:
+                        crytic_print(PrintMode.WARNING, f"            * {v.signature_str}")
     return diff
 
 
