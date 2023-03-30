@@ -1,6 +1,9 @@
 from typing import List, Tuple
+
+from slither import Slither
 from slither.utils.type import convert_type_for_solidity_signature_to_string
 from slither.utils.code_generation import generate_interface
+from slither.utils.upgradeability import get_proxy_implementation_slot, TaintedExternalContract
 from slither.core.declarations.contract import Contract
 from slither.core.variables.local_variable import LocalVariable
 from slither.core.declarations.enum import Enum
@@ -15,6 +18,7 @@ from slither.core.declarations.structure import Structure
 from difffuzz.classes import FunctionInfo, ContractData, Diff
 from difffuzz.utils.printer import PrintMode, crytic_print
 from difffuzz.utils.helpers import (
+    get_pragma_version_from_file,
     similar,
     camel_case,
     do_diff
@@ -141,6 +145,38 @@ def get_contract_interface(contract_data: ContractData, suffix: str = "") -> dic
     contract_info["interface_name"] = f"I{contract.name}{suffix}"
 
     return contract_info
+
+
+def get_contract_data(contract: Contract, suffix: str = "") -> ContractData:
+    contract_data = ContractData(
+        contract_object=contract,
+        suffix=suffix,
+        path=contract.file_scope.filename.absolute,
+        solc_version=get_pragma_version_from_file(contract.file_scope.filename.absolute),
+    )
+
+    try:
+        contract_data["slither"] = Slither(contract.file_scope.filename.absolute)
+        contract_data["valid_data"] = True
+    except:
+        contract_data["slither"] = None
+        contract_data["valid_data"] = False
+
+    if contract_data["valid_data"]:
+        if contract.is_upgradeable_proxy:
+            contract_data["is_proxy"] = True
+            contract_data["implementation_slot"] = get_proxy_implementation_slot(
+                contract
+            )
+        else:
+            contract_data["is_proxy"] = False
+        target_info = get_contract_interface(contract_data, suffix)
+        contract_data["interface"] = target_info["interface"]
+        contract_data["interface_name"] = target_info["interface_name"]
+        contract_data["name"] = target_info["name"]
+        contract_data["functions"] = target_info["functions"]
+
+    return contract_data
 
 
 def wrap_functions(target: List[ContractData]) -> str:
