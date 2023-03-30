@@ -308,12 +308,8 @@ def wrap_diff_function(v1: ContractData, v2: ContractData, func: FunctionInfo, f
     return wrapped
 
 
-def wrap_diff_functions(v1: ContractData, v2: ContractData, proxy: ContractData = None) -> str:
-    wrapped = ""
-
-    diff: Diff = do_diff(v1, v2)
-
-    wrapped += "\n    /*** Modified Functions ***/ \n\n"
+def wrap_diff_functions(v1: ContractData, v2: ContractData, diff: Diff, proxy: ContractData = None, external_taint: List[ContractData] = None) -> str:
+    wrapped = "\n    /*** Modified Functions ***/ \n\n"
     for f in diff["modified_functions"]:
         if f.visibility in ["internal", "private"]:
             continue
@@ -378,6 +374,20 @@ def wrap_diff_functions(v1: ContractData, v2: ContractData, proxy: ContractData 
             wrapped += f"        assert({target_v1}.{v.full_name} == {target_v2}.{v.full_name});\n"
             wrapped += "    }\n\n"
 
+    if external_taint:
+        wrapped += "\n    /*** Tainted External Contracts ***/ \n\n"
+        for t in diff["tainted_contracts"]:
+            contract: Contract = t["contract"]
+            contract_data = next((t for t in external_taint if t['name'] == contract.name), None)
+            if contract_data:
+                for f in t["functions"]:
+                    if f.visibility in ["internal", "private"]:
+                        continue
+                    func = next(func for func in contract_data["functions"]
+                                if func['name'] == f.name and len(func['inputs']) == len(f.parameters))
+                    wrapped += wrap_diff_function(contract_data, contract_data, func)
+
+
     return wrapped
 
 
@@ -391,10 +401,19 @@ def generate_test_contract(
     proxy: ContractData = None,
     upgrade: bool = False
 ) -> str:
-
+    if tokens is None:
+        tokens = list()
+    if targets is None:
+        targets = list()
     crytic_print(PrintMode.INFORMATION, f"\n* Generating exploit contract...")
 
     final_contract = ""
+    diff: Diff = do_diff(v1, v2)
+    tainted_contracts = diff['tainted_contracts']
+    tainted_targets = [get_contract_data(t['contract']) for t in tainted_contracts]
+    other_targets = targets + tokens
+    if proxy:
+        other_targets.append(proxy)
 
     # Add solidity pragma and SPDX to avoid warnings
     final_contract += (
@@ -410,12 +429,15 @@ def generate_test_contract(
         )
         if proxy:
             final_contract += f'import {{ {proxy["name"]} }} from "{proxy["path"]}";\n'
-        if tokens is not None:
-            for i in tokens:
-                final_contract += f'import {{ {i["name"]} }} from "{i["path"]}";\n'
-        if targets is not None:
-            for i in targets:
-                final_contract += f'import {{ {i["name"]} }} from "{i["path"]}";\n'
+        for i in tokens:
+            final_contract += f'import {{ {i["name"]} }} from "{i["path"]}";\n'
+        for i in targets:
+            final_contract += f'import {{ {i["name"]} }} from "{i["path"]}";\n'
+        if tainted_targets is not None:
+            for tainted in tainted_targets:
+                c: Contract = tainted['contract_object']
+                if c.name not in (t['name'] for t in other_targets):
+                    final_contract += f'import {{ {c.name} }} from "{c.file_scope.filename.absolute}";\n'
         final_contract += "\n"
 
     # Add all interfaces first
@@ -423,12 +445,13 @@ def generate_test_contract(
     final_contract += v1["interface"]
     final_contract += v2["interface"]
 
-    if tokens is not None:
-        for i in tokens:
-            final_contract += i["interface"]
-    if targets is not None:
-        for i in targets:
-            final_contract += i["interface"]
+    for i in tokens:
+        final_contract += i["interface"]
+    for i in targets:
+        final_contract += i["interface"]
+    for tainted in tainted_targets:
+        if tainted['name'] not in (t['contract_object'].name for t in other_targets):
+            final_contract += tainted["interface"]
     if proxy is not None:
         final_contract += proxy["interface"]
 
@@ -469,13 +492,16 @@ def generate_test_contract(
         final_contract += f"    {proxy['interface_name']} {camel_case(proxy['name'])}V1;\n"
         final_contract += f"    {proxy['interface_name']} {camel_case(proxy['name'])}V2;\n"
 
-    if tokens is not None:
-        for t in tokens:
-            final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V1;\n"
-            final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V2;\n"
+    for t in tokens:
+        final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V1;\n"
+        final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V2;\n"
 
-    if targets is not None:
-        for t in targets:
+    for t in targets:
+        final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V1;\n"
+        final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V2;\n"
+
+    for t in tainted_targets:
+        if t['name'] not in [t['name'] for t in other_targets]:
             final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V1;\n"
             final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V2;\n"
 
@@ -483,7 +509,7 @@ def generate_test_contract(
     crytic_print(PrintMode.INFORMATION, f"  * Generating constructor.")
 
     if deploy:
-        final_contract += generate_deploy_constructor(v1, v2, tokens, targets, proxy, upgrade)
+        final_contract += generate_deploy_constructor(v1, v2, tokens, targets, tainted_targets, proxy, upgrade)
     else:
         final_contract += "\n    constructor() public {\n"
         final_contract += "        // TODO: Add any necessary initialization logic to the constructor here.\n"
@@ -525,7 +551,7 @@ def generate_test_contract(
     # Wrapper functions
     crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions.")
 
-    final_contract += wrap_diff_functions(v1, v2, proxy)
+    final_contract += wrap_diff_functions(v1, v2, diff, proxy, external_taint=tainted_targets)
 
     if targets is not None:
         final_contract += wrap_additional_target_functions(targets)
@@ -540,12 +566,17 @@ def generate_test_contract(
 
 def generate_deploy_constructor(
     v1: ContractData, 
-    v2: ContractData, 
-    tokens: List[ContractData] = None, 
-    targets: List[ContractData] = None, 
+    v2: ContractData,
+    tokens: List[ContractData] = None,
+    targets: List[ContractData] = None,
+    tainted_targets: List[ContractData] = None,
     proxy: ContractData = None, 
     upgrade: bool = False
 ) -> str:
+    if tokens is None:
+        tokens = list()
+    if targets is None:
+        targets = list()
     constructor = "\n    constructor() public {\n"
     constructor += f"        {camel_case(v1['name'])}V1 = {v1['interface_name']}(address(new {v1['name']}_V1()));\n"
     constructor += f"        {camel_case(v2['name'])}V2 = {v2['interface_name']}(address(new {v2['name']}_V2()));\n"
@@ -571,13 +602,19 @@ def generate_deploy_constructor(
             f"            bytes32(uint256(uint160(address({camel_case(v2['name'])}{'V1' if upgrade else 'V2'}))))\n"
         )
         constructor += f"        );\n"
-    if tokens is not None:
-        for t in tokens:
-            constructor += f"        {camel_case(t['name'])}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
-            constructor += f"        {camel_case(t['name'])}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
-    if targets is not None:
-        for t in targets:
-            constructor += f"        {camel_case(t['name'])}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
-            constructor += f"        {camel_case(t['name'])}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
+    for t in tokens:
+        constructor += f"        {camel_case(t['name'])}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
+        constructor += f"        {camel_case(t['name'])}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
+    for t in targets:
+        constructor += f"        {camel_case(t['name'])}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
+        constructor += f"        {camel_case(t['name'])}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
+    other_targets = targets + tokens
+    if proxy:
+        other_targets.append(proxy)
+    if tainted_targets is not None:
+        for t in tainted_targets:
+            if t['name'] not in (target['contract_object'].name for target in other_targets):
+                constructor += f"        {camel_case(t['name'])}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
+                constructor += f"        {camel_case(t['name'])}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
     constructor += "    }\n\n"
     return constructor
