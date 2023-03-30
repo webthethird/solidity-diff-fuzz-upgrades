@@ -21,7 +21,7 @@ from difffuzz.utils.helpers import (
     get_pragma_version_from_file,
     similar,
     camel_case,
-    do_diff
+    do_diff,
 )
 
 
@@ -46,7 +46,6 @@ def generate_config_file(
 
 def get_solidity_function_parameters(parameters: List[LocalVariable]) -> List[str]:
     """Get function parameters as solidity types.
-    It can return additional interfaces/structs if parameter types are tupes
     """
     inputs = []
 
@@ -73,9 +72,8 @@ def get_solidity_function_parameters(parameters: List[LocalVariable]) -> List[st
     return inputs
 
 
-def get_solidity_function_returns(return_type: Type) -> List[str]:
+def get_solidity_function_returns(return_type: List[Type]) -> List[str]:
     """Get function return types as solidity types.
-    It can return additional interfaces/structs if parameter types are tupes
     """
     outputs = []
 
@@ -250,6 +248,8 @@ def wrap_additional_target_functions(targets: List[ContractData]) -> str:
 
     if len(targets) == 0:
         return wrapped
+
+    crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions for additional targets.")
 
     wrapped += "\n    /*** Additional Targets ***/ \n\n"
     for t in targets:
@@ -533,6 +533,7 @@ def generate_test_contract(
         #                 final_contract +=  f"        {t['name']}.approve(address({t['name']}), type(uint256).max);\n"
         final_contract += f"    }}\n\n"
 
+    # Upgrade function
     if upgrade and proxy is not None:
         crytic_print(PrintMode.INFORMATION, f"  * Adding upgrade function.")
         final_contract += "    /*** Upgrade Function ***/ \n\n"
@@ -548,11 +549,12 @@ def generate_test_contract(
         final_contract += f"        );\n"
         final_contract += "    }\n\n"
 
-    # Wrapper functions
-    crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions.")
+    # Wrapper functions for V1/V2
+    crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions for V1/V2.")
 
     final_contract += wrap_diff_functions(v1, v2, diff, proxy, external_taint=tainted_targets)
 
+    # Wrapper functions for additional targets
     if targets is not None:
         final_contract += wrap_additional_target_functions(targets)
     if tokens is not None:
