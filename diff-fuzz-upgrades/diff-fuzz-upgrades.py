@@ -116,7 +116,7 @@ def main():
         crytic_print(PrintMode.ERROR, "\nFork mode coming soon...")
         fork_mode(args)
     if os.path.exists(args.v1) and os.path.exists(args.v2):
-        crytic_print(PrintMode.INFORMATION, "* Using 'deployment mode' (no fork):")
+        crytic_print(PrintMode.INFORMATION, "* Using 'path mode' (no fork):")
         deploy_mode(args)
     elif not os.path.exists(args.v1):
         crytic_print(PrintMode.ERROR, f"\nFile not found: {args.v1}")

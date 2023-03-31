@@ -18,7 +18,7 @@ from difffuzz.utils.from_path import (
 )
 
 
-def deploy_mode(args: argparse.Namespace):
+def path_mode(args: argparse.Namespace):
     if args.output_dir is not None:
         output_dir = args.output_dir
         if not str(output_dir).endswith(os.path.sep):
@@ -27,13 +27,13 @@ def deploy_mode(args: argparse.Namespace):
         output_dir = "./"
 
     if args.network:
-        crytic_print(PrintMode.WARNING, "* Network specified via command line argument, but you are using 'deployment mode'. "
+        crytic_print(PrintMode.WARNING, "* Network specified via command line argument, but you are using 'path mode'. "
                                         "To use fork mode, provide addresses instead of file paths.\n  Ignoring network...\n")
     if args.block:
-        crytic_print(PrintMode.WARNING, "* Block specified via command line argument, but you are using 'deployment mode'. "
+        crytic_print(PrintMode.WARNING, "* Block specified via command line argument, but you are using 'path mode'. "
                                         "To use fork mode, provide addresses instead of file paths.\n  Ignoring block...\n")
     if args.network_rpc:
-        crytic_print(PrintMode.WARNING, "* RPC specified via command line argument, but you are using 'deployment mode'. "
+        crytic_print(PrintMode.WARNING, "* RPC specified via command line argument, but you are using 'path mode'. "
                                         "To use fork mode, provide addresses instead of file paths.\n  Ignoring RPC...\n")
 
     crytic_print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
