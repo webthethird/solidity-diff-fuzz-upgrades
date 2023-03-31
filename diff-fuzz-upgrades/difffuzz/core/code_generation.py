@@ -250,12 +250,17 @@ def wrap_additional_target_functions(targets: List[ContractData], tainted: List[
         return wrapped
     if tainted is None:
         tainted = []
-    contracts = [target['contract_object'] for target in targets]
+    tainted_contracts = [taint['contract'] for taint in tainted]
+    contracts = [target['contract_object'] for target in targets if target['contract_object'] not in tainted_contracts]
     tainted = tainted_inheriting_contracts(tainted, contracts)
     crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions for additional targets.")
 
     wrapped += "\n    /*** Additional Targets ***/ \n\n"
     for t in targets:
+        c: Contract = t["contract_object"]
+        if c.name in (t.name for t in tainted_contracts):
+            # already covered by wrap_diff_functions
+            continue
         functions_to_wrap: List[FunctionInfo] = t["functions"]
         for func in functions_to_wrap:
             if len(tainted) > 0:
