@@ -6,6 +6,7 @@ from slither.core.declarations.contract import Contract
 from slither.core.declarations.function import Function
 from slither.core.variables.variable import Variable
 from slither.utils.upgradeability import TaintedExternalContract
+from slither.tools.read_storage.read_storage import SlotInfo
 
 
 class FunctionInfo(TypedDict):
@@ -38,6 +39,7 @@ class ContractData(TypedDict):
     is_proxy: bool    
     implementation_object: Contract
     implementation_slither: Slither
+    implementation_slot: SlotInfo
 
 
 class Diff(TypedDict):
