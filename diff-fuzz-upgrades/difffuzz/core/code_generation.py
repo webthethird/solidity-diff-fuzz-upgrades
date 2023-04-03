@@ -598,25 +598,28 @@ def generate_deploy_constructor(
     if proxy:
         constructor += f"        {camel_case(proxy['name'])}V1 = {proxy['interface_name']}(address(new {proxy['name']}()));\n"
         constructor += f"        {camel_case(proxy['name'])}V2 = {proxy['interface_name']}(address(new {proxy['name']}()));\n"
-        constructor += "        // Store the implementation addresses in the proxy.\n"
-        constructor += f"        hevm.store(\n"
-        constructor += f"            address({camel_case(proxy['name'])}V1),\n"
-        constructor += (
-            f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
-        )
-        constructor += (
-            f"            bytes32(uint256(uint160(address({camel_case(v1['name'])}V1))))\n"
-        )
-        constructor += f"        );\n"
-        constructor += f"        hevm.store(\n"
-        constructor += f"            address({camel_case(proxy['name'])}V2),\n"
-        constructor += (
-            f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
-        )
-        constructor += (
-            f"            bytes32(uint256(uint160(address({camel_case(v2['name'])}{'V1' if upgrade else 'V2'}))))\n"
-        )
-        constructor += f"        );\n"
+        if proxy['implementation_slot'] is not None:
+            constructor += "        // Store the implementation addresses in the proxy.\n"
+            constructor += f"        hevm.store(\n"
+            constructor += f"            address({camel_case(proxy['name'])}V1),\n"
+            constructor += (
+                f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
+            )
+            constructor += (
+                f"            bytes32(uint256(uint160(address({camel_case(v1['name'])}V1))))\n"
+            )
+            constructor += f"        );\n"
+            constructor += f"        hevm.store(\n"
+            constructor += f"            address({camel_case(proxy['name'])}V2),\n"
+            constructor += (
+                f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
+            )
+            constructor += (
+                f"            bytes32(uint256(uint160(address({camel_case(v2['name'])}{'V1' if upgrade else 'V2'}))))\n"
+            )
+            constructor += f"        );\n"
+        else:
+            constructor += "        // TODO: Set proxy implementations (proxy implementation slot not found)."
     for t in tokens:
         constructor += f"        {camel_case(t['name'])}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
         constructor += f"        {camel_case(t['name'])}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
