@@ -7,7 +7,7 @@ import os
 from eth_utils import is_address
 from colorama import init as colorama_init
 from difffuzz.utils.printer import PrintMode, crytic_print
-from difffuzz.core.deploy_mode import deploy_mode
+from difffuzz.core.path_mode import path_mode
 from difffuzz.core.fork_mode import fork_mode
 
 
@@ -117,7 +117,7 @@ def main():
         fork_mode(args)
     if os.path.exists(args.v1) and os.path.exists(args.v2):
         crytic_print(PrintMode.INFORMATION, "* Using 'path mode' (no fork):")
-        deploy_mode(args)
+        path_mode(args)
     elif not os.path.exists(args.v1):
         crytic_print(PrintMode.ERROR, f"\nFile not found: {args.v1}")
         raise FileNotFoundError(args.v1)
