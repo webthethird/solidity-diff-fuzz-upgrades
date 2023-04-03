@@ -409,13 +409,10 @@ def generate_test_contract(
     v2: ContractData,
     deploy: bool,
     version: str,
-    tokens: List[ContractData] = None,
     targets: List[ContractData] = None,
     proxy: ContractData = None,
     upgrade: bool = False
 ) -> str:
-    if tokens is None:
-        tokens = list()
     if targets is None:
         targets = list()
     crytic_print(PrintMode.INFORMATION, f"\n* Generating exploit contract...")
@@ -424,7 +421,7 @@ def generate_test_contract(
     diff: Diff = do_diff(v1, v2)
     tainted_contracts = diff['tainted_contracts']
     tainted_targets = [get_contract_data(t['contract']) for t in tainted_contracts]
-    other_targets = targets + tokens
+    other_targets = targets
     if proxy:
         other_targets.append(proxy)
 
@@ -442,8 +439,6 @@ def generate_test_contract(
         )
         if proxy:
             final_contract += f'import {{ {proxy["name"]} }} from "{proxy["path"]}";\n'
-        for i in tokens:
-            final_contract += f'import {{ {i["name"]} }} from "{i["path"]}";\n'
         for i in targets:
             final_contract += f'import {{ {i["name"]} }} from "{i["path"]}";\n'
         if tainted_targets is not None:
@@ -458,8 +453,6 @@ def generate_test_contract(
     final_contract += v1["interface"]
     final_contract += v2["interface"]
 
-    for i in tokens:
-        final_contract += i["interface"]
     for i in targets:
         final_contract += i["interface"]
     for tainted in tainted_targets:
@@ -505,10 +498,6 @@ def generate_test_contract(
         final_contract += f"    {proxy['interface_name']} {camel_case(proxy['name'])}V1;\n"
         final_contract += f"    {proxy['interface_name']} {camel_case(proxy['name'])}V2;\n"
 
-    for t in tokens:
-        final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V1;\n"
-        final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V2;\n"
-
     for t in targets:
         final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V1;\n"
         final_contract += f"    {t['interface_name']} {camel_case(t['name'])}V2;\n"
@@ -522,7 +511,7 @@ def generate_test_contract(
     crytic_print(PrintMode.INFORMATION, f"  * Generating constructor.")
 
     if deploy:
-        final_contract += generate_deploy_constructor(v1, v2, tokens, targets, tainted_targets, proxy, upgrade)
+        final_contract += generate_deploy_constructor(v1, v2, targets, tainted_targets, proxy, upgrade)
     else:
         final_contract += "\n    constructor() public {\n"
         final_contract += "        // TODO: Add any necessary initialization logic to the constructor here.\n"
@@ -570,8 +559,6 @@ def generate_test_contract(
     # Wrapper functions for additional targets
     if targets is not None:
         final_contract += wrap_additional_target_functions(targets, tainted_contracts)
-    if tokens is not None:
-        final_contract += wrap_functions(tokens)
 
     # End of contract
     final_contract += "}\n"
@@ -582,14 +569,11 @@ def generate_test_contract(
 def generate_deploy_constructor(
     v1: ContractData, 
     v2: ContractData,
-    tokens: List[ContractData] = None,
     targets: List[ContractData] = None,
     tainted_targets: List[ContractData] = None,
     proxy: ContractData = None, 
     upgrade: bool = False
 ) -> str:
-    if tokens is None:
-        tokens = list()
     if targets is None:
         targets = list()
     constructor = "\n    constructor() public {\n"
@@ -620,13 +604,10 @@ def generate_deploy_constructor(
             constructor += f"        );\n"
         else:
             constructor += "        // TODO: Set proxy implementations (proxy implementation slot not found)."
-    for t in tokens:
-        constructor += f"        {camel_case(t['name'])}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
-        constructor += f"        {camel_case(t['name'])}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
     for t in targets:
         constructor += f"        {camel_case(t['name'])}V1 = {t['interface_name']}(address(new {t['name']}()));\n"
         constructor += f"        {camel_case(t['name'])}V2 = {t['interface_name']}(address(new {t['name']}()));\n"
-    other_targets = targets + tokens
+    other_targets = targets
     if proxy:
         other_targets.append(proxy)
     if tainted_targets is not None:

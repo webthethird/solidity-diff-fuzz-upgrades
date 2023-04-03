@@ -32,9 +32,6 @@ def main():
         "-p", "--proxy", dest="proxy", help="Specifies the proxy contract to use."
     )
     parser.add_argument(
-        "-t", "--tokens", dest="tokens", help="Specifies the token contracts to use."
-    )
-    parser.add_argument(
         "-T",
         "--targets",
         dest="targets",
