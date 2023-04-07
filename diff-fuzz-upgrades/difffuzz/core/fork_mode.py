@@ -197,6 +197,11 @@ def fork_mode(args: argparse.Namespace):
     else:
         version = "0.8.0"
 
+    if args.include_protected:
+        protected = True
+    else:
+        protected = False
+
     if args.contract_addr:
         contract_addr = args.contract_addr
         crytic_print(
@@ -214,7 +219,8 @@ def fork_mode(args: argparse.Namespace):
         version,
         targets=targets,
         proxy=proxy,
-        upgrade=upgrade
+        upgrade=upgrade,
+        protected=protected
     )
     write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
     crytic_print(

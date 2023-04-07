@@ -246,7 +246,8 @@ def get_args_and_returns_for_wrapping(func: FunctionInfo) -> Tuple[str, str, Lis
     return args, call_args, return_vals, returns_to_compare
 
 
-def wrap_additional_target_functions(targets: List[ContractData], fork: bool, tainted: List[TaintedExternalContract] = None, proxy: ContractData = None) -> str:
+def wrap_additional_target_functions(targets: List[ContractData], fork: bool, tainted: List[TaintedExternalContract] = None, proxy: ContractData = None, protected: bool = False) -> str:
+    protected_mods = ["onlyOwner", "onlyAdmin", "ifOwner", "ifAdmin", "adminOnly", "ownerOnly"]
     wrapped = ""
 
     if len(targets) == 0:
@@ -266,6 +267,9 @@ def wrap_additional_target_functions(targets: List[ContractData], fork: bool, ta
             continue
         functions_to_wrap: List[FunctionInfo] = t["functions"]
         for func in functions_to_wrap:
+            mods = [m.name for m in func["function"].modifiers]
+            if not protected and any(m in protected_mods for m in mods):
+                continue
             if len(tainted) > 0:
                 if any(func['function'].signature_str == f.signature_str
                        for taint in tainted for f in taint.tainted_functions):
@@ -384,9 +388,14 @@ def wrap_tainted_vars(variables: List[Variable], v1: ContractData, v2: ContractD
     return wrapped
 
 
-def wrap_diff_functions(v1: ContractData, v2: ContractData, diff: Diff, fork: bool, proxy: ContractData = None, external_taint: List[ContractData] = None) -> str:
+def wrap_diff_functions(v1: ContractData, v2: ContractData, diff: Diff, fork: bool, proxy: ContractData = None, external_taint: List[ContractData] = None, protected: bool = False) -> str:
+    protected_mods = ["onlyOwner", "onlyAdmin", "ifOwner", "ifAdmin", "adminOnly", "ownerOnly"]
+
     wrapped = "\n    /*** Modified Functions ***/ \n\n"
     for f in diff["modified_functions"]:
+        mods = [m.name for m in f.modifiers]
+        if not protected and any(m in protected_mods for m in mods):
+            continue
         if f.visibility in ["internal", "private"]:
             continue
         func = next(func for func in v2["functions"] if func['name'] == f.name and len(func['inputs']) == len(f.parameters))
@@ -397,6 +406,9 @@ def wrap_diff_functions(v1: ContractData, v2: ContractData, diff: Diff, fork: bo
 
     wrapped += "\n    /*** Tainted Functions ***/ \n\n"
     for f in diff["tainted_functions"]:
+        mods = [m.name for m in f.modifiers]
+        if not protected and any(m in protected_mods for m in mods):
+            continue
         if f.visibility in ["internal", "private"]:
             continue
         func = next(func for func in v2["functions"] if func['name'] == f.name and len(func['inputs']) == len(f.parameters))
@@ -407,6 +419,9 @@ def wrap_diff_functions(v1: ContractData, v2: ContractData, diff: Diff, fork: bo
 
     wrapped += "\n    /*** New Functions ***/ \n\n"
     for f in diff["new_functions"]:
+        mods = [m.name for m in f.modifiers]
+        if not protected and any(m in protected_mods for m in mods):
+            continue
         if f.visibility in ["internal", "private"]:
             continue
         for f0 in v1["contract_object"].functions_entry_points:
@@ -432,6 +447,9 @@ def wrap_diff_functions(v1: ContractData, v2: ContractData, diff: Diff, fork: bo
             contract_data = next((t for t in external_taint if t['name'] == contract.name), None)
             if contract_data:
                 for f in t.tainted_functions:
+                    mods = [m.name for m in f.modifiers]
+                    if not protected and any(m in protected_mods for m in mods):
+                        continue
                     if f.visibility in ["internal", "private"] or any([f.is_constructor, f.is_fallback, f.is_receive]):
                         continue
                     func = next(func for func in contract_data["functions"]
@@ -449,7 +467,8 @@ def generate_test_contract(
     version: str,
     targets: List[ContractData] = None,
     proxy: ContractData = None,
-    upgrade: bool = False
+    upgrade: bool = False,
+    protected: bool = False
 ) -> str:
     if targets is None:
         targets = list()
@@ -602,6 +621,7 @@ def generate_test_contract(
     if upgrade and proxy is not None:
         crytic_print(PrintMode.INFORMATION, f"  * Adding upgrade function.")
         final_contract += "    /*** Upgrade Function ***/ \n\n"
+        final_contract += "    // TODO: Consider replacing this with the actual upgrade method\n"
         final_contract += "    function upgradeV2() external virtual {\n"
         if proxy['implementation_slot'] is not None:
             final_contract += f"        hevm.store(\n"

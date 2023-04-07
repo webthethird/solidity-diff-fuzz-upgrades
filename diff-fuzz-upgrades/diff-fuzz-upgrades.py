@@ -93,7 +93,13 @@ def main():
         '-R', 
         '--rpc', 
         dest='network_rpc', 
-        help='Specifies network RPC endpoint for reading operations'
+        help='Specifies network RPC endpoint for reading operations.'
+    )
+    parser.add_argument(
+        '--protected',
+        dest='include_protected',
+        action='store_true',
+        help='Specifies whether to include wrappers for protected functions.'
     )
 
 
