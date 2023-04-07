@@ -30,7 +30,7 @@ from crytic_compile.utils.zip import load_from_zip, save_to_zip
 
 def get_contract_from_network_address(address: str, prefix: str) -> Slither:
     prefix = prefix[:-1]    # remove semicolon -- for compatibility with windows filesystems
-    path = f"./crytic-exploit/"
+    path = f"./crytic-cache/"
     filename = f"{prefix}-{address}.zip"
 
     crytic_print(PrintMode.INFORMATION, f"  * Downloading contract {address}.")
@@ -142,8 +142,10 @@ def get_deployed_contract(contract_data: ContractData, implementation: str) -> t
         contract_name = get_compilation_unit_name(impl_slither)
         impl_contract = impl_slither.get_contract_from_name(contract_name)[0]
 
+    return contract, impl_slither, impl_contract
 
-def get_contract_data_from_address(address: str, implementation: str, prefix: str, blocknumber: str, w3provider: Web3) -> ContractData:
+
+def get_contract_data_from_address(address: str, implementation: str, prefix: str, blocknumber: str, w3provider: Web3, suffix: str = "") -> ContractData:
 
     contract_data = ContractData()
 
@@ -152,6 +154,7 @@ def get_contract_data_from_address(address: str, implementation: str, prefix: st
     contract_data["address"] = to_checksum_address(address)    
     contract_data["block"]   = blocknumber
     contract_data["prefix"]  = prefix
+    contract_data["suffix"]  = suffix
     contract_data["web3_provider"] = w3provider
     try:
         contract_data["slither"] = get_contract_from_network_address(contract_data["address"], prefix)
@@ -175,7 +178,7 @@ def get_contract_data_from_address(address: str, implementation: str, prefix: st
         else:
             contract_data["is_proxy"] = False
 
-        target_info = get_contract_interface(contract_data)
+        target_info = get_contract_interface(contract_data, suffix)
         
         contract_data["interface"] = target_info["interface"]
         contract_data["interface_name"] = target_info["interface_name"]
@@ -185,3 +188,48 @@ def get_contract_data_from_address(address: str, implementation: str, prefix: st
         crytic_print(PrintMode.SUCCESS, f"    * Information fetched correctly for contract {contract_data['name']}")
 
     return contract_data
+
+
+def addresses_from_comma_separated_string(data: str) -> tuple[list, dict]:
+    addresses = data.split(",")
+
+    unique_addresses = set()
+    implementations = dict()
+
+    for u in addresses:
+        if ":" in u:
+            # This is an implementation specification
+            pair = u.split(":")
+            proxy = to_checksum_address(pair[0])
+            impl  = to_checksum_address(pair[1])
+
+            unique_addresses.add(proxy)
+            implementations[proxy] = impl
+        else:
+            if not is_address(u):
+                crytic_print(
+                    PrintMode.ERROR,
+                    f"\n  * {u} is not an address. Ignoring...",
+                )
+            else:
+                unique_addresses.add(to_checksum_address(u))
+    
+    unique_addresses = list(unique_addresses)
+
+    return unique_addresses, implementations
+
+
+def get_contracts_from_comma_separated_string(addresses_string: str, prefix: str, blocknumber: str, w3: Web3) -> tuple[list[ContractData], list[str], dict]:
+
+    results = []
+
+    [addresses, implementations] = addresses_from_comma_separated_string(addresses_string)
+    for a in addresses:
+        data = get_contract_data_from_address(a, implementations.get(a, ""), prefix, blocknumber, w3)
+        if not data["valid_data"]:
+            crytic_print(PrintMode.ERROR, f"  * Target contract {a} source code is not available.")
+            raise ValueError(f"Target contract {a} source code is not available.")
+        else:
+            results.append(data)
+
+    return results, addresses, implementations

@@ -110,9 +110,9 @@ def main():
 
     crytic_print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     if is_address(args.v1) and is_address(args.v2):
-        crytic_print(PrintMode.ERROR, "\nFork mode coming soon...")
+        crytic_print(PrintMode.INFORMATION, "* Using 'fork mode':")
         fork_mode(args)
-    if os.path.exists(args.v1) and os.path.exists(args.v2):
+    elif os.path.exists(args.v1) and os.path.exists(args.v2):
         crytic_print(PrintMode.INFORMATION, "* Using 'path mode' (no fork):")
         path_mode(args)
     elif not os.path.exists(args.v1):
