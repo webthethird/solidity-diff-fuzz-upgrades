@@ -3,7 +3,7 @@ import difflib
 from typing import List
 
 from solc_select.solc_select import get_installable_versions
-from slither.utils.upgradeability import compare
+from slither.utils.upgradeability import compare, tainted_inheriting_contracts, TaintedExternalContract
 from slither.core.declarations import Function
 from slither.core.variables.state_variable import StateVariable
 from difffuzz.classes import ContractData, Diff
@@ -66,11 +66,19 @@ def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
     return ".".join(high_version)
 
 
-def do_diff(v1: ContractData, v2: ContractData) -> Diff:
-    crytic_print(PrintMode.MESSAGE, "    * Performing diff of V1 and V2")
+def do_diff(v1: ContractData, v2: ContractData, additional_targets: List[ContractData] = None) -> Diff:
+    crytic_print(PrintMode.MESSAGE, "* Performing diff of V1 and V2")
     (
         missing_vars, new_vars, tainted_vars, new_funcs, modified_funcs, tainted_funcs, tainted_contracts
     ) = compare(v1["contract_object"], v2["contract_object"])
+    if additional_targets:
+        tainted_contracts = tainted_inheriting_contracts(
+            tainted_contracts, [
+                t["contract_object"] for t in additional_targets 
+                if t["contract_object"] not in 
+                [c.contract for c in tainted_contracts] + [v1["contract_object"], v2["contract_object"]]
+            ]
+        )
     diff = Diff(
         missing_variables=missing_vars,
         new_variables=new_vars,
@@ -82,18 +90,18 @@ def do_diff(v1: ContractData, v2: ContractData) -> Diff:
     )
     for key in diff.keys():
         if len(diff[key]) > 0:
-            crytic_print(PrintMode.WARNING, f'      * {str(key).replace("-", " ")}:')
+            crytic_print(PrintMode.WARNING, f'  * {str(key).replace("-", " ")}:')
             for obj in diff[key]:
                 if isinstance(obj, StateVariable):
-                    crytic_print(PrintMode.WARNING, f"          * {obj.full_name}")
+                    crytic_print(PrintMode.WARNING, f"      * {obj.full_name}")
                 elif isinstance(obj, Function):
-                    crytic_print(PrintMode.WARNING, f"          * {obj.signature_str}")
-                elif isinstance(obj, dict) and "contract" in obj:
-                    crytic_print(PrintMode.WARNING, f"          * {obj['contract'].name}")
-                    for f in obj['functions']:
-                        crytic_print(PrintMode.WARNING, f"            * {f.signature_str}")
-                    for v in obj['variables']:
-                        crytic_print(PrintMode.WARNING, f"            * {v.signature_str}")
+                    crytic_print(PrintMode.WARNING, f"      * {obj.signature_str}")
+                elif isinstance(obj, TaintedExternalContract):
+                    crytic_print(PrintMode.WARNING, f"      * {obj.contract.name}")
+                    for f in obj.tainted_functions:
+                        crytic_print(PrintMode.WARNING, f"        * {f.signature_str}")
+                    for v in obj.tainted_variables:
+                        crytic_print(PrintMode.WARNING, f"        * {v.signature_str}")
     return diff
 
 
