@@ -1,6 +1,6 @@
 import os
 import time
-from typing import List, Any
+from typing import List, Any, Tuple
 from solc_select.solc_select import (
     switch_global_version,
     installed_versions,
@@ -72,7 +72,7 @@ def get_contract_variable_value(variable: StateVariable, contract_data: Contract
         return ''
         
 
-def get_proxy_implementation(contract: Contract, contract_data: ContractData) -> str:
+def get_proxy_implementation(contract: Contract, contract_data: ContractData) -> Tuple[str, ContractData]:
 
     crytic_print(PrintMode.INFORMATION, f"    * Getting proxy implementation from {contract.name} at {contract_data['address']}.")
 
@@ -87,35 +87,62 @@ def get_proxy_implementation(contract: Contract, contract_data: ContractData) ->
         impl_address = '0x' + imp.hex()[-40:]
     
         if impl_address != "0x0000000000000000000000000000000000000000":
-            return impl_address
+            return impl_address, contract_data
 
         crytic_print(PrintMode.WARNING, f"      * storage slot {slot.name} is zero")
 
         raise ValueError("Proxy storage slot not found")
     else:
-        # Fallback: Try finding a state variable with "implementation" or "target" in its name
-        implementation_var = []
+        try: 
+            # Start by reading EIP1967 storage slot keccak256('eip1967.proxy.implementation') - 1
+            imp = get_storage_data(contract_data["web3_provider"], contract_data["address"], 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc, contract_data["block"])
+            impl_address = '0x' + imp.hex()[-40:]
+        
+            if impl_address != "0x0000000000000000000000000000000000000000":
+                contract_data["implementation_slot"] = SlotInfo(name="IMPLEMENTATION_SLOT", type_string="address", slot=int("0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc", 16), size=160, offset=0)
+                return impl_address, contract_data
 
-        for v in contract.state_variables_ordered:
-            if v.name.lower().find("implementation") >= 0 or v.name.lower().find("target") >= 0:
-                implementation_var.append(v)
+            crytic_print(PrintMode.WARNING, f"      * EIP1967 storage slot is zero")
 
-        if not implementation_var:
-            crytic_print(PrintMode.WARNING, f"      * Couldn't find proxy implementation in contract storage")
-            raise ValueError("Couldn't find proxy implementation in contract storage")
-        else:
-            for imp in implementation_var:
-                slot_value = get_contract_variable_value(imp, contract_data)
-                
-                if slot_value[0:2] != "0x":
-                    slot_value = "0x" + slot_value
+            # Try with slot keccak256('org.zeppelinos.proxy.implementation') used by early OZ proxies
+            imp = get_storage_data(contract_data["web3_provider"], contract_data["address"], 0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3, contract_data["block"])
+            impl_address = '0x' + imp.hex()[-40:]
+            
+            if impl_address != "0x0000000000000000000000000000000000000000":
+                contract_data["implementation_slot"] = SlotInfo(name="IMPLEMENTATION_SLOT", type_string="address", slot=int("0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3", 16), size=160, offset=0)
+                return impl_address, contract_data
 
-                if is_address(slot_value) and slot_value != '0000000000000000000000000000000000000000':
-                    crytic_print(PrintMode.WARNING, f"      * Proxy implementation address read from variable: {imp.type} {imp.name}")
-                    return slot_value
+            crytic_print(PrintMode.WARNING, f"      * OZ ZeppelinOS proxies storage slot is zero")
 
-            crytic_print(PrintMode.ERROR, f"      * Proxy storage slot read is not an address")
-            raise ValueError("Proxy storage slot read is not an address")
+            raise ValueError("Proxy storage slot not found")
+
+        except Exception as e:
+            # Fallback: Try finding a state variable with "implementation" or "target" in its name
+            implementation_var = []
+
+            for v in contract.state_variables_ordered:
+                if v.name.lower().find("implementation") >= 0 or v.name.lower().find("target") >= 0:
+                    implementation_var.append(v)
+
+            if not implementation_var:
+                crytic_print(PrintMode.WARNING, f"      * Couldn't find proxy implementation in contract storage")
+                raise ValueError("Couldn't find proxy implementation in contract storage")
+            else:
+                for imp in implementation_var:
+                    slot_value = get_contract_variable_value(imp, contract_data)
+                    
+                    if slot_value[0:2] != "0x":
+                        slot_value = "0x" + slot_value
+
+                    if is_address(slot_value) and slot_value != '0000000000000000000000000000000000000000':
+                        crytic_print(PrintMode.WARNING, f"      * Proxy implementation address read from variable: {imp.type} {imp.name}")
+                        srs = SlitherReadStorage(contract, 20)
+                        slot_info = srs.get_storage_slot(imp, contract)
+                        contract_data["implementation_slot"] = slot_info
+                        return slot_value, contract_data
+
+                crytic_print(PrintMode.ERROR, f"      * Proxy storage slot read is not an address")
+                raise ValueError("Proxy storage slot read is not an address")
         
 
 def get_deployed_contract(contract_data: ContractData, implementation: str) -> tuple[Contract, Slither|None, Contract|None]:
@@ -132,7 +159,7 @@ def get_deployed_contract(contract_data: ContractData, implementation: str) -> t
 
     if contract.is_upgradeable_proxy:
         if implementation == "":
-            implementation = get_proxy_implementation(contract, contract_data)
+            implementation, contract_data = get_proxy_implementation(contract, contract_data)
             if implementation == "0x0000000000000000000000000000000000000000":
                 crytic_print(PrintMode.WARNING, f"      * Contract at {contract_data['address']} was mistakenly identified as a proxy. Please check that results are consistent.")
                 return contract, impl_slither, impl_contract
