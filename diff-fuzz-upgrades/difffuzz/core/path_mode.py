@@ -19,6 +19,8 @@ from difffuzz.utils.from_path import (
 
 
 def path_mode(args: argparse.Namespace):
+    mode = "deploy"
+
     if args.output_dir is not None:
         output_dir = args.output_dir
         if not str(output_dir).endswith(os.path.sep):
@@ -111,7 +113,7 @@ def path_mode(args: argparse.Namespace):
     contract = generate_test_contract(
         v1_contract_data,
         v2_contract_data,
-        deploy,
+        mode,
         version,
         targets=targets,
         proxy=proxy,

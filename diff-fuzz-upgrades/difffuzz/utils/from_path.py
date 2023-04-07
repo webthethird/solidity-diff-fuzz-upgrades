@@ -45,6 +45,7 @@ def get_contract_data_from_path(filepath: str, suffix: str = "") -> ContractData
         contract_data["slither"] = get_slither_object_from_path(filepath)
         contract_data["valid_data"] = True
     except:
+        crytic_print(PrintMode.ERROR, f"  * Error getting Slither object")
         contract_data["slither"] = None
         contract_data["valid_data"] = False
 
@@ -54,7 +55,7 @@ def get_contract_data_from_path(filepath: str, suffix: str = "") -> ContractData
         try:
             contract = slither_object.get_contract_from_name(contract_name)[0]
         except IndexError:
-            contract = slither_object.get_contract_from_name(contract_name.replace("V1", "").replace("V2", ""))[0]
+            contract = slither_object.get_contract_from_name(contract_name.replace("V1", "").replace("V2", "").replace("V3", ""))[0]
         contract_data["contract_object"] = contract
         if contract.is_upgradeable_proxy:
             contract_data["is_proxy"] = True
@@ -87,3 +88,5 @@ def get_slither_object_from_path(filepath: str) -> Slither:
     except SlitherError as e:
         crytic_print(PrintMode.ERROR, f"  * Slither error:\v{str(e)}")
         raise SlitherError(str(e))
+    except Exception as e:
+        crytic_print(PrintMode.ERROR, f"  * Exception:\v{str(e)}")
