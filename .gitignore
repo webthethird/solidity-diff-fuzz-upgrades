@@ -65,6 +65,9 @@ out
 # Echidna
 crytic-export
 corpus
+**/corpus
+**/crytic-cache
+**/crytic-exploit
 
 # VS Code
 .vscode
