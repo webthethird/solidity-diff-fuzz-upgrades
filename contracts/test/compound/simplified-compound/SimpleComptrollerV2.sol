@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
+import "./ComptrollerInterface.sol";
 import { SimpleCToken as CToken } from "./SimpleCToken.sol";
 import "./ErrorReporter.sol";
 import "./ExponentialNoError.sol";
@@ -13,7 +14,7 @@ import { SimpleComp as Comp } from "./SimpleComp.sol";
  * @title Compound's Comptroller Contract
  * @author Compound
  */
-contract SimpleComptrollerV2 is ComptrollerErrorReporter, ExponentialNoError {
+contract SimpleComptrollerV2 is ComptrollerInterface, ComptrollerErrorReporter, ExponentialNoError {
     // ComptrollerStorage
     address public admin;
     address public compAddress;
@@ -44,7 +45,7 @@ contract SimpleComptrollerV2 is ComptrollerErrorReporter, ExponentialNoError {
 //    mapping(address => uint) public borrowCaps;
 //    mapping(address => uint) public compContributorSpeeds;
 //    mapping(address => uint) public lastContributorBlock;
-    bool public constant isComptroller = true;
+    // bool public constant isComptroller = true;
     /// @notice The initial COMP index for a market
     uint224 public constant compInitialIndex = 1e36;
 
@@ -134,7 +135,7 @@ contract SimpleComptrollerV2 is ComptrollerErrorReporter, ExponentialNoError {
      * @param cTokens The list of addresses of the cToken markets to be enabled
      * @return Success indicator for whether each corresponding market was entered
      */
-    function enterMarkets(address[] memory cTokens) public returns (uint[] memory) {
+    function enterMarkets(address[] memory cTokens) public override returns (uint[] memory) {
         uint len = cTokens.length;
 
         uint[] memory results = new uint[](len);
@@ -188,7 +189,7 @@ contract SimpleComptrollerV2 is ComptrollerErrorReporter, ExponentialNoError {
      * @param mintAmount The amount of underlying being supplied to the market in exchange for tokens
      * @return 0 if the mint is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
-    function mintAllowed(address cToken, address minter, uint mintAmount) external returns (uint) {
+    function mintAllowed(address cToken, address minter, uint mintAmount) external override returns (uint) {
         // Shh - currently unused
         minter;
         mintAmount;
@@ -211,7 +212,7 @@ contract SimpleComptrollerV2 is ComptrollerErrorReporter, ExponentialNoError {
      * @param redeemTokens The number of cTokens to exchange for the underlying asset in the market
      * @return 0 if the redeem is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
-    function redeemAllowed(address cToken, address redeemer, uint redeemTokens) external returns (uint) {
+    function redeemAllowed(address cToken, address redeemer, uint redeemTokens) external override returns (uint) {
         uint allowed = redeemAllowedInternal(cToken, redeemer, redeemTokens);
         if (allowed != uint(Error.NO_ERROR)) {
             return allowed;
@@ -235,18 +236,18 @@ contract SimpleComptrollerV2 is ComptrollerErrorReporter, ExponentialNoError {
         }
 
         /* Otherwise, perform a hypothetical liquidity check to guard against shortfall */
-//        (Error err, , uint shortfall) = getHypotheticalAccountLiquidityInternal(redeemer, CToken(cToken), redeemTokens, 0);
-//        if (err != Error.NO_ERROR) {
-//            return uint(err);
-//        }
-//        if (shortfall > 0) {
-//            return uint(Error.INSUFFICIENT_LIQUIDITY);
-//        }
+       (Error err, , uint shortfall) = getHypotheticalAccountLiquidityInternal(redeemer, CToken(cToken), redeemTokens, 0);
+       if (err != Error.NO_ERROR) {
+           return uint(err);
+       }
+       if (shortfall > 0) {
+           return uint(Error.INSUFFICIENT_LIQUIDITY);
+       }
 
         return uint(Error.NO_ERROR);
     }
 
-    function redeemVerify(address cToken, address redeemer, uint redeemAmount, uint redeemTokens) external {
+    function redeemVerify(address cToken, address redeemer, uint redeemAmount, uint redeemTokens) external override {
         // Shh - currently unused
         cToken;
         redeemer;
@@ -254,6 +255,96 @@ contract SimpleComptrollerV2 is ComptrollerErrorReporter, ExponentialNoError {
         // Require tokens is zero or amount is also zero
         if (redeemTokens == 0 && redeemAmount > 0) {
             revert("redeemTokens zero");
+        }
+    }
+
+    /*** Liquidity/Liquidation Calculations ***/
+
+    /**
+     * @dev Local vars for avoiding stack-depth limits in calculating account liquidity.
+     *  Note that `cTokenBalance` is the number of cTokens the account owns in the market,
+     *  whereas `borrowBalance` is the amount of underlying that the account has borrowed.
+     */
+    struct AccountLiquidityLocalVars {
+        uint sumCollateral;
+        uint sumBorrowPlusEffects;
+        uint cTokenBalance;
+        uint borrowBalance;
+        uint exchangeRateMantissa;
+        uint oraclePriceMantissa;
+        Exp collateralFactor;
+        Exp exchangeRate;
+        Exp oraclePrice;
+        Exp tokensToDenom;
+    }
+
+    /**
+     * @notice Determine what the account liquidity would be if the given amounts were redeemed/borrowed
+     * @param cTokenModify The market to hypothetically redeem/borrow in
+     * @param account The account to determine liquidity for
+     * @param redeemTokens The number of tokens to hypothetically redeem
+     * @param borrowAmount The amount of underlying to hypothetically borrow
+     * @dev Note that we calculate the exchangeRateStored for each collateral cToken using stored data,
+     *  without calculating accumulated interest.
+     * @return (possible error code,
+                hypothetical account liquidity in excess of collateral requirements,
+     *          hypothetical account shortfall below collateral requirements)
+     */
+    function getHypotheticalAccountLiquidityInternal(
+        address account,
+        CToken cTokenModify,
+        uint redeemTokens,
+        uint borrowAmount) internal view returns (Error, uint, uint) {
+
+        AccountLiquidityLocalVars memory vars; // Holds all our calculation results
+        uint oErr;
+
+        // For each asset the account is in
+        CToken[] memory assets = accountAssets[account];
+        for (uint i = 0; i < assets.length; i++) {
+            CToken asset = assets[i];
+
+            // Read the balances and exchange rate from the cToken
+            (oErr, vars.cTokenBalance, vars.borrowBalance, vars.exchangeRateMantissa) = asset.getAccountSnapshot(account);
+            if (oErr != 0) { // semi-opaque error code, we assume NO_ERROR == 0 is invariant between upgrades
+                return (Error.SNAPSHOT_ERROR, 0, 0);
+            }
+            vars.collateralFactor = Exp({mantissa: markets[address(asset)].collateralFactorMantissa});
+            vars.exchangeRate = Exp({mantissa: vars.exchangeRateMantissa});
+
+            // Get the normalized price of the asset
+            vars.oraclePriceMantissa = oracle.getUnderlyingPrice(asset);
+            if (vars.oraclePriceMantissa == 0) {
+                return (Error.PRICE_ERROR, 0, 0);
+            }
+            vars.oraclePrice = Exp({mantissa: vars.oraclePriceMantissa});
+
+            // Pre-compute a conversion factor from tokens -> ether (normalized price value)
+            vars.tokensToDenom = mul_(mul_(vars.collateralFactor, vars.exchangeRate), vars.oraclePrice);
+
+            // sumCollateral += tokensToDenom * cTokenBalance
+            vars.sumCollateral = mul_ScalarTruncateAddUInt(vars.tokensToDenom, vars.cTokenBalance, vars.sumCollateral);
+
+            // sumBorrowPlusEffects += oraclePrice * borrowBalance
+            vars.sumBorrowPlusEffects = mul_ScalarTruncateAddUInt(vars.oraclePrice, vars.borrowBalance, vars.sumBorrowPlusEffects);
+
+            // Calculate effects of interacting with cTokenModify
+            if (asset == cTokenModify) {
+                // redeem effect
+                // sumBorrowPlusEffects += tokensToDenom * redeemTokens
+                vars.sumBorrowPlusEffects = mul_ScalarTruncateAddUInt(vars.tokensToDenom, redeemTokens, vars.sumBorrowPlusEffects);
+
+                // borrow effect
+                // sumBorrowPlusEffects += oraclePrice * borrowAmount
+                vars.sumBorrowPlusEffects = mul_ScalarTruncateAddUInt(vars.oraclePrice, borrowAmount, vars.sumBorrowPlusEffects);
+            }
+        }
+
+        // These are safe, as the underflow condition is checked first
+        if (vars.sumCollateral > vars.sumBorrowPlusEffects) {
+            return (Error.NO_ERROR, vars.sumCollateral - vars.sumBorrowPlusEffects, 0);
+        } else {
+            return (Error.NO_ERROR, 0, vars.sumBorrowPlusEffects - vars.sumCollateral);
         }
     }
 
@@ -604,13 +695,7 @@ contract SimpleComptrollerV2 is ComptrollerErrorReporter, ExponentialNoError {
      * @notice Return the address of the COMP token
      * @return The address of COMP
      */
-    function getCompAddress() virtual public view returns (address) {
-        return 0xc00e94Cb662C3520282E6f5717214004A7f26888;
-    }
-}
-
-contract ComptrollerHarness is SimpleComptrollerV2 {
-    function getCompAddress() public view override returns (address) {
+    function getCompAddress() public view returns (address) {
         return compAddress;
     }
 

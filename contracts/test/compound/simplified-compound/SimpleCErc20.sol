@@ -23,7 +23,7 @@ contract SimpleCErc20 is SimpleCToken {
      * @param decimals_ ERC-20 decimal precision of this token
      */
     function initialize(address underlying_,
-                        SimpleComptroller comptroller_,
+                        ComptrollerInterface comptroller_,
                         InterestRateModel interestRateModel_,
                         uint initialExchangeRateMantissa_,
                         string memory name_,

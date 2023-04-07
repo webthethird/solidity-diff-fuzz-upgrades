@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./SimpleComptrollerV1.sol";
+import "./ComptrollerInterface.sol";
 import "./ErrorReporter.sol";
 import "./EIP20Interface.sol";
 import "./InterestRateModel.sol";
@@ -53,7 +53,7 @@ abstract contract SimpleCToken is ExponentialNoError, TokenErrorReporter {
     /**
      * @notice Contract which oversees inter-cToken operations
      */
-    SimpleComptroller public comptroller;
+    ComptrollerInterface public comptroller;
 
     /**
      * @notice Model which tells what the current interest rate should be
@@ -134,7 +134,7 @@ abstract contract SimpleCToken is ExponentialNoError, TokenErrorReporter {
     /*** Admin Events ***/
     event NewPendingAdmin(address oldPendingAdmin, address newPendingAdmin);
     event NewAdmin(address oldAdmin, address newAdmin);
-    event NewComptroller(SimpleComptroller oldComptroller, SimpleComptroller newComptroller);
+    event NewComptroller(ComptrollerInterface oldComptroller, ComptrollerInterface newComptroller);
     event NewMarketInterestRateModel(InterestRateModel oldInterestRateModel, InterestRateModel newInterestRateModel);
     event NewReserveFactor(uint oldReserveFactorMantissa, uint newReserveFactorMantissa);
     event ReservesAdded(address benefactor, uint addAmount, uint newTotalReserves);
@@ -151,7 +151,7 @@ abstract contract SimpleCToken is ExponentialNoError, TokenErrorReporter {
      * @param symbol_ EIP-20 symbol of this token
      * @param decimals_ EIP-20 decimal precision of this token
      */
-    function initialize(SimpleComptroller comptroller_,
+    function initialize(ComptrollerInterface comptroller_,
                         InterestRateModel interestRateModel_,
                         uint initialExchangeRateMantissa_,
                         string memory name_,
@@ -298,6 +298,21 @@ abstract contract SimpleCToken is ExponentialNoError, TokenErrorReporter {
     function balanceOfUnderlying(address owner) external returns (uint) {
         Exp memory exchangeRate = Exp({mantissa: exchangeRateCurrent()});
         return mul_ScalarTruncate(exchangeRate, accountTokens[owner]);
+    }
+
+    /**
+     * @notice Get a snapshot of the account's balances, and the cached exchange rate
+     * @dev This is used by comptroller to more efficiently perform liquidity checks.
+     * @param account Address of the account to snapshot
+     * @return (possible error, token balance, borrow balance, exchange rate mantissa)
+     */
+    function getAccountSnapshot(address account) external view returns (uint, uint, uint, uint) {
+        return (
+            NO_ERROR,
+            accountTokens[account],
+            0,
+            exchangeRateStoredInternal()
+        );
     }
 
     /**
@@ -628,13 +643,13 @@ abstract contract SimpleCToken is ExponentialNoError, TokenErrorReporter {
       * @dev Admin function to set a new comptroller
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
-    function _setComptroller(SimpleComptroller newComptroller) public returns (uint) {
+    function _setComptroller(ComptrollerInterface newComptroller) public returns (uint) {
         // Check caller is admin
         if (msg.sender != admin) {
             revert SetComptrollerOwnerCheck();
         }
 
-        SimpleComptroller oldComptroller = comptroller;
+        ComptrollerInterface oldComptroller = comptroller;
         // Ensure invoke comptroller.isComptroller() returns true
         require(newComptroller.isComptroller(), "marker method returned false");
 
