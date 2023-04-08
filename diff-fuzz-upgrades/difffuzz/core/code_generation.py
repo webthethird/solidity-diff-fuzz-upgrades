@@ -308,7 +308,9 @@ def wrap_diff_function(v1: ContractData, v2: ContractData, fork: bool, func: Fun
 
     wrapped += f"    function {v2['name']}_{func2['name']}{args} public virtual {{\n"
     if fork:
+        wrapped += "        uint blockNo = block.number;\n"
         wrapped += "        hevm.selectFork(fork2);\n"
+        wrapped += "        hevm.roll(blockNo);\n"
     if not func2['protected']:
         wrapped += "        hevm.prank(msg.sender);\n"
     wrapped += wrap_low_level_call(v2, func2, call_args, fork, "V2", proxy)
@@ -318,6 +320,7 @@ def wrap_diff_function(v1: ContractData, v2: ContractData, fork: bool, func: Fun
     #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
     if fork:
         wrapped += "        hevm.selectFork(fork1);\n"
+        wrapped += "        hevm.roll(blockNo);\n"
     if not func['protected']:
         wrapped += "        hevm.prank(msg.sender);\n"
     if func != func2:
@@ -355,9 +358,12 @@ def wrap_tainted_vars(variables: List[Variable], v1: ContractData, v2: ContractD
                     f"    function {v1['name']}_{v.name}({type_from} a) public {{\n"
                 )
                 if fork:
+                    wrapped += f"        uint blockNo = block.number;\n"
                     wrapped += f"        hevm.selectFork(fork1);\n"
+                    wrapped += f"        hevm.roll(blockNo);\n"
                     wrapped += f"        {v.type.type_to} a1 = {target_v1}.{v.name}(a);\n"
                     wrapped += f"        hevm.selectFork(fork2);\n"
+                    wrapped += f"        hevm.roll(blockNo);\n"
                     wrapped += f"        {v.type.type_to} a2 = {target_v2}.{v.name}(a);\n"
                     wrapped += f"        assert(a1 == a2);\n"
                 else:
@@ -366,9 +372,12 @@ def wrap_tainted_vars(variables: List[Variable], v1: ContractData, v2: ContractD
             elif isinstance(v.type, ArrayType):
                 wrapped += f"    function {v1['name']}_{v.name}(uint i) public {{\n"
                 if fork:
+                    wrapped += f"        uint blockNo = block.number;\n"
                     wrapped += f"        hevm.selectFork(fork1);\n"
+                    wrapped += f"        hevm.roll(blockNo);\n"
                     wrapped += f"        {v.type.type} a1 = {target_v1}.{v.name}(i);\n"
                     wrapped += f"        hevm.selectFork(fork2);\n"
+                    wrapped += f"        hevm.roll(blockNo);\n"
                     wrapped += f"        {v.type.type} a2 = {target_v2}.{v.name}(i);\n"
                     wrapped += f"        assert(a1 == a2);\n"
                 else:
@@ -377,9 +386,12 @@ def wrap_tainted_vars(variables: List[Variable], v1: ContractData, v2: ContractD
         else:
             wrapped += f"    function {v1['name']}_{v.full_name} public {{\n"
             if fork:
+                wrapped += f"        uint blockNo = block.number;\n"
                 wrapped += f"        hevm.selectFork(fork1);\n"
+                wrapped += f"        hevm.roll(blockNo);\n"
                 wrapped += f"        {'address' if isinstance(v.type, UserDefinedType) and isinstance(v.type.type, Contract) else v.type} a1 = {target_v1}.{v.full_name};\n"
                 wrapped += f"        hevm.selectFork(fork2);\n"
+                wrapped += f"        hevm.roll(blockNo);\n"
                 wrapped += f"        {'address' if isinstance(v.type, UserDefinedType) and isinstance(v.type.type, Contract) else v.type} a2 = {target_v2}.{v.full_name};\n"
                 wrapped += f"        assert(a1 == a2);\n"
             else:
@@ -617,6 +629,7 @@ def generate_test_contract(
         #                 final_contract +=  f"        {t['name']}.approve(address({t['name']}), type(uint256).max);\n"
         final_contract += f"    }}\n\n"
 
+    fork = mode == "fork"
     # Upgrade function
     if upgrade and proxy is not None:
         crytic_print(PrintMode.INFORMATION, f"  * Adding upgrade function.")
@@ -624,6 +637,10 @@ def generate_test_contract(
         final_contract += "    // TODO: Consider replacing this with the actual upgrade method\n"
         final_contract += "    function upgradeV2() external virtual {\n"
         if proxy['implementation_slot'] is not None:
+            if fork:
+                final_contract += f"        uint blockNo = block.number;\n"
+                final_contract += f"        hevm.selectFork(fork2);\n"
+                final_contract += f"        hevm.roll(blockNo);\n"
             final_contract += f"        hevm.store(\n"
             final_contract += f"            address({camel_case(proxy['name'])}{v2['name'] if mode == 'deploy' else ''}),\n"
             final_contract += (
@@ -633,6 +650,9 @@ def generate_test_contract(
                 f"            bytes32(uint256(uint160(address({camel_case(v2['name'])}{v2['suffix']}))))\n"
             )
             final_contract += f"        );\n"
+            if fork:
+                final_contract += f"        hevm.selectFork(fork1);\n"
+                final_contract += f"        hevm.roll(blockNo);\n"
         else:
             final_contract += f"        // TODO: add upgrade logic here (implementation slot could not be found automatically)\n"
         final_contract += "    }\n\n"
@@ -640,7 +660,6 @@ def generate_test_contract(
     # Wrapper functions for V1/V2
     crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions for V1/V2.")
 
-    fork = mode == "fork"
     final_contract += wrap_diff_functions(v1, v2, diff, fork, proxy, external_taint=tainted_targets)
 
     # Wrapper functions for additional targets
