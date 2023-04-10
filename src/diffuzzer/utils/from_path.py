@@ -8,13 +8,13 @@ from solc_select.solc_select import (
 from slither import Slither
 from slither.exceptions import SlitherError
 from slither.utils.upgradeability import get_proxy_implementation_slot
-from difffuzz.classes import ContractData
-from difffuzz.utils.printer import PrintMode, crytic_print
-from difffuzz.utils.helpers import (
+from diffuzzer.classes import ContractData
+from diffuzzer.utils.printer import PrintMode, crytic_print
+from diffuzzer.utils.helpers import (
     get_pragma_version_from_file,
     get_compilation_unit_name
 )
-from difffuzz.core.code_generation import (
+from diffuzzer.core.code_generation import (
     get_contract_interface
 )
 

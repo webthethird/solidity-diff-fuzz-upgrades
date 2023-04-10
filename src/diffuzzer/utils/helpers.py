@@ -6,8 +6,8 @@ from solc_select.solc_select import get_installable_versions
 from slither.utils.upgradeability import compare, tainted_inheriting_contracts, TaintedExternalContract
 from slither.core.declarations import Function
 from slither.core.variables.state_variable import StateVariable
-from difffuzz.classes import ContractData, Diff
-from difffuzz.utils.printer import PrintMode, crytic_print
+from diffuzzer.classes import ContractData, Diff
+from diffuzzer.utils.printer import PrintMode, crytic_print
 
 
 def get_compilation_unit_name(slither_object) -> str:

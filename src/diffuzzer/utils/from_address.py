@@ -16,13 +16,13 @@ from slither.utils.upgradeability import get_proxy_implementation_slot
 from slither.tools.read_storage.utils import get_storage_data
 from slither.tools.read_storage.read_storage import SlotInfo
 from slither.tools.read_storage import SlitherReadStorage
-from difffuzz.classes import ContractData
-from difffuzz.utils.printer import PrintMode, crytic_print
-from difffuzz.utils.helpers import (
+from diffuzzer.classes import ContractData
+from diffuzzer.utils.printer import PrintMode, crytic_print
+from diffuzzer.utils.helpers import (
     get_pragma_version_from_file,
     get_compilation_unit_name
 )
-from difffuzz.core.code_generation import (
+from diffuzzer.core.code_generation import (
     get_contract_interface
 )
 from crytic_compile.utils.zip import load_from_zip, save_to_zip

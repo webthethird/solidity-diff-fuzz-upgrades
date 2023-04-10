@@ -37,15 +37,15 @@ from slither.core.solidity_types import (
 )
 from slither.core.declarations.structure import Structure
 from slither.core.declarations.structure_contract import StructureContract
-from difffuzz.utils.printer import PrintMode, crytic_print
-from difffuzz.utils.helpers import (
+from diffuzzer.utils.printer import PrintMode, crytic_print
+from diffuzzer.utils.helpers import (
     write_to_file
 )
-from difffuzz.core.code_generation import (
+from diffuzzer.core.code_generation import (
     generate_test_contract,
     generate_config_file
 )
-from difffuzz.utils.from_address import (
+from diffuzzer.utils.from_address import (
     get_contracts_from_comma_separated_string,
     get_contract_data_from_address
 )
@@ -222,10 +222,10 @@ def fork_mode(args: argparse.Namespace):
         upgrade=upgrade,
         protected=protected
     )
-    write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
+    write_to_file(f"{output_dir}diffuzzerUpgrades.sol", contract)
     crytic_print(
         PrintMode.SUCCESS,
-        f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.",
+        f"  * Fuzzing contract generated and written to {output_dir}diffuzzerUpgrades.sol.",
     )
 
     config_file = generate_config_file(

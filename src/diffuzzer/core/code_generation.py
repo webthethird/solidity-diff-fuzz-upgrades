@@ -16,9 +16,9 @@ from slither.core.solidity_types import (
     MappingType
 )
 from slither.core.declarations.structure import Structure
-from difffuzz.classes import FunctionInfo, ContractData, Diff
-from difffuzz.utils.printer import PrintMode, crytic_print
-from difffuzz.utils.helpers import (
+from diffuzzer.classes import FunctionInfo, ContractData, Diff
+from diffuzzer.utils.printer import PrintMode, crytic_print
+from diffuzzer.utils.helpers import (
     get_pragma_version_from_file,
     similar,
     camel_case,
@@ -548,7 +548,7 @@ def generate_test_contract(
 
     # Create the exploit contract
     crytic_print(PrintMode.INFORMATION, f"  * Creating the exploit contract.")
-    final_contract += "contract DiffFuzzUpgrades {\n"
+    final_contract += "contract diffuzzerUpgrades {\n"
 
     # State variables
     crytic_print(PrintMode.INFORMATION, f"  * Adding state variables declarations.")
