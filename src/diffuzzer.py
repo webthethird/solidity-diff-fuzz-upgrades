@@ -5,10 +5,9 @@ import logging
 import os
 
 from eth_utils import is_address
-from colorama import init as colorama_init
-from src.utils.printer import PrintMode, crytic_print
-from src.core.path_mode import path_mode
-from src.core.fork_mode import fork_mode
+from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
+from diffuzzer.core.path_mode import path_mode
+from diffuzzer.core.fork_mode import fork_mode
 
 
 SUPPORTED_NETWORKS = [ "mainet","optim","ropsten","kovan","rinkeby","goerli","tobalaba","bsc","testnet.bsc","arbi","testnet.arbi","poly","mumbai","avax","testnet.avax","ftm"]
@@ -105,27 +104,25 @@ def main():
 
     args = parser.parse_args()
 
-    crytic_print(PrintMode.MESSAGE, "\nWelcome to diff-fuzz-upgrades, enjoy your stay!")
-    crytic_print(PrintMode.MESSAGE, "===============================================\n")
+    CryticPrint.initialize()
+    CryticPrint.print(PrintMode.MESSAGE, "\nWelcome to diff-fuzz-upgrades, enjoy your stay!")
+    CryticPrint.print(PrintMode.MESSAGE, "===============================================\n")
 
     # Silence Slither Read Storage
     logging.getLogger("Slither-read-storage").setLevel(logging.CRITICAL)
 
-    # Initialize colorama
-    colorama_init()
-
-    crytic_print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
+    CryticPrint.print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     if is_address(args.v1) and is_address(args.v2):
-        crytic_print(PrintMode.INFORMATION, "* Using 'fork mode':")
+        CryticPrint.print(PrintMode.INFORMATION, "* Using 'fork mode':")
         fork_mode(args)
     elif os.path.exists(args.v1) and os.path.exists(args.v2):
-        crytic_print(PrintMode.INFORMATION, "* Using 'path mode' (no fork):")
+        CryticPrint.print(PrintMode.INFORMATION, "* Using 'path mode' (no fork):")
         path_mode(args)
     elif not os.path.exists(args.v1):
-        crytic_print(PrintMode.ERROR, f"\nFile not found: {args.v1}")
+        CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v1}")
         raise FileNotFoundError(args.v1)
     else:
-        crytic_print(PrintMode.ERROR, f"\nFile not found: {args.v2}")
+        CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v2}")
         raise FileNotFoundError(args.v2)
 
 

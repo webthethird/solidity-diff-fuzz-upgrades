@@ -37,7 +37,7 @@ from slither.core.solidity_types import (
 )
 from slither.core.declarations.structure import Structure
 from slither.core.declarations.structure_contract import StructureContract
-from diffuzzer.utils.printer import PrintMode, crytic_print
+from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.utils.helpers import (
     write_to_file
 )
@@ -76,24 +76,24 @@ def fork_mode(args: argparse.Namespace):
     network_rpc = ""
     if args.network_rpc:
         network_rpc = args.network_rpc
-        crytic_print(PrintMode.INFORMATION, f"* RPC specified via command line parameter: {network_rpc}")
+        CryticPrint.print(PrintMode.INFORMATION, f"* RPC specified via command line parameter: {network_rpc}")
     else:
         for env_var in WEB3_RPC_ENV_VARS:
             if env_var in os.environ:
                 network_rpc = os.environ[env_var]
-                crytic_print(PrintMode.INFORMATION,
+                CryticPrint.print(PrintMode.INFORMATION,
                              f"* RPC specified via {env_var} environment variable: {network_rpc}")
                 break
 
     if network_rpc != "":
         w3 = Web3(Web3.HTTPProvider(network_rpc))
         if not w3.is_connected():
-            crytic_print(PrintMode.ERROR, f"* Could not connect to the provided RPC endpoint.")
+            CryticPrint.print(PrintMode.ERROR, f"* Could not connect to the provided RPC endpoint.")
             raise ValueError(f"Could not connect to the provided RPC endpoint: {network_rpc}.")
         else:
-            crytic_print(PrintMode.SUCCESS, f"* Connected to RPC endpoint.")
+            CryticPrint.print(PrintMode.SUCCESS, f"* Connected to RPC endpoint.")
     else:
-        crytic_print(PrintMode.ERROR, f"* RPC not specified")
+        CryticPrint.print(PrintMode.ERROR, f"* RPC not specified")
         raise ValueError(f"RPC not specified.")
 
     # Add prefix for current network
@@ -102,9 +102,9 @@ def fork_mode(args: argparse.Namespace):
             prefix = "mainet:"
         else:
             prefix = f"{args.network}:"
-        crytic_print(PrintMode.INFORMATION, f"* Network specified via command line parameter: {args.network}")
+        CryticPrint.print(PrintMode.INFORMATION, f"* Network specified via command line parameter: {args.network}")
     else:
-        crytic_print(PrintMode.WARNING, f"* Network {args.network} not supported. Defaulting to Ethereum main network.")
+        CryticPrint.print(PrintMode.WARNING, f"* Network {args.network} not supported. Defaulting to Ethereum main network.")
         prefix = "mainet:"
 
     # Workaround for PoA networks
@@ -114,37 +114,37 @@ def fork_mode(args: argparse.Namespace):
     # Get block number
     if args.block:
         blocknumber = int(args.block)
-        crytic_print(PrintMode.INFORMATION, f"* Block number specified via command line parameter: {blocknumber}")
+        CryticPrint.print(PrintMode.INFORMATION, f"* Block number specified via command line parameter: {blocknumber}")
     elif "ECHIDNA_RPC_BLOCK" in os.environ:
         blocknumber = int(os.environ["ECHIDNA_RPC_BLOCK"])
-        crytic_print(PrintMode.INFORMATION,
+        CryticPrint.print(PrintMode.INFORMATION,
                      f"* Block number specified via ECHIDNA_RPC_BLOCK environment variable: {blocknumber}")
     elif w3 is not None:
         blocknumber = int(w3.eth.get_block('latest')["number"])
-        crytic_print(PrintMode.INFORMATION, f"* Using network's latest block as starting block: {blocknumber}")
+        CryticPrint.print(PrintMode.INFORMATION, f"* Using network's latest block as starting block: {blocknumber}")
     else:
         blocknumber = 0  # We have no starting block
-        crytic_print(PrintMode.WARNING, f"* Block number not specified, and could not get network's latest block.")
+        CryticPrint.print(PrintMode.WARNING, f"* Block number not specified, and could not get network's latest block.")
 
-    crytic_print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
+    CryticPrint.print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     v1_contract_data = get_contract_data_from_address(args.v1, "", prefix, blocknumber, w3, suffix="V1")
     v2_contract_data = get_contract_data_from_address(args.v2, "", prefix, blocknumber, w3, suffix="V2")
 
     if args.proxy is not None:
-        crytic_print(
+        CryticPrint.print(
             PrintMode.INFORMATION,
             "\n* Proxy contract specified via command line parameter:",
         )
         if is_address(args.proxy):
             proxy = get_contract_data_from_address(args.proxy, "", prefix, blocknumber, w3)
             if not proxy["is_proxy"]:
-                crytic_print(
+                CryticPrint.print(
                     PrintMode.ERROR,
                     f"\n  * {proxy['name']} does not appear to be a proxy. Ignoring...",
                 )
                 proxy = None
         else:
-            crytic_print(
+            CryticPrint.print(
                 PrintMode.ERROR,
                 f"\n  * When using fork mode, the proxy must be specified as an address. Ignoring...",
             )
@@ -156,7 +156,7 @@ def fork_mode(args: argparse.Namespace):
         if args.proxy:
             upgrade = True
         else:
-            crytic_print(
+            CryticPrint.print(
                 PrintMode.WARNING, 
                 "  * Upgrade during fuzz sequence specified via command line parameter, but no proxy was specified. Ignoring..."
             )
@@ -165,7 +165,7 @@ def fork_mode(args: argparse.Namespace):
         upgrade = False
 
     if args.targets is not None:
-        crytic_print(
+        CryticPrint.print(
             PrintMode.INFORMATION,
             "\n* Additional targets specified via command line parameter:",
         )
@@ -174,7 +174,7 @@ def fork_mode(args: argparse.Namespace):
         targets = None
 
     if args.deploy:
-        crytic_print(
+        CryticPrint.print(
                 PrintMode.WARNING, 
                 "* Deploy mode flag specified, but you are using fork mode. The contracts are already deployed! Ignoring..."
             )
@@ -184,7 +184,7 @@ def fork_mode(args: argparse.Namespace):
         if str(args.seq_len).isnumeric():
             seq_len = int(args.seq_len)
         else:
-            crytic_print(
+            CryticPrint.print(
                 PrintMode.ERROR,
                 "\n* Sequence length provided is not numeric. Defaulting to 100.",
             )
@@ -204,7 +204,7 @@ def fork_mode(args: argparse.Namespace):
 
     if args.contract_addr:
         contract_addr = args.contract_addr
-        crytic_print(
+        CryticPrint.print(
             PrintMode.INFORMATION,
             f"\n* Exploit contract address specified via command line parameter: "
             f"{contract_addr}",
@@ -223,7 +223,7 @@ def fork_mode(args: argparse.Namespace):
         protected=protected
     )
     write_to_file(f"{output_dir}diffuzzerUpgrades.sol", contract)
-    crytic_print(
+    CryticPrint.print(
         PrintMode.SUCCESS,
         f"  * Fuzzing contract generated and written to {output_dir}diffuzzerUpgrades.sol.",
     )
@@ -232,20 +232,20 @@ def fork_mode(args: argparse.Namespace):
         f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
     )
     write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
-    crytic_print(
+    CryticPrint.print(
         PrintMode.SUCCESS,
         f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.",
     )
 
-    crytic_print(
+    CryticPrint.print(
         PrintMode.MESSAGE,
         f"\n-----------------------------------------------------------",
     )
-    crytic_print(
+    CryticPrint.print(
         PrintMode.MESSAGE,
         f"My work here is done. Thanks for using me, have a nice day!",
     )
-    crytic_print(
+    CryticPrint.print(
         PrintMode.MESSAGE,
         f"-----------------------------------------------------------",
     )

@@ -9,7 +9,7 @@ from slither import Slither
 from slither.exceptions import SlitherError
 from slither.utils.upgradeability import get_proxy_implementation_slot
 from diffuzzer.classes import ContractData
-from diffuzzer.utils.printer import PrintMode, crytic_print
+from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.utils.helpers import (
     get_pragma_version_from_file,
     get_compilation_unit_name
@@ -45,7 +45,7 @@ def get_contract_data_from_path(filepath: str, suffix: str = "") -> ContractData
         contract_data["slither"] = get_slither_object_from_path(filepath)
         contract_data["valid_data"] = True
     except:
-        crytic_print(PrintMode.ERROR, f"  * Error getting Slither object")
+        CryticPrint.print(PrintMode.ERROR, f"  * Error getting Slither object")
         contract_data["slither"] = None
         contract_data["valid_data"] = False
 
@@ -69,7 +69,7 @@ def get_contract_data_from_path(filepath: str, suffix: str = "") -> ContractData
         contract_data["interface_name"] = target_info["interface_name"]
         contract_data["name"] = target_info["name"]
         contract_data["functions"] = target_info["functions"]
-        crytic_print(
+        CryticPrint.print(
             PrintMode.MESSAGE, f"  * Done compiling contract {contract_data['name']}"
         )
 
@@ -80,13 +80,13 @@ def get_slither_object_from_path(filepath: str) -> Slither:
     if not os.path.exists(filepath):
         raise ValueError("File path does not exist!")
     try:
-        crytic_print(
+        CryticPrint.print(
             PrintMode.MESSAGE, f"  * Compiling contracts and retrieving Slither IR..."
         )
         slither_object = Slither(filepath)
         return slither_object
     except SlitherError as e:
-        crytic_print(PrintMode.ERROR, f"  * Slither error:\v{str(e)}")
+        CryticPrint.print(PrintMode.ERROR, f"  * Slither error:\v{str(e)}")
         raise SlitherError(str(e))
     except Exception as e:
-        crytic_print(PrintMode.ERROR, f"  * Exception:\v{str(e)}")
+        CryticPrint.print(PrintMode.ERROR, f"  * Exception:\v{str(e)}")

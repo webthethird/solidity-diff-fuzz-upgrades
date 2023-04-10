@@ -17,7 +17,7 @@ from slither.core.solidity_types import (
 )
 from slither.core.declarations.structure import Structure
 from diffuzzer.classes import FunctionInfo, ContractData, Diff
-from diffuzzer.utils.printer import PrintMode, crytic_print
+from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.utils.helpers import (
     get_pragma_version_from_file,
     similar,
@@ -29,7 +29,7 @@ from diffuzzer.utils.helpers import (
 def generate_config_file(
     corpus_dir: str, campaign_length: str, contract_addr: str, seq_len: int
 ) -> str:
-    crytic_print(
+    CryticPrint.print(
         PrintMode.INFORMATION,
         f"* Generating Echidna configuration file with campaign limit {campaign_length}"
         f" and corpus directory {corpus_dir}",
@@ -147,7 +147,7 @@ def get_contract_interface(contract_data: ContractData, suffix: str = "") -> dic
 
 
 def get_contract_data(contract: Contract, suffix: str = "") -> ContractData:
-    crytic_print(PrintMode.MESSAGE, f"  * Getting contract data from {contract.name}")
+    CryticPrint.print(PrintMode.MESSAGE, f"  * Getting contract data from {contract.name}")
 
     contract_data = ContractData(
         contract_object=contract,
@@ -257,7 +257,7 @@ def wrap_additional_target_functions(targets: List[ContractData], fork: bool, ta
     if proxy is None:
         proxy = ContractData(name="")
     tainted_contracts = [taint.contract for taint in tainted]
-    crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions for additional targets.")
+    CryticPrint.print(PrintMode.INFORMATION, f"  * Adding wrapper functions for additional targets.")
 
     wrapped += "\n    /*** Additional Targets ***/ \n\n"
     for t in targets:
@@ -478,7 +478,7 @@ def generate_test_contract(
     diff: Diff = do_diff(v1, v2, targets)
     tainted_contracts: List[TaintedExternalContract] = diff['tainted_contracts']
     tainted_contracts = [t for t in tainted_contracts if t.contract not in [v1["contract_object"], v2["contract_object"]]]
-    crytic_print(PrintMode.INFORMATION, f"* Getting contract data for tainted contracts.")
+    CryticPrint.print(PrintMode.INFORMATION, f"* Getting contract data for tainted contracts.")
     tainted_targets = [
         get_contract_data(t.contract) 
         if t.contract.name not in [target["contract_object"].name for target in targets] + [proxy["contract_object"].name]
@@ -490,7 +490,7 @@ def generate_test_contract(
     if proxy:
         other_targets.append(proxy)
 
-    crytic_print(PrintMode.INFORMATION, f"\n* Generating exploit contract...")
+    CryticPrint.print(PrintMode.INFORMATION, f"\n* Generating exploit contract...")
     # Add solidity pragma and SPDX to avoid warnings
     final_contract += (
         f"// SPDX-License-Identifier: AGPLv3\npragma solidity ^{version};\n\n"
@@ -515,7 +515,7 @@ def generate_test_contract(
         final_contract += "\n"
 
     # Add all interfaces first
-    crytic_print(PrintMode.INFORMATION, f"  * Adding interfaces.")
+    CryticPrint.print(PrintMode.INFORMATION, f"  * Adding interfaces.")
     final_contract += v1["interface"]
     final_contract += v2["interface"]
 
@@ -547,11 +547,11 @@ def generate_test_contract(
     final_contract += "    function selectFork(uint256 forkId) external;\n}\n\n"
 
     # Create the exploit contract
-    crytic_print(PrintMode.INFORMATION, f"  * Creating the exploit contract.")
+    CryticPrint.print(PrintMode.INFORMATION, f"  * Creating the exploit contract.")
     final_contract += "contract diffuzzerUpgrades {\n"
 
     # State variables
-    crytic_print(PrintMode.INFORMATION, f"  * Adding state variables declarations.")
+    CryticPrint.print(PrintMode.INFORMATION, f"  * Adding state variables declarations.")
 
     final_contract += (
         "    IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);\n\n"
@@ -588,7 +588,7 @@ def generate_test_contract(
         final_contract += "    uint256 fork1;\n    uint256 fork2;\n"
 
     # Constructor
-    crytic_print(PrintMode.INFORMATION, f"  * Generating constructor.")
+    CryticPrint.print(PrintMode.INFORMATION, f"  * Generating constructor.")
 
     if mode == "deploy":
         final_contract += generate_deploy_constructor(v1, v2, targets, tainted_targets, proxy, upgrade)
@@ -619,7 +619,7 @@ def generate_test_contract(
 
     # Upgrade function
     if upgrade and proxy is not None:
-        crytic_print(PrintMode.INFORMATION, f"  * Adding upgrade function.")
+        CryticPrint.print(PrintMode.INFORMATION, f"  * Adding upgrade function.")
         final_contract += "    /*** Upgrade Function ***/ \n\n"
         final_contract += "    // TODO: Consider replacing this with the actual upgrade method\n"
         final_contract += "    function upgradeV2() external virtual {\n"
@@ -638,7 +638,7 @@ def generate_test_contract(
         final_contract += "    }\n\n"
 
     # Wrapper functions for V1/V2
-    crytic_print(PrintMode.INFORMATION, f"  * Adding wrapper functions for V1/V2.")
+    CryticPrint.print(PrintMode.INFORMATION, f"  * Adding wrapper functions for V1/V2.")
 
     fork = mode == "fork"
     final_contract += wrap_diff_functions(v1, v2, diff, fork, proxy, external_taint=tainted_targets)

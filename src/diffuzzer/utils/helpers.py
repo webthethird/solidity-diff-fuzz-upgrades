@@ -7,7 +7,7 @@ from slither.utils.upgradeability import compare, tainted_inheriting_contracts, 
 from slither.core.declarations import Function
 from slither.core.variables.state_variable import StateVariable
 from diffuzzer.classes import ContractData, Diff
-from diffuzzer.utils.printer import PrintMode, crytic_print
+from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 
 
 def get_compilation_unit_name(slither_object) -> str:
@@ -67,7 +67,7 @@ def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
 
 
 def do_diff(v1: ContractData, v2: ContractData, additional_targets: List[ContractData] = None) -> Diff:
-    crytic_print(PrintMode.MESSAGE, "* Performing diff of V1 and V2")
+    CryticPrint.print(PrintMode.MESSAGE, "* Performing diff of V1 and V2")
     (
         missing_vars, new_vars, tainted_vars, new_funcs, modified_funcs, tainted_funcs, tainted_contracts
     ) = compare(v1["contract_object"], v2["contract_object"])
@@ -90,18 +90,18 @@ def do_diff(v1: ContractData, v2: ContractData, additional_targets: List[Contrac
     )
     for key in diff.keys():
         if len(diff[key]) > 0:
-            crytic_print(PrintMode.WARNING, f'  * {str(key).replace("-", " ")}:')
+            CryticPrint.print(PrintMode.WARNING, f'  * {str(key).replace("-", " ")}:')
             for obj in diff[key]:
                 if isinstance(obj, StateVariable):
-                    crytic_print(PrintMode.WARNING, f"      * {obj.full_name}")
+                    CryticPrint.print(PrintMode.WARNING, f"      * {obj.full_name}")
                 elif isinstance(obj, Function):
-                    crytic_print(PrintMode.WARNING, f"      * {obj.signature_str}")
+                    CryticPrint.print(PrintMode.WARNING, f"      * {obj.signature_str}")
                 elif isinstance(obj, TaintedExternalContract):
-                    crytic_print(PrintMode.WARNING, f"      * {obj.contract.name}")
+                    CryticPrint.print(PrintMode.WARNING, f"      * {obj.contract.name}")
                     for f in obj.tainted_functions:
-                        crytic_print(PrintMode.WARNING, f"        * {f.signature_str}")
+                        CryticPrint.print(PrintMode.WARNING, f"        * {f.signature_str}")
                     for v in obj.tainted_variables:
-                        crytic_print(PrintMode.WARNING, f"        * {v.signature_str}")
+                        CryticPrint.print(PrintMode.WARNING, f"        * {v.signature_str}")
     return diff
 
 

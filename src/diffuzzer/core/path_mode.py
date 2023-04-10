@@ -4,7 +4,7 @@ import argparse
 import os
 from typing import List
 
-from diffuzzer.utils.printer import PrintMode, crytic_print
+from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.utils.helpers import (
     write_to_file
 )
@@ -29,27 +29,27 @@ def path_mode(args: argparse.Namespace):
         output_dir = "./"
 
     if args.network:
-        crytic_print(PrintMode.WARNING, "* Network specified via command line argument, but you are using 'path mode'. "
+        CryticPrint.print(PrintMode.WARNING, "* Network specified via command line argument, but you are using 'path mode'. "
                                         "To use fork mode, provide addresses instead of file paths.\n  Ignoring network...\n")
     if args.block:
-        crytic_print(PrintMode.WARNING, "* Block specified via command line argument, but you are using 'path mode'. "
+        CryticPrint.print(PrintMode.WARNING, "* Block specified via command line argument, but you are using 'path mode'. "
                                         "To use fork mode, provide addresses instead of file paths.\n  Ignoring block...\n")
     if args.network_rpc:
-        crytic_print(PrintMode.WARNING, "* RPC specified via command line argument, but you are using 'path mode'. "
+        CryticPrint.print(PrintMode.WARNING, "* RPC specified via command line argument, but you are using 'path mode'. "
                                         "To use fork mode, provide addresses instead of file paths.\n  Ignoring RPC...\n")
 
-    crytic_print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
+    CryticPrint.print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     v1_contract_data = get_contract_data_from_path(args.v1, suffix="V1")
     v2_contract_data = get_contract_data_from_path(args.v2, suffix="V2")
 
     if args.proxy is not None:
-        crytic_print(
+        CryticPrint.print(
             PrintMode.INFORMATION,
             "\n* Proxy contract specified via command line parameter:",
         )
         proxy = get_contract_data_from_path(args.proxy)
         if not proxy["is_proxy"]:
-            crytic_print(
+            CryticPrint.print(
                 PrintMode.ERROR,
                 f"\n  * {proxy['name']} does not appear to be a proxy. Ignoring...",
             )
@@ -61,7 +61,7 @@ def path_mode(args: argparse.Namespace):
         if args.proxy:
             upgrade = True
         else:
-            crytic_print(
+            CryticPrint.print(
                 PrintMode.WARNING, 
                 "  * Upgrade during fuzz sequence specified via command line parameter, but no proxy was specified. Ignoring..."
             )
@@ -70,7 +70,7 @@ def path_mode(args: argparse.Namespace):
         upgrade = False
 
     if args.targets is not None:
-        crytic_print(
+        CryticPrint.print(
             PrintMode.INFORMATION,
             "\n* Additional targets specified via command line parameter:",
         )
@@ -87,7 +87,7 @@ def path_mode(args: argparse.Namespace):
         if str(args.seq_len).isnumeric():
             seq_len = int(args.seq_len)
         else:
-            crytic_print(
+            CryticPrint.print(
                 PrintMode.ERROR,
                 "\n* Sequence length provided is not numeric. Defaulting to 100.",
             )
@@ -107,7 +107,7 @@ def path_mode(args: argparse.Namespace):
 
     if args.contract_addr:
         contract_addr = args.contract_addr
-        crytic_print(
+        CryticPrint.print(
             PrintMode.INFORMATION,
             f"\n* Exploit contract address specified via command line parameter: "
             f"{contract_addr}",
@@ -126,7 +126,7 @@ def path_mode(args: argparse.Namespace):
         protected=protected
     )
     write_to_file(f"{output_dir}diffuzzerUpgrades.sol", contract)
-    crytic_print(
+    CryticPrint.print(
         PrintMode.SUCCESS,
         f"  * Fuzzing contract generated and written to {output_dir}diffuzzerUpgrades.sol.",
     )
@@ -135,20 +135,20 @@ def path_mode(args: argparse.Namespace):
         f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
     )
     write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
-    crytic_print(
+    CryticPrint.print(
         PrintMode.SUCCESS,
         f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.",
     )
 
-    crytic_print(
+    CryticPrint.print(
         PrintMode.MESSAGE,
         f"\n-----------------------------------------------------------",
     )
-    crytic_print(
+    CryticPrint.print(
         PrintMode.MESSAGE,
         f"My work here is done. Thanks for using me, have a nice day!",
     )
-    crytic_print(
+    CryticPrint.print(
         PrintMode.MESSAGE,
         f"-----------------------------------------------------------",
     )

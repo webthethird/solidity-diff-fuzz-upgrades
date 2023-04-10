@@ -17,7 +17,7 @@ from slither.tools.read_storage.utils import get_storage_data
 from slither.tools.read_storage.read_storage import SlotInfo
 from slither.tools.read_storage import SlitherReadStorage
 from diffuzzer.classes import ContractData
-from diffuzzer.utils.printer import PrintMode, crytic_print
+from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.utils.helpers import (
     get_pragma_version_from_file,
     get_compilation_unit_name
@@ -33,15 +33,15 @@ def get_contract_from_network_address(address: str, prefix: str) -> Slither:
     path = f"./crytic-cache/"
     filename = f"{prefix}-{address}.zip"
 
-    crytic_print(PrintMode.INFORMATION, f"  * Downloading contract {address}.")
+    CryticPrint.print(PrintMode.INFORMATION, f"  * Downloading contract {address}.")
 
     if os.path.exists(path + filename):
-        crytic_print(PrintMode.SUCCESS, f"    * Contract {prefix}-{address} found in cache.")
+        CryticPrint.print(PrintMode.SUCCESS, f"    * Contract {prefix}-{address} found in cache.")
         cc = load_from_zip(path + filename)
         return Slither(cc[0])
     else:
-        crytic_print(PrintMode.INFORMATION, f"    * Contract {prefix}-{address} not found in cache. Fetching from network...")
-        crytic_print(PrintMode.INFORMATION, f"      * Waiting for Etherscan API timeout...")     # needed for etherscan without api key
+        CryticPrint.print(PrintMode.INFORMATION, f"    * Contract {prefix}-{address} not found in cache. Fetching from network...")
+        CryticPrint.print(PrintMode.INFORMATION, f"      * Waiting for Etherscan API timeout...")     # needed for etherscan without api key
         time.sleep(5)
     
         try:
@@ -49,10 +49,10 @@ def get_contract_from_network_address(address: str, prefix: str) -> Slither:
             if not os.path.exists(path):
                 os.makedirs(path)
             save_to_zip([slither_object.crytic_compile], path + filename)
-            crytic_print(PrintMode.SUCCESS, f"      * Contract {prefix}-{address} obtained and cached.")
+            CryticPrint.print(PrintMode.SUCCESS, f"      * Contract {prefix}-{address} obtained and cached.")
             return slither_object
         except KeyError:
-            crytic_print(PrintMode.ERROR, f"    * Contract {prefix}-{address} source code is not available.")
+            CryticPrint.print(PrintMode.ERROR, f"    * Contract {prefix}-{address} source code is not available.")
             raise ValueError("Contract source code is not available.")
         
 
@@ -74,10 +74,10 @@ def get_contract_variable_value(variable: StateVariable, contract_data: Contract
 
 def get_proxy_implementation(contract: Contract, contract_data: ContractData) -> Tuple[str, ContractData]:
 
-    crytic_print(PrintMode.INFORMATION, f"    * Getting proxy implementation from {contract.name} at {contract_data['address']}.")
+    CryticPrint.print(PrintMode.INFORMATION, f"    * Getting proxy implementation from {contract.name} at {contract_data['address']}.")
 
     if not contract_data["web3_provider"]:
-        crytic_print(PrintMode.ERROR, f"    * A valid Web3 provider is needed to get proxy implementations.")
+        CryticPrint.print(PrintMode.ERROR, f"    * A valid Web3 provider is needed to get proxy implementations.")
         raise ValueError("A valid Web3 provider is needed to get proxy implementations.")
     
     slot: SlotInfo = get_proxy_implementation_slot(contract)
@@ -89,7 +89,7 @@ def get_proxy_implementation(contract: Contract, contract_data: ContractData) ->
         if impl_address != "0x0000000000000000000000000000000000000000":
             return impl_address, contract_data
 
-        crytic_print(PrintMode.WARNING, f"      * storage slot {slot.name} is zero")
+        CryticPrint.print(PrintMode.WARNING, f"      * storage slot {slot.name} is zero")
 
         raise ValueError("Proxy storage slot not found")
     else:
@@ -102,7 +102,7 @@ def get_proxy_implementation(contract: Contract, contract_data: ContractData) ->
                 contract_data["implementation_slot"] = SlotInfo(name="IMPLEMENTATION_SLOT", type_string="address", slot=int("0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc", 16), size=160, offset=0)
                 return impl_address, contract_data
 
-            crytic_print(PrintMode.WARNING, f"      * EIP1967 storage slot is zero")
+            CryticPrint.print(PrintMode.WARNING, f"      * EIP1967 storage slot is zero")
 
             # Try with slot keccak256('org.zeppelinos.proxy.implementation') used by early OZ proxies
             imp = get_storage_data(contract_data["web3_provider"], contract_data["address"], 0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3, contract_data["block"])
@@ -112,7 +112,7 @@ def get_proxy_implementation(contract: Contract, contract_data: ContractData) ->
                 contract_data["implementation_slot"] = SlotInfo(name="IMPLEMENTATION_SLOT", type_string="address", slot=int("0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3", 16), size=160, offset=0)
                 return impl_address, contract_data
 
-            crytic_print(PrintMode.WARNING, f"      * OZ ZeppelinOS proxies storage slot is zero")
+            CryticPrint.print(PrintMode.WARNING, f"      * OZ ZeppelinOS proxies storage slot is zero")
 
             raise ValueError("Proxy storage slot not found")
 
@@ -125,7 +125,7 @@ def get_proxy_implementation(contract: Contract, contract_data: ContractData) ->
                     implementation_var.append(v)
 
             if not implementation_var:
-                crytic_print(PrintMode.WARNING, f"      * Couldn't find proxy implementation in contract storage")
+                CryticPrint.print(PrintMode.WARNING, f"      * Couldn't find proxy implementation in contract storage")
                 raise ValueError("Couldn't find proxy implementation in contract storage")
             else:
                 for imp in implementation_var:
@@ -135,13 +135,13 @@ def get_proxy_implementation(contract: Contract, contract_data: ContractData) ->
                         slot_value = "0x" + slot_value
 
                     if is_address(slot_value) and slot_value != '0000000000000000000000000000000000000000':
-                        crytic_print(PrintMode.WARNING, f"      * Proxy implementation address read from variable: {imp.type} {imp.name}")
+                        CryticPrint.print(PrintMode.WARNING, f"      * Proxy implementation address read from variable: {imp.type} {imp.name}")
                         srs = SlitherReadStorage(contract, 20)
                         slot_info = srs.get_storage_slot(imp, contract)
                         contract_data["implementation_slot"] = slot_info
                         return slot_value, contract_data
 
-                crytic_print(PrintMode.ERROR, f"      * Proxy storage slot read is not an address")
+                CryticPrint.print(PrintMode.ERROR, f"      * Proxy storage slot read is not an address")
                 raise ValueError("Proxy storage slot read is not an address")
         
 
@@ -150,7 +150,7 @@ def get_deployed_contract(contract_data: ContractData, implementation: str) -> t
     Will get the correct implementation if the contract is a proxy
     """
 
-    crytic_print(PrintMode.INFORMATION, f"    * Getting information from contract...")
+    CryticPrint.print(PrintMode.INFORMATION, f"    * Getting information from contract...")
     slither_object = contract_data["slither"]
     contract_name = get_compilation_unit_name(slither_object)
     contract = slither_object.get_contract_from_name(contract_name)[0]
@@ -161,9 +161,9 @@ def get_deployed_contract(contract_data: ContractData, implementation: str) -> t
         if implementation == "":
             implementation, contract_data = get_proxy_implementation(contract, contract_data)
             if implementation == "0x0000000000000000000000000000000000000000":
-                crytic_print(PrintMode.WARNING, f"      * Contract at {contract_data['address']} was mistakenly identified as a proxy. Please check that results are consistent.")
+                CryticPrint.print(PrintMode.WARNING, f"      * Contract at {contract_data['address']} was mistakenly identified as a proxy. Please check that results are consistent.")
                 return contract, impl_slither, impl_contract
-            crytic_print(PrintMode.WARNING, f"      * {contract_data['address']} is a proxy. Found implementation at {implementation}")
+            CryticPrint.print(PrintMode.WARNING, f"      * {contract_data['address']} is a proxy. Found implementation at {implementation}")
 
         impl_slither = get_contract_from_network_address(implementation, contract_data["prefix"])
         contract_name = get_compilation_unit_name(impl_slither)
@@ -176,7 +176,7 @@ def get_contract_data_from_address(address: str, implementation: str, prefix: st
 
     contract_data = ContractData()
 
-    crytic_print(PrintMode.INFORMATION, f"  * Getting information from address {to_checksum_address(address)}")
+    CryticPrint.print(PrintMode.INFORMATION, f"  * Getting information from address {to_checksum_address(address)}")
 
     contract_data["address"] = to_checksum_address(address)    
     contract_data["block"]   = blocknumber
@@ -189,7 +189,7 @@ def get_contract_data_from_address(address: str, implementation: str, prefix: st
     except:
         contract_data["slither"] = None
         contract_data["valid_data"] = False
-        crytic_print(PrintMode.WARNING, f"    * Could not fetch information.")
+        CryticPrint.print(PrintMode.WARNING, f"    * Could not fetch information.")
 
     if contract_data["valid_data"]:
         contract, impl_slither, impl_contract = get_deployed_contract(contract_data, implementation)
@@ -212,7 +212,7 @@ def get_contract_data_from_address(address: str, implementation: str, prefix: st
         contract_data["name"] = target_info["name"]
         contract_data["functions"] = target_info["functions"]
 
-        crytic_print(PrintMode.SUCCESS, f"    * Information fetched correctly for contract {contract_data['name']}")
+        CryticPrint.print(PrintMode.SUCCESS, f"    * Information fetched correctly for contract {contract_data['name']}")
 
     return contract_data
 
@@ -234,7 +234,7 @@ def addresses_from_comma_separated_string(data: str) -> tuple[list, dict]:
             implementations[proxy] = impl
         else:
             if not is_address(u):
-                crytic_print(
+                CryticPrint.print(
                     PrintMode.ERROR,
                     f"\n  * {u} is not an address. Ignoring...",
                 )
@@ -254,7 +254,7 @@ def get_contracts_from_comma_separated_string(addresses_string: str, prefix: str
     for a in addresses:
         data = get_contract_data_from_address(a, implementations.get(a, ""), prefix, blocknumber, w3)
         if not data["valid_data"]:
-            crytic_print(PrintMode.ERROR, f"  * Target contract {a} source code is not available.")
+            CryticPrint.print(PrintMode.ERROR, f"  * Target contract {a} source code is not available.")
             raise ValueError(f"Target contract {a} source code is not available.")
         else:
             results.append(data)
