@@ -655,16 +655,12 @@ contract DiffFuzzUpgrades {
     // }
 
     function upgradeV2() external virtual {
-        uint blockNo = block.number;
         hevm.selectFork(fork2);
-        hevm.roll(blockNo);
         address admin = unitroller.admin();
         hevm.prank(admin);
         unitroller._setPendingImplementation(address(comptrollerV2));
         hevm.prank(admin);
         comptrollerV2._become(address(unitroller));
-        hevm.selectFork(fork1);
-        hevm.roll(blockNo);
     }
 
 
@@ -1000,9 +996,7 @@ contract DiffFuzzUpgrades {
     // }
 
     function Comptroller_claimComp(address a) public virtual {
-        uint blockNo = block.number;
         hevm.selectFork(fork2);
-        hevm.roll(blockNo);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -1010,7 +1004,6 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
-        hevm.roll(blockNo);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -1263,13 +1256,10 @@ contract DiffFuzzUpgrades {
     // }
 
     function Comptroller_compSupplierIndex(address a, address b) public {
-        uint blockNo = block.number;
         hevm.selectFork(fork1);
-        hevm.roll(blockNo);
         emit SwitchedFork(fork1, block.number);
         uint256 a1 = IComptrollerV1(address(unitroller)).compSupplierIndex(a, b);
         hevm.selectFork(fork2);
-        hevm.roll(blockNo);
         emit SwitchedFork(fork2, block.number);
         uint256 a2 = IComptrollerV2(address(unitroller)).compSupplierIndex(a, b);
         if(a1 != a2) {
@@ -1593,9 +1583,7 @@ contract DiffFuzzUpgrades {
     // }
 
     function Comp_balanceOf(address a) public virtual {
-        uint blockNo = block.number;
         hevm.selectFork(fork2);
-        hevm.roll(blockNo);
         emit SwitchedFork(fork2, block.number);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(comp).call(
@@ -1604,7 +1592,6 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
-        hevm.roll(blockNo);
         emit SwitchedFork(fork1, block.number);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(comp).call(
@@ -1655,9 +1642,7 @@ contract DiffFuzzUpgrades {
     // }
 
     function CEther_mint() public virtual {
-        uint blockNo = block.number;
         hevm.selectFork(fork2);
-        hevm.roll(blockNo);
         emit SwitchedFork(fork2, block.number);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(cEther).call(
@@ -1666,7 +1651,6 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
-        hevm.roll(blockNo);
         emit SwitchedFork(fork1, block.number);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(cEther).call(
@@ -1781,9 +1765,7 @@ contract DiffFuzzUpgrades {
     // }
 
     function CErc20_mint(uint256 a) public virtual {
-        uint blockNo = block.number;
         hevm.selectFork(fork2);
-        hevm.roll(blockNo);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(cErc20).call(
             abi.encodeWithSelector(
@@ -1791,7 +1773,6 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
-        hevm.roll(blockNo);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(cErc20).call(
             abi.encodeWithSelector(
