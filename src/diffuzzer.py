@@ -6,9 +6,9 @@ import os
 
 from eth_utils import is_address
 from colorama import init as colorama_init
-from difffuzz.utils.printer import PrintMode, crytic_print
-from difffuzz.core.path_mode import path_mode
-from difffuzz.core.fork_mode import fork_mode
+from src.utils.printer import PrintMode, crytic_print
+from src.core.path_mode import path_mode
+from src.core.fork_mode import fork_mode
 
 
 SUPPORTED_NETWORKS = [ "mainet","optim","ropsten","kovan","rinkeby","goerli","tobalaba","bsc","testnet.bsc","arbi","testnet.arbi","poly","mumbai","avax","testnet.avax","ftm"]
