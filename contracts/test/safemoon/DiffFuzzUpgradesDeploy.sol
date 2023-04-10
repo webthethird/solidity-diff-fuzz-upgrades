@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPLv3
 pragma solidity ^0.8.11;
 
+import { Safemoon as Safemoon_V1 } from "../../implementation/safemoon/SafemoonV2.sol";
+import { Safemoon as Safemoon_V2 } from "../../implementation/safemoon/SafemoonV3.sol";
+import { TransparentUpgradeableProxy } from "../../implementation/safemoon/TransparentUpgradeableProxy.sol";
+
 interface ISafemoonV1 {
     struct FeeTier {
         uint256 ecoSystemFee;
@@ -219,37 +223,6 @@ interface ISafemoonV2 {
     function burn(address,uint256) external;
 }
 
-interface IIUniswapV2Router02 {
-    function factory() external pure returns (address);
-    function routerTrade() external pure returns (address);
-    function WETH() external pure returns (address);
-    function addLiquidityETH(address,uint256,uint256,uint256,address,uint256) external payable returns (uint256,uint256,uint256);
-}
-
-interface IISafeSwapTradeRouter {
-    struct Trade {
-        uint256 amountIn;
-        uint256 amountOut;
-        address[] path;
-        address to;
-        uint256 deadline;
-    }
-    function setRouter(address) external;
-    function setFeePercent(uint256) external;
-    function sePercent(uint256) external;
-    function addFfsWhitelist(address) external;
-    function removeFfsWhitelist(address) external;
-    function setFeeJar(address) external;
-    function swapExactTokensForETHAndFeeAmount(Trade memory) external payable;
-    function swapTokensForExactETHAndFeeAmount(Trade memory) external payable;
-    function swapExactETHForTokensWithFeeAmount(Trade memory,uint256) external payable;
-    function swapETHForExactTokensWithFeeAmount(Trade memory,uint256) external payable;
-    function swapExactTokensForTokensWithFeeAmount(Trade memory) external payable;
-    function swapTokensForExactTokensWithFeeAmount(Trade memory) external payable;
-    function getSwapFee(uint256,uint256,address,address) external view returns (uint256);
-    function getSwapFees(uint256,address[] memory) external view returns (uint256);
-}
-
 interface ITransparentUpgradeableProxy {
     function admin() external returns (address);
     function implementation() external returns (address);
@@ -267,8 +240,6 @@ interface IHevm {
     function addr(uint256 privateKey) external returns (address add);
     function ffi(string[] calldata inputs) external returns (bytes memory result);
     function prank(address newSender) external;
-    function createFork() external returns (uint256 forkId);
-    function selectFork(uint256 forkId) external;
 }
 
 contract DiffFuzzUpgrades {
@@ -277,53 +248,40 @@ contract DiffFuzzUpgrades {
     // TODO: Deploy the contracts and put their addresses below
     ISafemoonV1 safemoonV1;
     ISafemoonV2 safemoonV2;
-    ITransparentUpgradeableProxy transparentUpgradeableProxy;
-    IIUniswapV2Router02 iUniswapV2Router02;
-    IISafeSwapTradeRouter iSafeSwapTradeRouter;
-    uint256 fork1;
-    uint256 fork2;
+    ITransparentUpgradeableProxy transparentUpgradeableProxyV1;
+    ITransparentUpgradeableProxy transparentUpgradeableProxyV2;
 
     constructor() public {
-        hevm.roll(26857448);
-        fork1 = hevm.createFork();
-        fork2 = hevm.createFork();
-        fork1 = 1;
-        fork2 = 2;
-        safemoonV1 = ISafemoonV1(0x0296201BfDfB410C29EF30BCaE1b395537aeEB31);
-        safemoonV2 = ISafemoonV2(0xEb11a0a0beF1AC028B8C2d4CD64138DD5938cA7A);
-        transparentUpgradeableProxy = ITransparentUpgradeableProxy(0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5);
-        // TODO: Set proxy implementations (proxy implementation slot not found).
-        address owner = ISafemoonV1(address(transparentUpgradeableProxy)).owner();
-        hevm.selectFork(fork1);
-        hevm.store(
-            address(transparentUpgradeableProxy),
-            bytes32(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc),
-            bytes32(uint256(uint160(address(safemoonV1))))
-        );
-        hevm.prank(owner);
-        ISafemoonV1(address(transparentUpgradeableProxy)).transferOwnership(address(this));
-        assert(ISafemoonV1(address(transparentUpgradeableProxy)).owner() == address(this));
-        hevm.selectFork(fork2);
-        hevm.store(
-            address(transparentUpgradeableProxy),
-            bytes32(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc),
-            bytes32(uint256(uint160(address(safemoonV2))))
-        );
-        hevm.prank(owner);
-        ISafemoonV1(address(transparentUpgradeableProxy)).transferOwnership(address(this));
-
-        // TODO: Fill in target address below (address not found automatically)
-        iUniswapV2Router02 = IIUniswapV2Router02(address(0x006ac68913d8fccd52d196b09e6bc0205735a4be5f));
-        // TODO: Fill in target address below (address not found automatically)
-        iSafeSwapTradeRouter = IISafeSwapTradeRouter(address(0x00524bc73fcb4fb70e2e84dc08efe255252a3b026e));
+        safemoonV1 = ISafemoonV1(address(new Safemoon_V1()));
+        safemoonV2 = ISafemoonV2(address(new Safemoon_V2()));
+        transparentUpgradeableProxyV1 = ITransparentUpgradeableProxy(address(new TransparentUpgradeableProxy(
+            address(safemoonV1), address(this), ""
+        )));
+        transparentUpgradeableProxyV2 = ITransparentUpgradeableProxy(address(new TransparentUpgradeableProxy(
+            address(safemoonV1), address(this), ""
+        )));
+        // Store the implementation addresses in the proxy.
+        // hevm.store(
+        //     address(transparentUpgradeableProxyV1),
+        //     bytes32(uint(24440054405305269366569402256811496959409073762505157381672968839269610695612)),
+        //     bytes32(uint256(uint160(address(safemoonV1))))
+        // );
+        // hevm.store(
+        //     address(transparentUpgradeableProxyV2),
+        //     bytes32(uint(24440054405305269366569402256811496959409073762505157381672968839269610695612)),
+        //     bytes32(uint256(uint160(address(safemoonV1))))
+        // );
     }
 
     /*** Upgrade Function ***/ 
 
-    // TODO: Consider replacing this with the actual upgrade method
-    // function upgradeV2() external virtual {
-    //     // TODO: add upgrade logic here (implementation slot could not be found automatically)
-    // }
+    function upgradeV2() external virtual {
+        hevm.store(
+            address(transparentUpgradeableProxyV2),
+            bytes32(uint(24440054405305269366569402256811496959409073762505157381672968839269610695612)),
+            bytes32(uint256(uint160(address(safemoonV2))))
+        );
+    }
 
 
     /*** Modified Functions ***/ 
@@ -332,16 +290,14 @@ contract DiffFuzzUpgrades {
     /*** Tainted Functions ***/ 
 
     function Safemoon_initialize() public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.initialize.selector
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.initialize.selector
             )
@@ -351,16 +307,14 @@ contract DiffFuzzUpgrades {
     }
 
     function Safemoon_balanceOf(address a) public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.balanceOf.selector, a
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.balanceOf.selector, a
             )
@@ -370,16 +324,14 @@ contract DiffFuzzUpgrades {
     }
 
     function Safemoon_transfer(address a, uint256 b) public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.transfer.selector, a, b
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.transfer.selector, a, b
             )
@@ -389,16 +341,14 @@ contract DiffFuzzUpgrades {
     }
 
     function Safemoon_transferFrom(address a, address b, uint256 c) public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.transferFrom.selector, a, b, c
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.transferFrom.selector, a, b, c
             )
@@ -408,16 +358,14 @@ contract DiffFuzzUpgrades {
     }
 
     function Safemoon_totalFees() public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.totalFees.selector
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.totalFees.selector
             )
@@ -427,16 +375,14 @@ contract DiffFuzzUpgrades {
     }
 
     function Safemoon_reflectionFromTokenInTiers(uint256 a, uint256 b, bool c) public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.reflectionFromTokenInTiers.selector, a, b, c
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.reflectionFromTokenInTiers.selector, a, b, c
             )
@@ -446,16 +392,14 @@ contract DiffFuzzUpgrades {
     }
 
     function Safemoon_reflectionFromToken(uint256 a, bool b) public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.reflectionFromToken.selector, a, b
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.reflectionFromToken.selector, a, b
             )
@@ -465,16 +409,14 @@ contract DiffFuzzUpgrades {
     }
 
     function Safemoon_tokenFromReflection(uint256 a) public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.tokenFromReflection.selector, a
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.tokenFromReflection.selector, a
             )
@@ -483,17 +425,60 @@ contract DiffFuzzUpgrades {
         assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
     }
 
+    function Safemoon_excludeFromReward(address a) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.excludeFromReward.selector, a
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.excludeFromReward.selector, a
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
+    function Safemoon_includeInReward(address a) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.includeInReward.selector, a
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.includeInReward.selector, a
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
+    function Safemoon_whitelistAddress(address a, uint256 b) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.whitelistAddress.selector, a, b
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.whitelistAddress.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
     function Safemoon_accountTier(address a) public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.accountTier.selector, a
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.accountTier.selector, a
             )
@@ -502,17 +487,135 @@ contract DiffFuzzUpgrades {
         assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
     }
 
+    function Safemoon_setEcoSystemFeePercent(uint256 a, uint256 b) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.setEcoSystemFeePercent.selector, a, b
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.setEcoSystemFeePercent.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
+    function Safemoon_setLiquidityFeePercent(uint256 a, uint256 b) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.setLiquidityFeePercent.selector, a, b
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.setLiquidityFeePercent.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
+    function Safemoon_setTaxFeePercent(uint256 a, uint256 b) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.setTaxFeePercent.selector, a, b
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.setTaxFeePercent.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
+    function Safemoon_setOwnerFeePercent(uint256 a, uint256 b) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.setOwnerFeePercent.selector, a, b
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.setOwnerFeePercent.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
+    function Safemoon_setBurnFeePercent(uint256 a, uint256 b) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.setBurnFeePercent.selector, a, b
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.setBurnFeePercent.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
+    function Safemoon_setEcoSystemFeeAddress(uint256 a, address b) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.setEcoSystemFeeAddress.selector, a, b
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.setEcoSystemFeeAddress.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
+    function Safemoon_setOwnerFeeAddress(uint256 a, address b) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.setOwnerFeeAddress.selector, a, b
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.setOwnerFeeAddress.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
+    function Safemoon_addTier(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e, address f, address g) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.addTier.selector, a, b, c, d, e, f, g
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.addTier.selector, a, b, c, d, e, f, g
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
     function Safemoon_feeTier(uint256 a) public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.feeTier.selector, a
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.feeTier.selector, a
             )
@@ -522,16 +625,14 @@ contract DiffFuzzUpgrades {
     }
 
     function Safemoon_migrate(address a, uint256 b) public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.migrate.selector, a, b
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.migrate.selector, a, b
             )
@@ -541,16 +642,14 @@ contract DiffFuzzUpgrades {
     }
 
     function Safemoon_feeTiersLength() public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.feeTiersLength.selector
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.feeTiersLength.selector
             )
@@ -559,17 +658,30 @@ contract DiffFuzzUpgrades {
         assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
     }
 
+    function Safemoon_updateBurnAddress(address a) public virtual {
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
+            abi.encodeWithSelector(
+                safemoonV2.updateBurnAddress.selector, a
+            )
+        );
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
+            abi.encodeWithSelector(
+                safemoonV1.updateBurnAddress.selector, a
+            )
+        );
+        assert(successV1 == successV2); 
+        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+    }
+
     function Safemoon_getContractBalance() public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.getContractBalance.selector
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.getContractBalance.selector
             )
@@ -579,16 +691,14 @@ contract DiffFuzzUpgrades {
     }
 
     function Safemoon_mint(address a, uint256 b) public virtual {
-        hevm.selectFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
                 safemoonV2.mint.selector, a, b
             )
         );
-        hevm.selectFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.mint.selector, a, b
             )
@@ -606,16 +716,26 @@ contract DiffFuzzUpgrades {
     // Safemoon.burn(uint256).
     // If these functions have different arguments, this function may be incorrect.
     function Safemoon_burn(address a, uint256 b) public virtual {
-        hevm.selectFork(fork2);
+        bool successV2;
+        bytes memory outputV2;
+        if(transparentUpgradeableProxyV2.implementation() == address(safemoonV2)) {
+            hevm.prank(msg.sender);
+            (successV2, outputV2) = address(transparentUpgradeableProxyV2).call(
+                abi.encodeWithSelector(
+                    safemoonV2.burn.selector, a, b
+                )
+            );
+        } else {
+            hevm.prank(msg.sender);
+            (successV2, outputV2) = address(transparentUpgradeableProxyV2).call(
+                abi.encodeWithSelector(
+                    safemoonV1.burn.selector, b
+                )
+            );
+        }
+        
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
-            abi.encodeWithSelector(
-                safemoonV2.burn.selector, a, b
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
                 safemoonV1.burn.selector, b
             )
@@ -628,157 +748,31 @@ contract DiffFuzzUpgrades {
     /*** Tainted Variables ***/ 
 
     // function Safemoon__defaultFees() public {
-    //     hevm.selectFork(fork1);
-    //     Safemoon.FeeTier a1 = ISafemoonV1(address(transparentUpgradeableProxy))._defaultFees();
-    //     hevm.selectFork(fork2);
-    //     Safemoon.FeeTier a2 = ISafemoonV2(address(transparentUpgradeableProxy))._defaultFees();
-    //     assert(a1 == a2);
+    //     assert(ISafemoonV1(address(transparentUpgradeableProxyV1))._defaultFees() == ISafemoonV2(address(transparentUpgradeableProxyV2))._defaultFees());
     // }
 
     function Safemoon__burnAddress() public {
-        hevm.selectFork(fork1);
-        address a1 = ISafemoonV1(address(transparentUpgradeableProxy))._burnAddress();
-        hevm.selectFork(fork2);
-        address a2 = ISafemoonV2(address(transparentUpgradeableProxy))._burnAddress();
-        assert(a1 == a2);
+        assert(ISafemoonV1(address(transparentUpgradeableProxyV1))._burnAddress() == ISafemoonV2(address(transparentUpgradeableProxyV2))._burnAddress());
     }
 
     function Safemoon__maxTxAmount() public {
-        hevm.selectFork(fork1);
-        uint256 a1 = ISafemoonV1(address(transparentUpgradeableProxy))._maxTxAmount();
-        hevm.selectFork(fork2);
-        uint256 a2 = ISafemoonV2(address(transparentUpgradeableProxy))._maxTxAmount();
-        assert(a1 == a2);
+        assert(ISafemoonV1(address(transparentUpgradeableProxyV1))._maxTxAmount() == ISafemoonV2(address(transparentUpgradeableProxyV2))._maxTxAmount());
     }
 
     function Safemoon_numTokensToCollectBNB() public {
-        hevm.selectFork(fork1);
-        uint256 a1 = ISafemoonV1(address(transparentUpgradeableProxy)).numTokensToCollectBNB();
-        hevm.selectFork(fork2);
-        uint256 a2 = ISafemoonV2(address(transparentUpgradeableProxy)).numTokensToCollectBNB();
-        assert(a1 == a2);
+        assert(ISafemoonV1(address(transparentUpgradeableProxyV1)).numTokensToCollectBNB() == ISafemoonV2(address(transparentUpgradeableProxyV2)).numTokensToCollectBNB());
     }
 
     function Safemoon_swapAndEvolveEnabled() public {
-        hevm.selectFork(fork1);
-        bool a1 = ISafemoonV1(address(transparentUpgradeableProxy)).swapAndEvolveEnabled();
-        hevm.selectFork(fork2);
-        bool a2 = ISafemoonV2(address(transparentUpgradeableProxy)).swapAndEvolveEnabled();
-        assert(a1 == a2);
+        assert(ISafemoonV1(address(transparentUpgradeableProxyV1)).swapAndEvolveEnabled() == ISafemoonV2(address(transparentUpgradeableProxyV2)).swapAndEvolveEnabled());
     }
 
     function Safemoon_bridgeBurnAddress() public {
-        hevm.selectFork(fork1);
-        address a1 = ISafemoonV1(address(transparentUpgradeableProxy)).bridgeBurnAddress();
-        hevm.selectFork(fork2);
-        address a2 = ISafemoonV2(address(transparentUpgradeableProxy)).bridgeBurnAddress();
-        assert(a1 == a2);
+        assert(ISafemoonV1(address(transparentUpgradeableProxyV1)).bridgeBurnAddress() == ISafemoonV2(address(transparentUpgradeableProxyV2)).bridgeBurnAddress());
     }
 
     function Safemoon_whitelistMint(address a) public {
-        hevm.selectFork(fork1);
-        bool a1 = ISafemoonV1(address(transparentUpgradeableProxy)).whitelistMint(a);
-        hevm.selectFork(fork2);
-        bool a2 = ISafemoonV2(address(transparentUpgradeableProxy)).whitelistMint(a);
-        assert(a1 == a2);
-    }
-
-
-    /*** Tainted External Contracts ***/ 
-
-    function IUniswapV2Router02_factory() public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(iUniswapV2Router02).call(
-            abi.encodeWithSelector(
-                iUniswapV2Router02.factory.selector
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(iUniswapV2Router02).call(
-            abi.encodeWithSelector(
-                iUniswapV2Router02.factory.selector
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function IUniswapV2Router02_WETH() public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(iUniswapV2Router02).call(
-            abi.encodeWithSelector(
-                iUniswapV2Router02.WETH.selector
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(iUniswapV2Router02).call(
-            abi.encodeWithSelector(
-                iUniswapV2Router02.WETH.selector
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function IUniswapV2Router02_routerTrade() public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(iUniswapV2Router02).call(
-            abi.encodeWithSelector(
-                iUniswapV2Router02.routerTrade.selector
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(iUniswapV2Router02).call(
-            abi.encodeWithSelector(
-                iUniswapV2Router02.routerTrade.selector
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function ISafeSwapTradeRouter_swapExactTokensForETHAndFeeAmount(IISafeSwapTradeRouter.Trade calldata a) public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(iSafeSwapTradeRouter).call(
-            abi.encodeWithSelector(
-                iSafeSwapTradeRouter.swapExactTokensForETHAndFeeAmount.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(iSafeSwapTradeRouter).call(
-            abi.encodeWithSelector(
-                iSafeSwapTradeRouter.swapExactTokensForETHAndFeeAmount.selector, a
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function ISafeSwapTradeRouter_getSwapFees(uint256 a, address[] memory b) public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(iSafeSwapTradeRouter).call(
-            abi.encodeWithSelector(
-                iSafeSwapTradeRouter.getSwapFees.selector, a, b
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(iSafeSwapTradeRouter).call(
-            abi.encodeWithSelector(
-                iSafeSwapTradeRouter.getSwapFees.selector, a, b
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+        assert(ISafemoonV1(address(transparentUpgradeableProxyV1)).whitelistMint(a) == ISafemoonV2(address(transparentUpgradeableProxyV2)).whitelistMint(a));
     }
 
 
