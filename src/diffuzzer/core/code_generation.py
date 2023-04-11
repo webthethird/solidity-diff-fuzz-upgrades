@@ -446,6 +446,9 @@ def wrap_diff_functions(v1: ContractData, v2: ContractData, diff: Diff, fork: bo
             contract: Contract = t.contract
             contract_data = next((t for t in external_taint if t['name'] == contract.name), None)
             if contract_data:
+                contract_data_2 = contract_data.copy()
+                contract_data["suffix"] = "V1"
+                contract_data_2["suffix"] = "V2"
                 for f in t.tainted_functions:
                     mods = [m.name for m in f.modifiers]
                     if not protected and any(m in protected_mods for m in mods):
@@ -454,7 +457,7 @@ def wrap_diff_functions(v1: ContractData, v2: ContractData, diff: Diff, fork: bo
                         continue
                     func = next(func for func in contract_data["functions"]
                                 if func['name'] == f.name and len(func['inputs']) == len(f.parameters))
-                    wrapped += wrap_diff_function(contract_data, contract_data, fork, func)
+                    wrapped += wrap_diff_function(contract_data, contract_data_2, fork, func)
 
 
     return wrapped
@@ -625,7 +628,7 @@ def generate_test_contract(
         final_contract += "    function upgradeV2() external virtual {\n"
         if proxy['implementation_slot'] is not None:
             final_contract += f"        hevm.store(\n"
-            final_contract += f"            address({camel_case(proxy['name'])}{v2['name'] if mode == 'deploy' else ''}),\n"
+            final_contract += f"            address({camel_case(proxy['name'])}{v2['suffix'] if mode == 'deploy' else ''}),\n"
             final_contract += (
                 f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
             )
