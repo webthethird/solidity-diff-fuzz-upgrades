@@ -1,3 +1,5 @@
+"""Module containing helper functions used in both path mode and fork mode."""
+
 import os
 import difflib
 from typing import List
@@ -15,6 +17,8 @@ from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 
 
 def get_compilation_unit_name(slither_object) -> str:
+    """Get the name of the compilation unit from Slither."""
+
     name = list(slither_object.crytic_compile.compilation_units.keys())[0]
     if os.path.sep in name:
         name = name.rsplit(os.path.sep, maxsplit=1)[1]
@@ -24,12 +28,13 @@ def get_compilation_unit_name(slither_object) -> str:
 
 
 def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
+    """Recursive function to determine minimum solc version required by a Solidity file."""
+
     if seen is None:
-        seen = list()
+        seen = []
     try:
-        f = open(filepath, "r")
-        lines = f.readlines()
-        f.close()
+        with open(filepath, "r", encoding="utf-8") as file:
+            lines = file.readlines()
     except FileNotFoundError:
         return "0.0.0"
     versions = [
@@ -53,16 +58,16 @@ def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
             seen.append(file)
             versions.append(get_pragma_version_from_file(file, seen))
     high_version = ["0", "0", "0"]
-    for v in versions:
-        vers = v.split(".")
+    for ver in versions:
+        vers = ver.split(".")
         vers[0] = "0"
         if int(vers[1]) > int(high_version[1]) or (
             int(vers[1]) == int(high_version[1]) and int(vers[2]) > int(high_version[2])
         ):
             high_version = vers
-            if v.startswith(">") and not v.startswith(">="):
+            if ver.startswith(">") and not ver.startswith(">="):
                 vers[2] = str(int(vers[2]) + 1)
-                if not ".".join(vers) in get_installable_versions():
+                if ".".join(vers) not in get_installable_versions():
                     vers[1] = str(int(vers[1]) + 1)
                     vers[2] = "0"
                 if ".".join(vers) in get_installable_versions():
@@ -71,8 +76,10 @@ def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
 
 
 def do_diff(
-    v1: ContractData, v2: ContractData, additional_targets: List[ContractData] = None
+    v_1: ContractData, v_2: ContractData, additional_targets: List[ContractData] = None
 ) -> Diff:
+    """Use slither.utils.upgradeability to perform a diff between two contract versions."""
+
     CryticPrint.print(PrintMode.MESSAGE, "* Performing diff of V1 and V2")
     (
         missing_vars,
@@ -82,7 +89,7 @@ def do_diff(
         modified_funcs,
         tainted_funcs,
         tainted_contracts,
-    ) = compare(v1["contract_object"], v2["contract_object"])
+    ) = compare(v_1["contract_object"], v_2["contract_object"])
     if additional_targets:
         tainted_contracts = tainted_inheriting_contracts(
             tainted_contracts,
@@ -91,7 +98,7 @@ def do_diff(
                 for t in additional_targets
                 if t["contract_object"]
                 not in [c.contract for c in tainted_contracts]
-                + [v1["contract_object"], v2["contract_object"]]
+                + [v_1["contract_object"], v_2["contract_object"]]
             ],
         )
     diff = Diff(
@@ -103,23 +110,23 @@ def do_diff(
         tainted_functions=tainted_funcs,
         tainted_contracts=tainted_contracts,
     )
-    for key in diff.keys():
-        if len(diff[key]) > 0:
+    for key, lst in diff.items():
+        if len(lst) > 0:
             CryticPrint.print(PrintMode.WARNING, f'  * {str(key).replace("-", " ")}:')
-            for obj in diff[key]:
+            for obj in lst:
                 if isinstance(obj, StateVariable):
                     CryticPrint.print(PrintMode.WARNING, f"      * {obj.full_name}")
                 elif isinstance(obj, Function):
                     CryticPrint.print(PrintMode.WARNING, f"      * {obj.signature_str}")
                 elif isinstance(obj, TaintedExternalContract):
                     CryticPrint.print(PrintMode.WARNING, f"      * {obj.contract.name}")
-                    for f in obj.tainted_functions:
+                    for taint in obj.tainted_functions:
                         CryticPrint.print(
-                            PrintMode.WARNING, f"        * {f.signature_str}"
+                            PrintMode.WARNING, f"        * {taint.signature_str}"
                         )
-                    for v in obj.tainted_variables:
+                    for taint in obj.tainted_variables:
                         CryticPrint.print(
-                            PrintMode.WARNING, f"        * {v.signature_str}"
+                            PrintMode.WARNING, f"        * {taint.signature_str}"
                         )
     return diff
 
@@ -136,12 +143,15 @@ def similar(name1: str, name2: str) -> bool:
     Returns:
         bool: true if names are similar
     """
+
     val = difflib.SequenceMatcher(a=name1.lower(), b=name2.lower()).ratio()
     ret = val > 0.90
     return ret
 
 
 def camel_case(name: str) -> str:
+    """Convert a string to camel case."""
+
     parts = name.replace("_", " ").replace("-", " ").split()
     name = parts[0][0].lower() + parts[0][1:]
     if len(parts) > 1:
@@ -151,6 +161,7 @@ def camel_case(name: str) -> str:
 
 
 def write_to_file(filename: str, content: str) -> None:
-    out_file = open(filename, "wt")
-    out_file.write(content)
-    out_file.close()
+    """Write content to a file."""
+
+    with open(filename, "wt", encoding="utf-8") as out_file:
+        out_file.write(content)

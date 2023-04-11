@@ -1,6 +1,7 @@
+"""Module containing classes common to path mode and fork mode."""
+
 from typing import TypedDict, List
 
-from web3 import Web3
 from slither import Slither
 from slither.core.declarations.contract import Contract
 from slither.core.declarations.function import Function
@@ -10,6 +11,7 @@ from slither.tools.read_storage.read_storage import SlotInfo
 
 
 class FunctionInfo(TypedDict):
+    """Typed dictionary of function info"""
     name: str
     function: Function
     inputs: List[str]
@@ -18,6 +20,7 @@ class FunctionInfo(TypedDict):
 
 
 class ContractData(TypedDict):
+    """Typed dictionary of contract data"""
     # Blockchain info
     address: str
     valid_data: bool
@@ -40,6 +43,7 @@ class ContractData(TypedDict):
 
 
 class Diff(TypedDict):
+    """Typed dictionary of V1/V2 diff"""
     missing_variables: List[Variable]
     new_variables: List[Variable]
     tainted_variables: List[Variable]

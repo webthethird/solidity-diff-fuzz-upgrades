@@ -1,3 +1,5 @@
+"""Module containing class for getting and storing network information."""
+
 from typing import Any
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
@@ -13,6 +15,7 @@ from diffuzzer.utils.classes import ContractData, SlotInfo
 
 
 class NetworkInfoProvider:
+    """Class for getting and storing information from the network."""
 
     _w3: Web3
     _block: int
@@ -26,13 +29,13 @@ class NetworkInfoProvider:
 
         if not self._w3.is_connected():
             CryticPrint.print_error(
-                f"* Could not connect to the provided RPC endpoint."
+                "* Could not connect to the provided RPC endpoint."
             )
             raise ValueError(
                 f"Could not connect to the provided RPC endpoint: {rpc_provider}."
             )
 
-        if block == 0 or block == "":
+        if block in [0, ""]:
             self._block = int(self._w3.eth.get_block("latest")["number"])
         else:
             self._block = int(block)
@@ -42,15 +45,17 @@ class NetworkInfoProvider:
             self._w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
     def get_block_timestamp(self) -> int:
+        """Timestamp getter."""
         if self._block != 0:
             return self._w3.eth.get_block(self._block)["timestamp"]
-        else:
-            return 0
+        return 0
 
     def get_block_number(self) -> int:
+        """Block number getter."""
         return self._block
 
     def get_contract_variable_value(self, variable: StateVariable, address: str) -> Any:
+        """Get the value of a state variable from a contract's storage."""
         contract = variable.contract
         srs = SlitherReadStorage(contract, 20)
 
@@ -62,12 +67,13 @@ class NetworkInfoProvider:
             slot = srs.get_storage_slot(variable, contract)
             srs.get_slot_values(slot)
             return slot.value
-        except:
+        except (ValueError, TypeError, AssertionError):
             return ""
 
     def get_proxy_implementation(
         self, contract: Contract, contract_data: ContractData
     ) -> str:
+        """Get a proxy's implementation address from the proxy's storage."""
 
         address = contract_data["address"]
         CryticPrint.print_information(
@@ -86,103 +92,105 @@ class NetworkInfoProvider:
             CryticPrint.print_warning(f"      * storage slot {slot.name} is zero")
 
             raise ValueError("Proxy storage slot not found")
-        else:
-            try:
-                # Start by reading EIP1967 storage slot keccak256('eip1967.proxy.implementation') - 1
-                imp = get_storage_data(
-                    self._w3,
-                    address,
-                    0x360894A13BA1A3210667C828492DB98DCA3E2076CC3735A920A3CA505D382BBC,
-                    self._block,
+        try:
+            # Start by reading EIP1967 storage slot keccak256('eip1967.proxy.implementation') - 1
+            imp = get_storage_data(
+                self._w3,
+                address,
+                0x360894A13BA1A3210667C828492DB98DCA3E2076CC3735A920A3CA505D382BBC,
+                self._block,
+            )
+            impl_address = "0x" + imp.hex()[-40:]
+
+            if impl_address != "0x0000000000000000000000000000000000000000":
+                contract_data["implementation_slot"] = SlotInfo(
+                    name="IMPLEMENTATION_SLOT",
+                    type_string="address",
+                    slot=int(
+                        "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                        16,
+                    ),
+                    size=160,
+                    offset=0,
                 )
-                impl_address = "0x" + imp.hex()[-40:]
+                return impl_address, contract_data
 
-                if impl_address != "0x0000000000000000000000000000000000000000":
-                    contract_data["implementation_slot"] = SlotInfo(
-                        name="IMPLEMENTATION_SLOT",
-                        type_string="address",
-                        slot=int(
-                            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                            16,
-                        ),
-                        size=160,
-                        offset=0,
-                    )
-                    return impl_address, contract_data
+            CryticPrint.print_warning("      * EIP1967 storage slot is zero")
 
-                CryticPrint.print_warning(f"      * EIP1967 storage slot is zero")
+            # Try slot keccak256('org.zeppelinos.proxy.implementation') used by early OZ proxies
+            imp = get_storage_data(
+                self._w3,
+                address,
+                0x7050C9E0F4CA769C69BD3A8EF740BC37934F8E2C036E5A723FD8EE048ED3F8C3,
+                self._block,
+            )
+            impl_address = "0x" + imp.hex()[-40:]
 
-                # Try with slot keccak256('org.zeppelinos.proxy.implementation') used by early OZ proxies
-                imp = get_storage_data(
-                    self._w3,
-                    address,
-                    0x7050C9E0F4CA769C69BD3A8EF740BC37934F8E2C036E5A723FD8EE048ED3F8C3,
-                    self._block,
+            if impl_address != "0x0000000000000000000000000000000000000000":
+                contract_data["implementation_slot"] = SlotInfo(
+                    name="IMPLEMENTATION_SLOT",
+                    type_string="address",
+                    slot=int(
+                        "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                        16,
+                    ),
+                    size=160,
+                    offset=0,
                 )
-                impl_address = "0x" + imp.hex()[-40:]
+                return impl_address, contract_data
 
-                if impl_address != "0x0000000000000000000000000000000000000000":
-                    contract_data["implementation_slot"] = SlotInfo(
-                        name="IMPLEMENTATION_SLOT",
-                        type_string="address",
-                        slot=int(
-                            "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                            16,
-                        ),
-                        size=160,
-                        offset=0,
-                    )
-                    return impl_address, contract_data
+            CryticPrint.print_warning(
+                "      * OZ ZeppelinOS proxies storage slot is zero"
+            )
 
+            raise ValueError("Proxy storage slot not found")
+
+        except (ValueError, TypeError, AssertionError) as err:
+            # Fallback: Try finding a state variable with "implementation" or "target" in its name
+            implementation_var = []
+
+            for var in contract.state_variables_ordered:
+                if (
+                    var.name.lower().find("implementation") >= 0
+                    or var.name.lower().find("target") >= 0
+                ):
+                    implementation_var.append(var)
+
+            if not implementation_var:
                 CryticPrint.print_warning(
-                    f"      * OZ ZeppelinOS proxies storage slot is zero"
+                    "      * Couldn't find proxy implementation in contract storage"
                 )
+                raise ValueError(
+                    "Couldn't find proxy implementation in contract storage"
+                ) from err
+            for imp in implementation_var:
+                slot_value = self.get_contract_variable_value(imp, address)
 
-                raise ValueError("Proxy storage slot not found")
+                if slot_value[0:2] != "0x":
+                    slot_value = "0x" + slot_value
 
-            except Exception as e:
-                # Fallback: Try finding a state variable with "implementation" or "target" in its name
-                implementation_var = []
-
-                for v in contract.state_variables_ordered:
-                    if (
-                        v.name.lower().find("implementation") >= 0
-                        or v.name.lower().find("target") >= 0
-                    ):
-                        implementation_var.append(v)
-
-                if not implementation_var:
+                if (
+                    is_address(slot_value)
+                    and slot_value != "0000000000000000000000000000000000000000"
+                ):
                     CryticPrint.print_warning(
-                        f"      * Couldn't find proxy implementation in contract storage"
+                        "      * Proxy implementation address read from variable:"
+                        f" {imp.type} {imp.name}"
                     )
-                    raise ValueError(
-                        "Couldn't find proxy implementation in contract storage"
-                    )
-                else:
-                    for imp in implementation_var:
-                        slot_value = self.get_contract_variable_value(imp, address)
+                    srs = SlitherReadStorage(contract, 20)
+                    slot_info = srs.get_storage_slot(imp, contract)
+                    contract_data["implementation_slot"] = slot_info
+                    return slot_value, contract_data
 
-                        if slot_value[0:2] != "0x":
-                            slot_value = "0x" + slot_value
+            CryticPrint.print_error(
+                "      * Proxy storage slot read is not an address"
+            )
+            raise ValueError("Proxy storage slot read is not an address") from err
 
-                        if (
-                            is_address(slot_value)
-                            and slot_value != "0000000000000000000000000000000000000000"
-                        ):
-                            CryticPrint.print_warning(
-                                f"      * Proxy implementation address read from variable: {imp.type} {imp.name}"
-                            )
-                            srs = SlitherReadStorage(contract, 20)
-                            slot_info = srs.get_storage_slot(imp, contract)
-                            contract_data["implementation_slot"] = slot_info
-                            return slot_value, contract_data
-
-                    CryticPrint.print_error(
-                        f"      * Proxy storage slot read is not an address"
-                    )
-                    raise ValueError("Proxy storage slot read is not an address")
-
+    # pylint: disable=too-many-locals
     def get_token_holder(self, min_token_amount: int, address: str, abi: str) -> str:
+        """Get the address of a holder of the token at the given address."""
+
         block_from = int(self._block) - 2000
         block_to = int(self._block)
         max_retries = 10
@@ -221,13 +229,13 @@ class NetworkInfoProvider:
 
             if holder:
                 return holder
-            else:
-                max_retries -= 1
-                block_from -= 2000
-                block_to -= 2000
+            max_retries -= 1
+            block_from -= 2000
+            block_to -= 2000
 
         CryticPrint.print_error(
-            f"* Could not find a token holder for {address}. Please use --token-holder to set it manually."
+            f"* Could not find a token holder for {address}. "
+            "Please use --token-holder to set it manually."
         )
         raise ValueError(
             "Could not find a token holder. Please use --token-holder to set it manually."
