@@ -2,6 +2,7 @@
 
 from typing import TypedDict, List
 
+# pylint: disable= no-name-in-module
 from slither import Slither
 from slither.core.declarations.contract import Contract
 from slither.core.declarations.function import Function

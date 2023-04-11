@@ -1,5 +1,6 @@
 """Module containing helper functions used by fork mode."""
 
+# pylint: disable= no-name-in-module
 from eth_utils import to_checksum_address, is_address
 from slither import Slither
 from slither.exceptions import SlitherError

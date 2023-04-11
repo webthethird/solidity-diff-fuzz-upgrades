@@ -1,6 +1,8 @@
 """Module containing helper functions used by path mode."""
 
 from typing import List
+
+# pylint: disable= no-name-in-module
 from solc_select.solc_select import (
     switch_global_version,
     installed_versions,

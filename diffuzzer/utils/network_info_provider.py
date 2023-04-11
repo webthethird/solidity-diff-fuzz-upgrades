@@ -1,5 +1,6 @@
 """Module containing class for getting and storing network information."""
 
+# pylint: disable= no-name-in-module
 from typing import Any
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware

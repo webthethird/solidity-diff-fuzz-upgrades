@@ -4,6 +4,7 @@ import os
 import difflib
 from typing import List
 
+# pylint: disable= no-name-in-module
 from solc_select.solc_select import get_installable_versions
 from slither.utils.upgradeability import (
     compare,

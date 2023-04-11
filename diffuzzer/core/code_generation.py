@@ -2,6 +2,7 @@
 
 from typing import List, Tuple
 
+# pylint: disable= no-name-in-module
 from slither import Slither
 from slither.exceptions import SlitherError
 from slither.utils.type import convert_type_for_solidity_signature_to_string
