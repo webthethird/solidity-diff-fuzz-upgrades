@@ -66,10 +66,10 @@ class NetworkInfoProvider:
     
     def get_proxy_implementation(self, contract: Contract, contract_data: ContractData) -> str:
 
+        address = contract_data["address"]
         CryticPrint.print_information(f"    * Getting proxy implementation from {contract.name} at {address}.")
 
         slot: SlotInfo = get_proxy_implementation_slot(contract)
-        address = contract_data["address"]
         if slot is not None: 
             
             imp = get_storage_data(self._w3, address, bytes(slot.slot), self._block)
