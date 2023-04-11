@@ -219,7 +219,7 @@ def fork_mode(args: argparse.Namespace):
         upgrade=upgrade,
         protected=protected
     )
-    write_to_file(f"{output_dir}diffuzzerUpgrades.sol", contract)
+    write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
     CryticPrint.print(
         PrintMode.SUCCESS,
         f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.",
