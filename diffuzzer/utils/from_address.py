@@ -16,7 +16,7 @@ from slither.utils.upgradeability import get_proxy_implementation_slot
 from slither.tools.read_storage.utils import get_storage_data
 from slither.tools.read_storage.read_storage import SlotInfo
 from slither.tools.read_storage import SlitherReadStorage
-from diffuzzer.classes import ContractData
+from diffuzzer.utils.classes import ContractData
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.utils.slither_provider import NetworkSlitherProvider
 from diffuzzer.utils.network_info_provider import NetworkInfoProvider

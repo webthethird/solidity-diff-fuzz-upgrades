@@ -9,7 +9,7 @@ from slither.utils.upgradeability import get_proxy_implementation_slot
 from eth_utils import is_address
 
 from diffuzzer.utils.crytic_print import CryticPrint
-from diffuzzer.classes import ContractData, SlotInfo
+from diffuzzer.utils.classes import ContractData, SlotInfo
 
 
 class NetworkInfoProvider:

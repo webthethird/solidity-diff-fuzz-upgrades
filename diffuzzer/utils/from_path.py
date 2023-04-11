@@ -8,7 +8,7 @@ from solc_select.solc_select import (
 from slither import Slither
 from slither.exceptions import SlitherError
 from slither.utils.upgradeability import get_proxy_implementation_slot
-from diffuzzer.classes import ContractData
+from diffuzzer.utils.classes import ContractData
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.utils.slither_provider import FileSlitherProvider
 from diffuzzer.utils.helpers import (

@@ -10,7 +10,7 @@ from slither.utils.upgradeability import (
 )
 from slither.core.declarations import Function
 from slither.core.variables.state_variable import StateVariable
-from diffuzzer.classes import ContractData, Diff
+from diffuzzer.utils.classes import ContractData, Diff
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 
 
