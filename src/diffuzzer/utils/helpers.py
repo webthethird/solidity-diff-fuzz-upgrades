@@ -3,7 +3,11 @@ import difflib
 from typing import List
 
 from solc_select.solc_select import get_installable_versions
-from slither.utils.upgradeability import compare, tainted_inheriting_contracts, TaintedExternalContract
+from slither.utils.upgradeability import (
+    compare,
+    tainted_inheriting_contracts,
+    TaintedExternalContract,
+)
 from slither.core.declarations import Function
 from slither.core.variables.state_variable import StateVariable
 from diffuzzer.classes import ContractData, Diff
@@ -66,18 +70,29 @@ def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
     return ".".join(high_version)
 
 
-def do_diff(v1: ContractData, v2: ContractData, additional_targets: List[ContractData] = None) -> Diff:
+def do_diff(
+    v1: ContractData, v2: ContractData, additional_targets: List[ContractData] = None
+) -> Diff:
     CryticPrint.print(PrintMode.MESSAGE, "* Performing diff of V1 and V2")
     (
-        missing_vars, new_vars, tainted_vars, new_funcs, modified_funcs, tainted_funcs, tainted_contracts
+        missing_vars,
+        new_vars,
+        tainted_vars,
+        new_funcs,
+        modified_funcs,
+        tainted_funcs,
+        tainted_contracts,
     ) = compare(v1["contract_object"], v2["contract_object"])
     if additional_targets:
         tainted_contracts = tainted_inheriting_contracts(
-            tainted_contracts, [
-                t["contract_object"] for t in additional_targets 
-                if t["contract_object"] not in 
-                [c.contract for c in tainted_contracts] + [v1["contract_object"], v2["contract_object"]]
-            ]
+            tainted_contracts,
+            [
+                t["contract_object"]
+                for t in additional_targets
+                if t["contract_object"]
+                not in [c.contract for c in tainted_contracts]
+                + [v1["contract_object"], v2["contract_object"]]
+            ],
         )
     diff = Diff(
         missing_variables=missing_vars,
@@ -86,7 +101,7 @@ def do_diff(v1: ContractData, v2: ContractData, additional_targets: List[Contrac
         new_functions=new_funcs,
         modified_functions=modified_funcs,
         tainted_functions=tainted_funcs,
-        tainted_contracts=tainted_contracts
+        tainted_contracts=tainted_contracts,
     )
     for key in diff.keys():
         if len(diff[key]) > 0:
@@ -99,9 +114,13 @@ def do_diff(v1: ContractData, v2: ContractData, additional_targets: List[Contrac
                 elif isinstance(obj, TaintedExternalContract):
                     CryticPrint.print(PrintMode.WARNING, f"      * {obj.contract.name}")
                     for f in obj.tainted_functions:
-                        CryticPrint.print(PrintMode.WARNING, f"        * {f.signature_str}")
+                        CryticPrint.print(
+                            PrintMode.WARNING, f"        * {f.signature_str}"
+                        )
                     for v in obj.tainted_variables:
-                        CryticPrint.print(PrintMode.WARNING, f"        * {v.signature_str}")
+                        CryticPrint.print(
+                            PrintMode.WARNING, f"        * {v.signature_str}"
+                        )
     return diff
 
 

@@ -11,7 +11,6 @@ class PrintMode(Enum):
 
 
 class CryticPrint:
-
     @staticmethod
     def initialize() -> None:
         colorama_init()

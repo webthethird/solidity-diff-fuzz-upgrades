@@ -5,16 +5,11 @@ import os
 from typing import List
 
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
-from diffuzzer.utils.helpers import (
-    write_to_file
-)
-from diffuzzer.core.code_generation import (
-    generate_test_contract,
-    generate_config_file
-)
+from diffuzzer.utils.helpers import write_to_file
+from diffuzzer.core.code_generation import generate_test_contract, generate_config_file
 from diffuzzer.utils.from_path import (
     get_contracts_from_comma_separated_paths,
-    get_contract_data_from_path
+    get_contract_data_from_path,
 )
 from diffuzzer.utils.slither_provider import FileSlitherProvider
 
@@ -31,14 +26,23 @@ def path_mode(args: argparse.Namespace):
         output_dir = "./"
 
     if args.network:
-        CryticPrint.print(PrintMode.WARNING, "* Network specified via command line argument, but you are using 'path mode'. "
-                                        "To use fork mode, provide addresses instead of file paths.\n  Ignoring network...\n")
+        CryticPrint.print(
+            PrintMode.WARNING,
+            "* Network specified via command line argument, but you are using 'path mode'. "
+            "To use fork mode, provide addresses instead of file paths.\n  Ignoring network...\n",
+        )
     if args.block:
-        CryticPrint.print(PrintMode.WARNING, "* Block specified via command line argument, but you are using 'path mode'. "
-                                        "To use fork mode, provide addresses instead of file paths.\n  Ignoring block...\n")
+        CryticPrint.print(
+            PrintMode.WARNING,
+            "* Block specified via command line argument, but you are using 'path mode'. "
+            "To use fork mode, provide addresses instead of file paths.\n  Ignoring block...\n",
+        )
     if args.network_rpc:
-        CryticPrint.print(PrintMode.WARNING, "* RPC specified via command line argument, but you are using 'path mode'. "
-                                        "To use fork mode, provide addresses instead of file paths.\n  Ignoring RPC...\n")
+        CryticPrint.print(
+            PrintMode.WARNING,
+            "* RPC specified via command line argument, but you are using 'path mode'. "
+            "To use fork mode, provide addresses instead of file paths.\n  Ignoring RPC...\n",
+        )
 
     CryticPrint.print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     v1_contract_data = get_contract_data_from_path(args.v1, provider, suffix="V1")
@@ -64,8 +68,8 @@ def path_mode(args: argparse.Namespace):
             upgrade = True
         else:
             CryticPrint.print(
-                PrintMode.WARNING, 
-                "  * Upgrade during fuzz sequence specified via command line parameter, but no proxy was specified. Ignoring..."
+                PrintMode.WARNING,
+                "  * Upgrade during fuzz sequence specified via command line parameter, but no proxy was specified. Ignoring...",
             )
             upgrade = False
     else:
@@ -125,7 +129,7 @@ def path_mode(args: argparse.Namespace):
         targets=targets,
         proxy=proxy,
         upgrade=upgrade,
-        protected=protected
+        protected=protected,
     )
     write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
     CryticPrint.print(

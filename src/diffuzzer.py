@@ -10,7 +10,24 @@ from diffuzzer.core.path_mode import path_mode
 from diffuzzer.core.fork_mode import fork_mode
 
 
-SUPPORTED_NETWORKS = [ "mainet","optim","ropsten","kovan","rinkeby","goerli","tobalaba","bsc","testnet.bsc","arbi","testnet.arbi","poly","mumbai","avax","testnet.avax","ftm"]
+SUPPORTED_NETWORKS = [
+    "mainet",
+    "optim",
+    "ropsten",
+    "kovan",
+    "rinkeby",
+    "goerli",
+    "tobalaba",
+    "bsc",
+    "testnet.bsc",
+    "arbi",
+    "testnet.arbi",
+    "poly",
+    "mumbai",
+    "avax",
+    "testnet.avax",
+    "ftm",
+]
 
 
 def main():
@@ -21,12 +38,8 @@ def main():
         description="Generate differential fuzz testing contract for comparing two upgradeable contract versions.",
     )
 
-    parser.add_argument(
-        "v1", help="The original version of the contract."
-    )
-    parser.add_argument(
-        "v2", help="The upgraded version of the contract."
-    )
+    parser.add_argument("v1", help="The original version of the contract.")
+    parser.add_argument("v2", help="The upgraded version of the contract.")
     parser.add_argument(
         "-p", "--proxy", dest="proxy", help="Specifies the proxy contract to use."
     )
@@ -47,7 +60,7 @@ def main():
         "-d",
         "--output-dir",
         dest="output_dir",
-        help="Specifies the directory where the generated test contract and config file are saved."
+        help="Specifies the directory where the generated test contract and config file are saved.",
     )
     parser.add_argument(
         "-A",
@@ -67,46 +80,50 @@ def main():
         "--fuzz-upgrade",
         dest="fuzz_upgrade",
         action="store_true",
-        help="Specifies whether to upgrade the proxy to the V2 during fuzzing (default is False). Requires a proxy."
+        help="Specifies whether to upgrade the proxy to the V2 during fuzzing (default is False). Requires a proxy.",
     )
 
     parser.add_argument(
         "-l",
         "--seq-length",
         dest="seq_len",
-        help="Specifies the sequence length to use with Slither. Default is 100."
+        help="Specifies the sequence length to use with Slither. Default is 100.",
     )
     parser.add_argument(
-        '-n', 
-        '--network', 
-        dest='network', 
-        help='Specifies the network where the contracts are deployed. Valid values: ' + ', '.join(SUPPORTED_NETWORKS)
+        "-n",
+        "--network",
+        dest="network",
+        help="Specifies the network where the contracts are deployed. Valid values: "
+        + ", ".join(SUPPORTED_NETWORKS),
     )
     parser.add_argument(
-        '-b', 
-        '--block', 
-        dest='block', 
-        help='Specifies the block number to fetch the contracts from. If not specified and RPC is available, latest block will be used.'
+        "-b",
+        "--block",
+        dest="block",
+        help="Specifies the block number to fetch the contracts from. If not specified and RPC is available, latest block will be used.",
     )
     parser.add_argument(
-        '-R', 
-        '--rpc', 
-        dest='network_rpc', 
-        help='Specifies network RPC endpoint for reading operations.'
+        "-R",
+        "--rpc",
+        dest="network_rpc",
+        help="Specifies network RPC endpoint for reading operations.",
     )
     parser.add_argument(
-        '--protected',
-        dest='include_protected',
-        action='store_true',
-        help='Specifies whether to include wrappers for protected functions.'
+        "--protected",
+        dest="include_protected",
+        action="store_true",
+        help="Specifies whether to include wrappers for protected functions.",
     )
-
 
     args = parser.parse_args()
 
     CryticPrint.initialize()
-    CryticPrint.print(PrintMode.MESSAGE, "\nWelcome to diff-fuzz-upgrades, enjoy your stay!")
-    CryticPrint.print(PrintMode.MESSAGE, "===============================================\n")
+    CryticPrint.print(
+        PrintMode.MESSAGE, "\nWelcome to diff-fuzz-upgrades, enjoy your stay!"
+    )
+    CryticPrint.print(
+        PrintMode.MESSAGE, "===============================================\n"
+    )
 
     # Silence Slither Read Storage
     logging.getLogger("Slither-read-storage").setLevel(logging.CRITICAL)

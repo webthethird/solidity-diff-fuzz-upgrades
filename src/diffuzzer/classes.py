@@ -33,7 +33,7 @@ class ContractData(TypedDict):
     slither: Slither
     contract_object: Contract
     # Proxy info
-    is_proxy: bool    
+    is_proxy: bool
     implementation_object: Contract
     implementation_slither: Slither
     implementation_slot: SlotInfo

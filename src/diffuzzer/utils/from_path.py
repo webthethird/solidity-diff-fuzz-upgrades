@@ -13,14 +13,14 @@ from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.utils.slither_provider import FileSlitherProvider
 from diffuzzer.utils.helpers import (
     get_pragma_version_from_file,
-    get_compilation_unit_name
+    get_compilation_unit_name,
 )
-from diffuzzer.core.code_generation import (
-    get_contract_interface
-)
+from diffuzzer.core.code_generation import get_contract_interface
 
 
-def get_contracts_from_comma_separated_paths(paths_string: str, provider: FileSlitherProvider, suffix: str = "") -> List[ContractData]:
+def get_contracts_from_comma_separated_paths(
+    paths_string: str, provider: FileSlitherProvider, suffix: str = ""
+) -> List[ContractData]:
     contracts = []
     filepaths = paths_string.split(",")
 
@@ -30,7 +30,9 @@ def get_contracts_from_comma_separated_paths(paths_string: str, provider: FileSl
     return contracts
 
 
-def get_contract_data_from_path(filepath: str, provider: FileSlitherProvider, suffix: str = "") -> ContractData:
+def get_contract_data_from_path(
+    filepath: str, provider: FileSlitherProvider, suffix: str = ""
+) -> ContractData:
     contract_data = ContractData()
 
     CryticPrint.print(PrintMode.MESSAGE, f"* Getting contract data from {filepath}")
@@ -56,7 +58,9 @@ def get_contract_data_from_path(filepath: str, provider: FileSlitherProvider, su
         try:
             contract = slither_object.get_contract_from_name(contract_name)[0]
         except IndexError:
-            contract = slither_object.get_contract_from_name(contract_name.replace("V1", "").replace("V2", "").replace("V3", ""))[0]
+            contract = slither_object.get_contract_from_name(
+                contract_name.replace("V1", "").replace("V2", "").replace("V3", "")
+            )[0]
         contract_data["contract_object"] = contract
         if contract.is_upgradeable_proxy:
             contract_data["is_proxy"] = True
