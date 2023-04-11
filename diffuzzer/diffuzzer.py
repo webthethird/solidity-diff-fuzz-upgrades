@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Main module"""
+
 import argparse
 import logging
 import os
@@ -30,7 +32,9 @@ SUPPORTED_NETWORKS = [
 ]
 
 
+# pylint: disable=line-too-long
 def main():
+    """Main method, parses arguments and calls path_mode or fork_mode."""
     # Read command line arguments
 
     parser = argparse.ArgumentParser(
@@ -48,13 +52,6 @@ def main():
         "--targets",
         dest="targets",
         help="Specifies the additional contracts to target.",
-    )
-    parser.add_argument(
-        "-D",
-        "--deploy",
-        dest="deploy",
-        action="store_true",
-        help="Specifies if the test contract deploys the contracts under test in its constructor.",
     )
     parser.add_argument(
         "-d",
@@ -141,6 +138,19 @@ def main():
     else:
         CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v2}")
         raise FileNotFoundError(args.v2)
+
+    CryticPrint.print(
+        PrintMode.MESSAGE,
+        "\n-----------------------------------------------------------",
+    )
+    CryticPrint.print(
+        PrintMode.MESSAGE,
+        "My work here is done. Thanks for using me, have a nice day!",
+    )
+    CryticPrint.print(
+        PrintMode.MESSAGE,
+        "-----------------------------------------------------------",
+    )
 
 
 if __name__ == "__main__":

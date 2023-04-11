@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+"""Main module for path mode."""
+
 import argparse
 import os
-from typing import List
 
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.utils.helpers import write_to_file
@@ -14,7 +15,10 @@ from diffuzzer.utils.from_path import (
 from diffuzzer.utils.slither_provider import FileSlitherProvider
 
 
+# pylint: disable=too-many-branches,too-many-statements
 def path_mode(args: argparse.Namespace):
+    """Takes over from diffuzzer.main when args provided are file paths."""
+
     mode = "deploy"
     provider = FileSlitherProvider()
 
@@ -69,7 +73,8 @@ def path_mode(args: argparse.Namespace):
         else:
             CryticPrint.print(
                 PrintMode.WARNING,
-                "  * Upgrade during fuzz sequence specified via command line parameter, but no proxy was specified. Ignoring...",
+                "  * Upgrade during fuzz sequence specified via command line parameter,"
+                " but no proxy was specified. Ignoring...",
             )
             upgrade = False
     else:
@@ -83,11 +88,6 @@ def path_mode(args: argparse.Namespace):
         targets = get_contracts_from_comma_separated_paths(args.targets, provider)
     else:
         targets = None
-
-    if args.deploy:
-        deploy = True
-    else:
-        deploy = False
 
     if args.seq_len:
         if str(args.seq_len).isnumeric():
@@ -106,16 +106,11 @@ def path_mode(args: argparse.Namespace):
     else:
         version = "0.8.0"
 
-    if args.include_protected:
-        protected = True
-    else:
-        protected = False
-
     if args.contract_addr:
         contract_addr = args.contract_addr
         CryticPrint.print(
             PrintMode.INFORMATION,
-            f"\n* Exploit contract address specified via command line parameter: "
+            "\n* Exploit contract address specified via command line parameter: "
             f"{contract_addr}",
         )
     else:
@@ -129,7 +124,7 @@ def path_mode(args: argparse.Namespace):
         targets=targets,
         proxy=proxy,
         upgrade=upgrade,
-        protected=protected,
+        protected=bool(args.include_protected),
     )
     write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
     CryticPrint.print(
@@ -144,17 +139,4 @@ def path_mode(args: argparse.Namespace):
     CryticPrint.print(
         PrintMode.SUCCESS,
         f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.",
-    )
-
-    CryticPrint.print(
-        PrintMode.MESSAGE,
-        f"\n-----------------------------------------------------------",
-    )
-    CryticPrint.print(
-        PrintMode.MESSAGE,
-        f"My work here is done. Thanks for using me, have a nice day!",
-    )
-    CryticPrint.print(
-        PrintMode.MESSAGE,
-        f"-----------------------------------------------------------",
     )

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Main module for fork mode."""
+
 import argparse
 import os
 from eth_utils import is_address
@@ -62,8 +64,10 @@ SUPPORTED_RPC_ENV_VARS = {
 }
 
 
+# pylint: disable=too-many-locals,too-many-branches,too-many-statements
 def fork_mode(args: argparse.Namespace):
-    mode = "fork"
+    """Takes over from diffuzzer.main when args provided are addresses."""
+
     provider: NetworkSlitherProvider
 
     if args.output_dir is not None:
@@ -169,7 +173,7 @@ def fork_mode(args: argparse.Namespace):
         else:
             CryticPrint.print(
                 PrintMode.ERROR,
-                f"\n  * When using fork mode, the proxy must be specified as an address. Ignoring...",
+                "\n  * When using fork mode, the proxy must be specified as an address.",
             )
             proxy = None
     else:
@@ -181,13 +185,13 @@ def fork_mode(args: argparse.Namespace):
         else:
             CryticPrint.print(
                 PrintMode.WARNING,
-                "  * Upgrade during fuzz sequence specified via command line parameter, but no proxy was specified. Ignoring...",
+                "  * Upgrade during fuzz sequence specified via command line parameter, "
+                "but no proxy was specified. Ignoring...",
             )
             upgrade = False
     else:
         upgrade = False
 
-    tokens = []
     targets = []
 
     if args.targets is not None:
@@ -200,13 +204,6 @@ def fork_mode(args: argparse.Namespace):
         )
     else:
         targets = None
-
-    if args.deploy:
-        CryticPrint.print(
-            PrintMode.WARNING,
-            "* Deploy mode flag specified, but you are using fork mode. The contracts are already deployed! Ignoring...",
-        )
-    deploy = False
 
     if args.seq_len:
         if str(args.seq_len).isnumeric():
@@ -225,16 +222,11 @@ def fork_mode(args: argparse.Namespace):
     else:
         version = "0.8.0"
 
-    if args.include_protected:
-        protected = True
-    else:
-        protected = False
-
     if args.contract_addr:
         contract_addr = args.contract_addr
         CryticPrint.print(
             PrintMode.INFORMATION,
-            f"\n* Exploit contract address specified via command line parameter: "
+            "\n* Exploit contract address specified via command line parameter: "
             f"{contract_addr}",
         )
     else:
@@ -243,12 +235,13 @@ def fork_mode(args: argparse.Namespace):
     contract = generate_test_contract(
         v1_contract_data,
         v2_contract_data,
-        mode,
+        "fork",
         version,
         targets=targets,
         proxy=proxy,
         upgrade=upgrade,
-        protected=protected,
+        protected=bool(args.include_protected),
+        network_info=net_info
     )
     write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
     CryticPrint.print(
@@ -263,17 +256,4 @@ def fork_mode(args: argparse.Namespace):
     CryticPrint.print(
         PrintMode.SUCCESS,
         f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.",
-    )
-
-    CryticPrint.print(
-        PrintMode.MESSAGE,
-        f"\n-----------------------------------------------------------",
-    )
-    CryticPrint.print(
-        PrintMode.MESSAGE,
-        f"My work here is done. Thanks for using me, have a nice day!",
-    )
-    CryticPrint.print(
-        PrintMode.MESSAGE,
-        f"-----------------------------------------------------------",
     )
