@@ -281,11 +281,11 @@ def wrap_additional_target_functions(targets: List[ContractData], fork: bool, ta
 
 def wrap_low_level_call(c: ContractData, func: FunctionInfo, call_args: str, fork: bool, suffix: str, proxy=None) -> str:
     if proxy is None:
-        target = camel_case(c['name']) + c["suffix"]
+        target = camel_case(c['name'])
     else:
         target = camel_case(proxy['name']) 
-        if not fork:
-            target += c["suffix"]
+    if not fork:
+        target += c["suffix"]
     wrapped = ""
     wrapped += f"        (bool success{suffix}, bytes memory output{suffix}) = address({target}).call(\n"
     wrapped += f"            abi.encodeWithSelector(\n"
@@ -447,8 +447,9 @@ def wrap_diff_functions(v1: ContractData, v2: ContractData, diff: Diff, fork: bo
             contract_data = next((t for t in external_taint if t['name'] == contract.name), None)
             if contract_data:
                 contract_data_2 = contract_data.copy()
-                contract_data["suffix"] = "V1"
-                contract_data_2["suffix"] = "V2"
+                if not fork:
+                    contract_data["suffix"] = "V1"
+                    contract_data_2["suffix"] = "V2"
                 for f in t.tainted_functions:
                     mods = [m.name for m in f.modifiers]
                     if not protected and any(m in protected_mods for m in mods):
