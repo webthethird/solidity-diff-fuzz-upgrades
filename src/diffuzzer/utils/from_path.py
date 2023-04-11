@@ -10,6 +10,7 @@ from slither.exceptions import SlitherError
 from slither.utils.upgradeability import get_proxy_implementation_slot
 from diffuzzer.classes import ContractData
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
+from diffuzzer.utils.slither_provider import FileSlitherProvider
 from diffuzzer.utils.helpers import (
     get_pragma_version_from_file,
     get_compilation_unit_name
@@ -19,20 +20,20 @@ from diffuzzer.core.code_generation import (
 )
 
 
-def get_contracts_from_comma_separated_paths(paths_string: str, suffix: str = "") -> List[ContractData]:
+def get_contracts_from_comma_separated_paths(paths_string: str, provider: FileSlitherProvider, suffix: str = "") -> List[ContractData]:
     contracts = []
     filepaths = paths_string.split(",")
 
     for path in filepaths:
-        contract_data = get_contract_data_from_path(path, suffix)
+        contract_data = get_contract_data_from_path(path, provider, suffix)
         contracts.append(contract_data)
     return contracts
 
 
-def get_contract_data_from_path(filepath: str, suffix: str = "") -> ContractData:
+def get_contract_data_from_path(filepath: str, provider: FileSlitherProvider, suffix: str = "") -> ContractData:
     contract_data = ContractData()
 
-    crytic_print(PrintMode.MESSAGE, f"* Getting contract data from {filepath}")
+    CryticPrint.print(PrintMode.MESSAGE, f"* Getting contract data from {filepath}")
 
     contract_data["path"] = filepath
     contract_data["suffix"] = suffix
@@ -42,7 +43,7 @@ def get_contract_data_from_path(filepath: str, suffix: str = "") -> ContractData
         switch_global_version(version, True)
 
     try:
-        contract_data["slither"] = get_slither_object_from_path(filepath)
+        contract_data["slither"] = provider.get_slither_from_filepath(filepath)
         contract_data["valid_data"] = True
     except:
         CryticPrint.print(PrintMode.ERROR, f"  * Error getting Slither object")

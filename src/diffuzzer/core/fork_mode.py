@@ -38,6 +38,8 @@ from slither.core.solidity_types import (
 from slither.core.declarations.structure import Structure
 from slither.core.declarations.structure_contract import StructureContract
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
+from diffuzzer.utils.slither_provider import NetworkSlitherProvider
+from diffuzzer.utils.network_info_provider import NetworkInfoProvider
 from diffuzzer.utils.helpers import (
     write_to_file
 )
@@ -53,10 +55,13 @@ from diffuzzer.utils.from_address import (
 
 SUPPORTED_NETWORKS = [ "mainet","optim","ropsten","kovan","rinkeby","goerli","tobalaba","bsc","testnet.bsc","arbi","testnet.arbi","poly","mumbai","avax","testnet.avax","ftm"]
 WEB3_RPC_ENV_VARS  = [ "WEB3_PROVIDER_URI", "ECHIDNA_RPC_URL", "RPC_URL" ]
+SUPPORTED_BLOCK_EXPLORER_ENV_VARS = {"mainet": "ETHERSCAN_API_KEY", "optim": "OPTIMISTIC_ETHERSCAN_API_KEY", "bsc": "BSCSCAN_API_KEY", "arbi": "ARBISCAN_API_KEY", "poly": "POLYGONSCAN_API_KEY", "avax": "SNOWTRACE_API_KEY", "ftm": "FTMSCAN_API_KEY"}
+SUPPORTED_RPC_ENV_VARS = {"mainet": "ECHIDNA_RPC_URL_MAINNET", "optim": "ECHIDNA_RPC_URL_OPTIMISM", "ropsten": "ECHIDNA_RPC_URL_ROPSTEN", "kovan": "ECHIDNA_RPC_URL_KOVAN", "rinkeby": "ECHIDNA_RPC_URL_RINKEBY", "goerli": "ECHIDNA_RPC_URL_GOERLI", "tobalaba": "ECHIDNA_RPC_URL_TOBALABA", "bsc": "ECHIDNA_RPC_URL_BSC", "testnet.bsc": "ECHIDNA_RPC_URL_BSC_TESTNET", "arbi": "ECHIDNA_RPC_URL_ARBI", "testnet.arbi": "ECHIDNA_RPC_URL_ARBI_TESTNET", "poly": "ECHIDNA_RPC_URL_POLY", "mumbai": "ECHIDNA_RPC_URL_MUMBAI", "avax": "ECHIDNA_RPC_URL_AVAX", "testnet.avax": "ECHIDNA_RPC_URL_AVAX_TESTNET", "ftm": "ECHIDNA_RPC_URL_FTM"}
 
 
 def fork_mode(args: argparse.Namespace):
     mode = "fork"
+    provider: NetworkSlitherProvider
 
     if args.output_dir is not None:
         output_dir = args.output_dir
@@ -65,12 +70,22 @@ def fork_mode(args: argparse.Namespace):
     else:
         output_dir = "./"
 
-    # Network prefix
-    prefix = ""
-
-    # Information from contracts
-    tokens = []
-    targets = []
+    # Add prefix for current network and create the SlitherProvider
+    if args.network in SUPPORTED_NETWORKS or args.network == "mainnet":
+        if args.network == "mainnet":
+            prefix = "mainet:"
+            provider = NetworkSlitherProvider(prefix, os.environ["ETHERSCAN_API_KEY"])
+        else:
+            prefix = f"{args.network}:"
+            if SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network] in os.environ:
+                provider = NetworkSlitherProvider(prefix, os.environ[SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network]])
+            else: 
+                provider = NetworkSlitherProvider(prefix, os.environ["ETHERSCAN_API_KEY"])
+        CryticPrint.print(PrintMode.INFORMATION, f"* Network specified via command line parameter: {args.network}")
+    else:
+        CryticPrint.print(PrintMode.WARNING, f"* Network {args.network} not supported. Defaulting to Ethereum main network.")
+        prefix = "mainet:"
+        provider = NetworkSlitherProvider(prefix, os.environ["ETHERSCAN_API_KEY"])
 
     # Try to get the network RPC endpoint
     network_rpc = ""
@@ -85,31 +100,14 @@ def fork_mode(args: argparse.Namespace):
                              f"* RPC specified via {env_var} environment variable: {network_rpc}")
                 break
 
-    if network_rpc != "":
-        w3 = Web3(Web3.HTTPProvider(network_rpc))
-        if not w3.is_connected():
-            CryticPrint.print(PrintMode.ERROR, f"* Could not connect to the provided RPC endpoint.")
-            raise ValueError(f"Could not connect to the provided RPC endpoint: {network_rpc}.")
-        else:
-            CryticPrint.print(PrintMode.SUCCESS, f"* Connected to RPC endpoint.")
-    else:
-        CryticPrint.print(PrintMode.ERROR, f"* RPC not specified")
-        raise ValueError(f"RPC not specified.")
-
-    # Add prefix for current network
-    if args.network in SUPPORTED_NETWORKS or args.network == "mainnet":
-        if args.network == "mainnet":
-            prefix = "mainet:"
-        else:
-            prefix = f"{args.network}:"
-        CryticPrint.print(PrintMode.INFORMATION, f"* Network specified via command line parameter: {args.network}")
-    else:
-        CryticPrint.print(PrintMode.WARNING, f"* Network {args.network} not supported. Defaulting to Ethereum main network.")
-        prefix = "mainet:"
+    if network_rpc == "":
+        CryticPrint.print_error("* RPC not provided, I can't fetch information from the network.")
+        raise ValueError("No RPC provided")
 
     # Workaround for PoA networks
+    is_poa = False
     if prefix in ["bsc:", "poly:", "rinkeby:"]:
-        w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        is_poa = True
 
     # Get block number
     if args.block:
@@ -119,16 +117,12 @@ def fork_mode(args: argparse.Namespace):
         blocknumber = int(os.environ["ECHIDNA_RPC_BLOCK"])
         CryticPrint.print(PrintMode.INFORMATION,
                      f"* Block number specified via ECHIDNA_RPC_BLOCK environment variable: {blocknumber}")
-    elif w3 is not None:
-        blocknumber = int(w3.eth.get_block('latest')["number"])
-        CryticPrint.print(PrintMode.INFORMATION, f"* Using network's latest block as starting block: {blocknumber}")
-    else:
-        blocknumber = 0  # We have no starting block
-        CryticPrint.print(PrintMode.WARNING, f"* Block number not specified, and could not get network's latest block.")
+    
+    net_info = NetworkInfoProvider(network_rpc, blocknumber, is_poa)
 
     CryticPrint.print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
-    v1_contract_data = get_contract_data_from_address(args.v1, "", prefix, blocknumber, w3, suffix="V1")
-    v2_contract_data = get_contract_data_from_address(args.v2, "", prefix, blocknumber, w3, suffix="V2")
+    v1_contract_data = get_contract_data_from_address(args.v1, "", provider, net_info, suffix="V1")
+    v2_contract_data = get_contract_data_from_address(args.v2, "", provider, net_info, suffix="V2")
 
     if args.proxy is not None:
         CryticPrint.print(
@@ -136,7 +130,7 @@ def fork_mode(args: argparse.Namespace):
             "\n* Proxy contract specified via command line parameter:",
         )
         if is_address(args.proxy):
-            proxy = get_contract_data_from_address(args.proxy, "", prefix, blocknumber, w3)
+            proxy = get_contract_data_from_address(args.proxy, "", provider, net_info)
             if not proxy["is_proxy"]:
                 CryticPrint.print(
                     PrintMode.ERROR,
@@ -163,6 +157,9 @@ def fork_mode(args: argparse.Namespace):
             upgrade = False
     else:
         upgrade = False
+
+    tokens = []
+    targets = []
 
     if args.targets is not None:
         CryticPrint.print(
@@ -225,7 +222,7 @@ def fork_mode(args: argparse.Namespace):
     write_to_file(f"{output_dir}diffuzzerUpgrades.sol", contract)
     CryticPrint.print(
         PrintMode.SUCCESS,
-        f"  * Fuzzing contract generated and written to {output_dir}diffuzzerUpgrades.sol.",
+        f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.",
     )
 
     config_file = generate_config_file(

@@ -20,10 +20,7 @@ class FunctionInfo(TypedDict):
 class ContractData(TypedDict):
     # Blockchain info
     address: str
-    block: str
-    prefix: str
     valid_data: bool
-    web3_provider: Web3
     # File info
     path: str
     solc_version: str

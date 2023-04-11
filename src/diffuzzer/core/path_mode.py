@@ -16,10 +16,12 @@ from diffuzzer.utils.from_path import (
     get_contracts_from_comma_separated_paths,
     get_contract_data_from_path
 )
+from diffuzzer.utils.slither_provider import FileSlitherProvider
 
 
 def path_mode(args: argparse.Namespace):
     mode = "deploy"
+    provider = FileSlitherProvider()
 
     if args.output_dir is not None:
         output_dir = args.output_dir
@@ -39,15 +41,15 @@ def path_mode(args: argparse.Namespace):
                                         "To use fork mode, provide addresses instead of file paths.\n  Ignoring RPC...\n")
 
     CryticPrint.print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
-    v1_contract_data = get_contract_data_from_path(args.v1, suffix="V1")
-    v2_contract_data = get_contract_data_from_path(args.v2, suffix="V2")
+    v1_contract_data = get_contract_data_from_path(args.v1, provider, suffix="V1")
+    v2_contract_data = get_contract_data_from_path(args.v2, provider, suffix="V2")
 
     if args.proxy is not None:
         CryticPrint.print(
             PrintMode.INFORMATION,
             "\n* Proxy contract specified via command line parameter:",
         )
-        proxy = get_contract_data_from_path(args.proxy)
+        proxy = get_contract_data_from_path(args.proxy, provider)
         if not proxy["is_proxy"]:
             CryticPrint.print(
                 PrintMode.ERROR,
@@ -74,7 +76,7 @@ def path_mode(args: argparse.Namespace):
             PrintMode.INFORMATION,
             "\n* Additional targets specified via command line parameter:",
         )
-        targets = get_contracts_from_comma_separated_paths(args.targets)
+        targets = get_contracts_from_comma_separated_paths(args.targets, provider)
     else:
         targets = None
 
