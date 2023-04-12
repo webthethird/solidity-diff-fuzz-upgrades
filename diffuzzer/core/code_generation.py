@@ -462,16 +462,16 @@ def wrap_diff_functions(
     ]
 
     wrapped = "\n    /*** Modified Functions ***/ \n\n"
-    for func in diff["modified_functions"]:
-        mods = [m.name for m in func.modifiers]
+    for f_ in diff["modified_functions"]:
+        mods = [m.name for m in f_.modifiers]
         if not protected and any(m in protected_mods for m in mods):
             continue
-        if func.visibility in ["internal", "private"]:
+        if f_.visibility in ["internal", "private"]:
             continue
         func = next(
             func
             for func in v_2["functions"]
-            if func["name"] == func.name and len(func["inputs"]) == len(func.parameters)
+            if func["name"] == f_.name and len(func["inputs"]) == len(f_.parameters)
         )
         if proxy is not None:
             wrapped += wrap_diff_function(v_1, v_2, fork, func, proxy=proxy)
@@ -479,16 +479,16 @@ def wrap_diff_functions(
             wrapped += wrap_diff_function(v_1, v_2, fork, func)
 
     wrapped += "\n    /*** Tainted Functions ***/ \n\n"
-    for func in diff["tainted_functions"]:
-        mods = [m.name for m in func.modifiers]
+    for f_ in diff["tainted_functions"]:
+        mods = [m.name for m in f_.modifiers]
         if not protected and any(m in protected_mods for m in mods):
             continue
-        if func.visibility in ["internal", "private"]:
+        if f_.visibility in ["internal", "private"]:
             continue
         func = next(
             func
             for func in v_2["functions"]
-            if func["name"] == func.name and len(func["inputs"]) == len(func.parameters)
+            if func["name"] == f_.name and len(func["inputs"]) == len(f_.parameters)
         )
         if proxy is not None:
             wrapped += wrap_diff_function(v_1, v_2, fork, func, proxy=proxy)
@@ -496,16 +496,16 @@ def wrap_diff_functions(
             wrapped += wrap_diff_function(v_1, v_2, fork, func)
 
     wrapped += "\n    /*** New Functions ***/ \n\n"
-    for func in diff["new_functions"]:
-        mods = [m.name for m in func.modifiers]
+    for f_ in diff["new_functions"]:
+        mods = [m.name for m in f_.modifiers]
         if not protected and any(m in protected_mods for m in mods):
             continue
-        if func.visibility in ["internal", "private"]:
+        if f_.visibility in ["internal", "private"]:
             continue
         for func_0 in v_1["contract_object"].functions_entry_points:
-            if similar(func.name, func_0.name):
+            if similar(f_.name, func_0.name):
                 wrapped += "    // TODO: Double-check this function for correctness\n"
-                wrapped += f"    // {func.canonical_name}\n"
+                wrapped += f"    // {f_.canonical_name}\n"
                 wrapped += "    // is a new function, which appears to replace a function with a similar name,\n"
                 wrapped += f"    // {func_0.canonical_name}.\n"
                 wrapped += "    // If these functions have different arguments, this function may be incorrect.\n"
@@ -513,7 +513,7 @@ def wrap_diff_functions(
                     func for func in v_1["functions"] if func["name"] == func_0.name
                 )
                 func2 = next(
-                    func for func in v_2["functions"] if func["name"] == func.name
+                    func for func in v_2["functions"] if func["name"] == f_.name
                 )
                 if proxy is not None:
                     wrapped += wrap_diff_function(
@@ -536,19 +536,19 @@ def wrap_diff_functions(
                 if not fork:
                     contract_data["suffix"] = "V1"
                     contract_data_2["suffix"] = "V2"
-                for func in tainted.tainted_functions:
-                    mods = [m.name for m in func.modifiers]
+                for f_ in tainted.tainted_functions:
+                    mods = [m.name for m in f_.modifiers]
                     if not protected and any(m in protected_mods for m in mods):
                         continue
-                    if func.visibility in ["internal", "private"] or any(
-                        [func.is_constructor, func.is_fallback, func.is_receive]
+                    if f_.visibility in ["internal", "private"] or any(
+                        [f_.is_constructor, f_.is_fallback, f_.is_receive]
                     ):
                         continue
                     func = next(
                         func
                         for func in contract_data["functions"]
-                        if func["name"] == func.name
-                        and len(func["inputs"]) == len(func.parameters)
+                        if func["name"] == f_.name
+                        and len(func["inputs"]) == len(f_.parameters)
                     )
                     wrapped += wrap_diff_function(
                         contract_data, contract_data_2, fork, func
