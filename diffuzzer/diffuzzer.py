@@ -7,8 +7,9 @@ import logging
 import os
 
 from eth_utils import is_address
-from diffuzzer.core.path_mode import path_mode
+from diffuzzer.core.path_mode import PathMode
 from diffuzzer.core.fork_mode import fork_mode
+from diffuzzer.core.analysis_mode import AnalysisMode
 from diffuzzer.core.code_generation import generate_config_file
 from diffuzzer.utils.helpers import write_to_file
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
@@ -142,19 +143,29 @@ def main():
     else:
         contract_addr = ""
 
+    # Start the analysis
+    analysis: AnalysisMode
     CryticPrint.print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     if is_address(args.v1) and is_address(args.v2):
         CryticPrint.print(PrintMode.INFORMATION, "* Using 'fork mode':")
         fork_mode(args, output_dir, version)
     elif os.path.exists(args.v1) and os.path.exists(args.v2):
         CryticPrint.print(PrintMode.INFORMATION, "* Using 'path mode' (no fork):")
-        path_mode(args, output_dir, version)
+        analysis = PathMode(args)
+        contract = analysis.write_test_contract()
+        # path_mode(args, output_dir, version)
     elif not os.path.exists(args.v1):
         CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v1}")
         raise FileNotFoundError(args.v1)
     else:
         CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v2}")
         raise FileNotFoundError(args.v2)
+    
+    write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
+    CryticPrint.print(
+        PrintMode.SUCCESS,
+        f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.",
+    )
 
     config_file = generate_config_file(
         f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
