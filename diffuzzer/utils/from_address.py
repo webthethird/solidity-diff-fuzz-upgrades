@@ -106,12 +106,7 @@ def get_contract_data_from_address(
         else:
             contract_data["is_proxy"] = False
 
-        target_info = get_contract_interface(contract_data, suffix)
-
-        contract_data["interface"] = target_info["interface"]
-        contract_data["interface_name"] = target_info["interface_name"]
-        contract_data["name"] = target_info["name"]
-        contract_data["functions"] = target_info["functions"]
+        contract_data = get_contract_interface(contract_data)
 
         CryticPrint.print(
             PrintMode.SUCCESS,

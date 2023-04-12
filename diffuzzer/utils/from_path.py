@@ -17,7 +17,7 @@ from diffuzzer.utils.helpers import (
     get_pragma_version_from_file,
     get_compilation_unit_name,
 )
-from diffuzzer.core.code_generation import get_contract_interface
+from diffuzzer.core.code_generation import get_contract_interface, get_valid_contract_data
 
 
 def get_contracts_from_comma_separated_paths(
@@ -66,18 +66,7 @@ def get_contract_data_from_path(
                 contract_name.replace("V1", "").replace("V2", "").replace("V3", "")
             )[0]
         contract_data["contract_object"] = contract
-        if contract.is_upgradeable_proxy:
-            contract_data["is_proxy"] = True
-            contract_data["implementation_slot"] = get_proxy_implementation_slot(
-                contract
-            )
-        else:
-            contract_data["is_proxy"] = False
-        target_info = get_contract_interface(contract_data, suffix)
-        contract_data["interface"] = target_info["interface"]
-        contract_data["interface_name"] = target_info["interface_name"]
-        contract_data["name"] = target_info["name"]
-        contract_data["functions"] = target_info["functions"]
+        contract_data = get_valid_contract_data(contract_data)
         CryticPrint.print(
             PrintMode.MESSAGE, f"  * Done compiling contract {contract_data['name']}"
         )

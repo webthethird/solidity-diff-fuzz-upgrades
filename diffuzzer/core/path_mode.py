@@ -7,7 +7,7 @@ import os
 
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.utils.helpers import write_to_file
-from diffuzzer.core.code_generation import generate_test_contract, generate_config_file
+from diffuzzer.core.code_generation import generate_test_contract
 from diffuzzer.utils.from_path import (
     get_contracts_from_comma_separated_paths,
     get_contract_data_from_path,
@@ -16,18 +16,11 @@ from diffuzzer.utils.slither_provider import FileSlitherProvider
 
 
 # pylint: disable=too-many-branches,too-many-statements
-def path_mode(args: argparse.Namespace):
+def path_mode(args: argparse.Namespace, output_dir: str, version: str):
     """Takes over from diffuzzer.main when args provided are file paths."""
 
     mode = "deploy"
     provider = FileSlitherProvider()
-
-    if args.output_dir is not None:
-        output_dir = args.output_dir
-        if not str(output_dir).endswith(os.path.sep):
-            output_dir += os.path.sep
-    else:
-        output_dir = "./"
 
     if args.network:
         CryticPrint.print(
@@ -89,33 +82,6 @@ def path_mode(args: argparse.Namespace):
     else:
         targets = None
 
-    if args.seq_len:
-        if str(args.seq_len).isnumeric():
-            seq_len = int(args.seq_len)
-        else:
-            CryticPrint.print(
-                PrintMode.ERROR,
-                "\n* Sequence length provided is not numeric. Defaulting to 100.",
-            )
-            seq_len = 100
-    else:
-        seq_len = 100
-
-    if args.version:
-        version = args.version
-    else:
-        version = "0.8.0"
-
-    if args.contract_addr:
-        contract_addr = args.contract_addr
-        CryticPrint.print(
-            PrintMode.INFORMATION,
-            "\n* Exploit contract address specified via command line parameter: "
-            f"{contract_addr}",
-        )
-    else:
-        contract_addr = ""
-
     contract = generate_test_contract(
         v1_contract_data,
         v2_contract_data,
@@ -130,13 +96,4 @@ def path_mode(args: argparse.Namespace):
     CryticPrint.print(
         PrintMode.SUCCESS,
         f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.",
-    )
-
-    config_file = generate_config_file(
-        f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
-    )
-    write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
-    CryticPrint.print(
-        PrintMode.SUCCESS,
-        f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.",
     )

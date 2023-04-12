@@ -7,29 +7,12 @@ import logging
 import os
 
 from eth_utils import is_address
-from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.core.path_mode import path_mode
 from diffuzzer.core.fork_mode import fork_mode
-
-
-SUPPORTED_NETWORKS = [
-    "mainet",
-    "optim",
-    "ropsten",
-    "kovan",
-    "rinkeby",
-    "goerli",
-    "tobalaba",
-    "bsc",
-    "testnet.bsc",
-    "arbi",
-    "testnet.arbi",
-    "poly",
-    "mumbai",
-    "avax",
-    "testnet.avax",
-    "ftm",
-]
+from diffuzzer.core.code_generation import generate_config_file
+from diffuzzer.utils.helpers import write_to_file
+from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
+import diffuzzer.utils.network_vars as net_vars
 
 
 # pylint: disable=line-too-long
@@ -91,7 +74,7 @@ def main():
         "--network",
         dest="network",
         help="Specifies the network where the contracts are deployed. Valid values: "
-        + ", ".join(SUPPORTED_NETWORKS),
+        + ", ".join(net_vars.SUPPORTED_NETWORKS),
     )
     parser.add_argument(
         "-b",
@@ -125,19 +108,62 @@ def main():
     # Silence Slither Read Storage
     logging.getLogger("Slither-read-storage").setLevel(logging.CRITICAL)
 
+    if args.output_dir is not None:
+        output_dir = args.output_dir
+        if not str(output_dir).endswith(os.path.sep):
+            output_dir += os.path.sep
+    else:
+        output_dir = "./"
+
+    if args.seq_len:
+        if str(args.seq_len).isnumeric():
+            seq_len = int(args.seq_len)
+        else:
+            CryticPrint.print(
+                PrintMode.ERROR,
+                "\n* Sequence length provided is not numeric. Defaulting to 100.",
+            )
+            seq_len = 100
+    else:
+        seq_len = 100
+
+    if args.version:
+        version = args.version
+    else:
+        version = "0.8.0"
+
+    if args.contract_addr:
+        contract_addr = args.contract_addr
+        CryticPrint.print(
+            PrintMode.INFORMATION,
+            "\n* Exploit contract address specified via command line parameter: "
+            f"{contract_addr}",
+        )
+    else:
+        contract_addr = ""
+
     CryticPrint.print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     if is_address(args.v1) and is_address(args.v2):
         CryticPrint.print(PrintMode.INFORMATION, "* Using 'fork mode':")
         fork_mode(args)
     elif os.path.exists(args.v1) and os.path.exists(args.v2):
         CryticPrint.print(PrintMode.INFORMATION, "* Using 'path mode' (no fork):")
-        path_mode(args)
+        path_mode(args, output_dir, version)
     elif not os.path.exists(args.v1):
         CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v1}")
         raise FileNotFoundError(args.v1)
     else:
         CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v2}")
         raise FileNotFoundError(args.v2)
+    
+    config_file = generate_config_file(
+        f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
+    )
+    write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
+    CryticPrint.print(
+        PrintMode.SUCCESS,
+        f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.",
+    )
 
     CryticPrint.print(
         PrintMode.MESSAGE,

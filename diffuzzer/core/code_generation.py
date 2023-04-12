@@ -3,6 +3,11 @@
 from typing import List, Tuple
 
 # pylint: disable= no-name-in-module
+from solc_select.solc_select import (
+    switch_global_version,
+    installed_versions,
+    get_installable_versions,
+)
 from slither import Slither
 from slither.exceptions import SlitherError
 from slither.utils.type import convert_type_for_solidity_signature_to_string
@@ -112,15 +117,16 @@ def get_solidity_function_returns(return_type: List[Type]) -> List[str]:
     return outputs
 
 
-def get_contract_interface(contract_data: ContractData, suffix: str = "") -> dict:
-    """Get contract ABI from Slither"""
+def get_contract_interface(contract_data: ContractData) -> ContractData:
+    """Populate ContractData with contract interface and function info from Slither"""
 
     contract: Contract = contract_data["contract_object"]
+    suffix: str = contract_data["suffix"]
 
     if not contract.functions_entry_points:
         raise ValueError("Contract has no public or external functions")
 
-    contract_info = {"functions": []}
+    contract_data["functions"] = []
 
     for i in contract.functions_entry_points:
 
@@ -134,7 +140,7 @@ def get_contract_interface(contract_data: ContractData, suffix: str = "") -> dic
         outputs = get_solidity_function_returns(i.return_type)
         protected = i.is_protected()
 
-        contract_info["functions"].append(
+        contract_data["functions"].append(
             FunctionInfo(
                 name=name,
                 function=i,
@@ -144,13 +150,13 @@ def get_contract_interface(contract_data: ContractData, suffix: str = "") -> dic
             )
         )
 
-    contract_info["name"] = contract.name
-    contract_info["interface"] = generate_interface(
+    contract_data["name"] = contract.name
+    contract_data["interface"] = generate_interface(
         contract, unroll_structs=False, skip_errors=True, skip_events=True
     ).replace(f"interface I{contract.name}", f"interface I{contract.name}{suffix}")
-    contract_info["interface_name"] = f"I{contract.name}{suffix}"
+    contract_data["interface_name"] = f"I{contract.name}{suffix}"
 
-    return contract_info
+    return contract_data
 
 
 def get_contract_data(contract: Contract, suffix: str = "") -> ContractData:
@@ -160,14 +166,15 @@ def get_contract_data(contract: Contract, suffix: str = "") -> ContractData:
         PrintMode.MESSAGE, f"  * Getting contract data from {contract.name}"
     )
 
+    version = get_pragma_version_from_file(contract.file_scope.filename.absolute)
     contract_data = ContractData(
         contract_object=contract,
         suffix=suffix,
         path=contract.file_scope.filename.absolute,
-        solc_version=get_pragma_version_from_file(
-            contract.file_scope.filename.absolute
-        ),
+        solc_version=version,
     )
+    if version in installed_versions() or version in get_installable_versions():
+        switch_global_version(version, True)
 
     try:
         contract_data["slither"] = Slither(contract.compilation_unit.crytic_compile)
@@ -177,18 +184,24 @@ def get_contract_data(contract: Contract, suffix: str = "") -> ContractData:
         contract_data["valid_data"] = False
 
     if contract_data["valid_data"]:
-        if contract.is_upgradeable_proxy:
-            contract_data["is_proxy"] = True
-            contract_data["implementation_slot"] = get_proxy_implementation_slot(
-                contract
-            )
-        else:
-            contract_data["is_proxy"] = False
-        target_info = get_contract_interface(contract_data, suffix)
-        contract_data["interface"] = target_info["interface"]
-        contract_data["interface_name"] = target_info["interface_name"]
-        contract_data["name"] = target_info["name"]
-        contract_data["functions"] = target_info["functions"]
+        contract_data = get_valid_contract_data(contract_data)
+
+    return contract_data
+
+
+def get_valid_contract_data(contract_data: ContractData) -> ContractData:
+    """Complete the ContractData object after getting valid data from Slither."""
+
+    assert(contract_data["valid_data"])
+
+    if contract_data["contract_object"].is_upgradeable_proxy:
+        contract_data["is_proxy"] = True
+        contract_data["implementation_slot"] = get_proxy_implementation_slot(
+            contract_data["contract_object"]
+        )
+    else:
+        contract_data["is_proxy"] = False
+    contract_data = get_contract_interface(contract_data)
 
     return contract_data
 
