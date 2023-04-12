@@ -153,7 +153,6 @@ def main():
         CryticPrint.print(PrintMode.INFORMATION, "* Using 'path mode' (no fork):")
         analysis = PathMode(args)
         contract = analysis.write_test_contract()
-        # path_mode(args, output_dir, version)
     elif not os.path.exists(args.v1):
         CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v1}")
         raise FileNotFoundError(args.v1)
