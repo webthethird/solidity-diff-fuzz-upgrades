@@ -15,7 +15,7 @@ from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 import diffuzzer.utils.network_vars as net_vars
 
 
-# pylint: disable=line-too-long
+# pylint: disable=line-too-long,too-many-branches,too-many-statements
 def main():
     """Main method, parses arguments and calls path_mode or fork_mode."""
     # Read command line arguments
@@ -145,7 +145,7 @@ def main():
     CryticPrint.print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     if is_address(args.v1) and is_address(args.v2):
         CryticPrint.print(PrintMode.INFORMATION, "* Using 'fork mode':")
-        fork_mode(args)
+        fork_mode(args, output_dir, version)
     elif os.path.exists(args.v1) and os.path.exists(args.v2):
         CryticPrint.print(PrintMode.INFORMATION, "* Using 'path mode' (no fork):")
         path_mode(args, output_dir, version)
@@ -155,7 +155,7 @@ def main():
     else:
         CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v2}")
         raise FileNotFoundError(args.v2)
-    
+
     config_file = generate_config_file(
         f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
     )

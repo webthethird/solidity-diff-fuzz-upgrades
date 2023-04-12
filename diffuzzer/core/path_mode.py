@@ -3,7 +3,6 @@
 """Main module for path mode."""
 
 import argparse
-import os
 
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 from diffuzzer.utils.helpers import write_to_file
