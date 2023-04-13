@@ -35,7 +35,7 @@ setup(
     long_description_content_type="text/markdown",
     entry_points={
         "console_scripts": [
-            "diffuzzer = src.diffuzzer:main",
+            "diffuzzer = diffuzzer.diffuzzer:main",
         ]
     },
 )

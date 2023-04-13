@@ -7,15 +7,16 @@ import logging
 import os
 
 from eth_utils import is_address
-from diffuzzer.core.path_mode import path_mode
-from diffuzzer.core.fork_mode import fork_mode
-from diffuzzer.core.code_generation import generate_config_file
+from diffuzzer.core.path_mode import PathMode
+from diffuzzer.core.fork_mode import ForkMode
+from diffuzzer.core.analysis_mode import AnalysisMode
+from diffuzzer.core.code_generation import CodeGenerator
 from diffuzzer.utils.helpers import write_to_file
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 import diffuzzer.utils.network_vars as net_vars
 
 
-# pylint: disable=line-too-long
+# pylint: disable=line-too-long,too-many-statements
 def main():
     """Main method, parses arguments and calls path_mode or fork_mode."""
     # Read command line arguments
@@ -94,6 +95,11 @@ def main():
         action="store_true",
         help="Specifies whether to include wrappers for protected functions.",
     )
+    parser.add_argument(
+        "--etherscan-key",
+        dest="etherscan_key",
+        help="Specifies the API key to use with Etherscan.",
+    )
 
     args = parser.parse_args()
 
@@ -108,55 +114,54 @@ def main():
     # Silence Slither Read Storage
     logging.getLogger("Slither-read-storage").setLevel(logging.CRITICAL)
 
+    output_dir = "./"
     if args.output_dir is not None:
         output_dir = args.output_dir
         if not str(output_dir).endswith(os.path.sep):
             output_dir += os.path.sep
-    else:
-        output_dir = "./"
 
+    seq_len = 100
     if args.seq_len:
         if str(args.seq_len).isnumeric():
             seq_len = int(args.seq_len)
         else:
-            CryticPrint.print(
-                PrintMode.ERROR,
+            CryticPrint.print_error(
                 "\n* Sequence length provided is not numeric. Defaulting to 100.",
             )
-            seq_len = 100
-    else:
-        seq_len = 100
 
-    if args.version:
-        version = args.version
-    else:
-        version = "0.8.0"
-
-    if args.contract_addr:
+    contract_addr = ""
+    if args.contract_addr and is_address(args.contract_addr):
         contract_addr = args.contract_addr
-        CryticPrint.print(
-            PrintMode.INFORMATION,
+        CryticPrint.print_information(
             "\n* Exploit contract address specified via command line parameter: "
             f"{contract_addr}",
         )
-    else:
-        contract_addr = ""
 
+    # Start the analysis
+    analysis: AnalysisMode
     CryticPrint.print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     if is_address(args.v1) and is_address(args.v2):
         CryticPrint.print(PrintMode.INFORMATION, "* Using 'fork mode':")
-        fork_mode(args)
+        analysis = ForkMode(args)
+        contract = analysis.write_test_contract()
     elif os.path.exists(args.v1) and os.path.exists(args.v2):
         CryticPrint.print(PrintMode.INFORMATION, "* Using 'path mode' (no fork):")
-        path_mode(args, output_dir, version)
+        analysis = PathMode(args)
+        contract = analysis.write_test_contract()
     elif not os.path.exists(args.v1):
         CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v1}")
         raise FileNotFoundError(args.v1)
     else:
         CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v2}")
         raise FileNotFoundError(args.v2)
-    
-    config_file = generate_config_file(
+
+    write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
+    CryticPrint.print(
+        PrintMode.SUCCESS,
+        f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.",
+    )
+
+    config_file = CodeGenerator.generate_config_file(
         f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
     )
     write_to_file(f"{output_dir}CryticConfig.yaml", config_file)

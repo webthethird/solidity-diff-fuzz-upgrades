@@ -30,6 +30,9 @@ logs
 # Configuration
 .env
 
+# Virtual Environment
+venv
+
 # Test Coverage
 coverage
 coverage.json
