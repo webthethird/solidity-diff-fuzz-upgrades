@@ -16,7 +16,7 @@ from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 import diffuzzer.utils.network_vars as net_vars
 
 
-# pylint: disable=line-too-long,too-many-statements
+# pylint: disable=too-many-statements
 def main():
     """Main method, parses arguments and calls path_mode or fork_mode."""
     # Read command line arguments
@@ -28,9 +28,7 @@ def main():
 
     parser.add_argument("v1", help="The original version of the contract.")
     parser.add_argument("v2", help="The upgraded version of the contract.")
-    parser.add_argument(
-        "-p", "--proxy", dest="proxy", help="Specifies the proxy contract to use."
-    )
+    parser.add_argument("-p", "--proxy", dest="proxy", help="Specifies the proxy contract to use.")
     parser.add_argument(
         "-T",
         "--targets",
@@ -104,12 +102,8 @@ def main():
     args = parser.parse_args()
 
     CryticPrint.initialize()
-    CryticPrint.print(
-        PrintMode.MESSAGE, "\nWelcome to diff-fuzz-upgrades, enjoy your stay!"
-    )
-    CryticPrint.print(
-        PrintMode.MESSAGE, "===============================================\n"
-    )
+    CryticPrint.print(PrintMode.MESSAGE, "\nWelcome to diff-fuzz-upgrades, enjoy your stay!")
+    CryticPrint.print(PrintMode.MESSAGE, "===============================================\n")
 
     # Silence Slither Read Storage
     logging.getLogger("Slither-read-storage").setLevel(logging.CRITICAL)

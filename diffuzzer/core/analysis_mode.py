@@ -72,7 +72,7 @@ class AnalysisMode:
             self._version,
             self._upgrade,
             self._protected,
-            self._net_info
+            self._net_info,
         )
         code_generator.proxy = self._proxy
         code_generator.targets = self._targets

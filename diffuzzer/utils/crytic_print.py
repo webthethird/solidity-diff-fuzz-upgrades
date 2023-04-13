@@ -6,6 +6,7 @@ from colorama import Fore, Style, init as colorama_init
 
 class PrintMode(Enum):
     """Enum class"""
+
     MESSAGE = 0
     SUCCESS = 1
     INFORMATION = 2

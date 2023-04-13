@@ -35,9 +35,7 @@ class ForkMode(AnalysisMode):
         self._mode = "fork"
         super().__init__(args)
         self._provider = NetworkSlitherProvider(self._prefix, self._api_key)
-        self._net_info = NetworkInfoProvider(
-            self._network_rpc, self._block_number, self._is_poa
-        )
+        self._net_info = NetworkInfoProvider(self._network_rpc, self._block_number, self._is_poa)
 
     def parse_args(self, args: argparse.Namespace) -> None:
         """Parse arguments for fork mode."""
@@ -103,10 +101,7 @@ class ForkMode(AnalysisMode):
                 self._api_env_var = "ETHERSCAN_API_KEY"
             else:
                 self._prefix = f"{args.network}:"
-                if (
-                        net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network]
-                        in os.environ
-                ):
+                if net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network] in os.environ:
                     self._api_env_var = net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network]
                 else:
                     self._api_env_var = "ETHERSCAN_API_KEY"

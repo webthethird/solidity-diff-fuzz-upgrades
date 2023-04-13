@@ -26,9 +26,7 @@ def get_deployed_contract(
     Will get the correct implementation if the contract is a proxy
     """
 
-    CryticPrint.print(
-        PrintMode.INFORMATION, "    * Getting information from contract..."
-    )
+    CryticPrint.print(PrintMode.INFORMATION, "    * Getting information from contract...")
     slither_object = contract_data["slither"]
     contract_name = get_compilation_unit_name(slither_object)
     contract = slither_object.get_contract_from_name(contract_name)[0]
@@ -100,9 +98,7 @@ def get_contract_data_from_address(
             contract_data["is_proxy"] = True
             contract_data["implementation_slither"] = impl_slither
             contract_data["implementation_object"] = impl_contract
-            contract_data["implementation_slot"] = get_proxy_implementation_slot(
-                contract
-            )
+            contract_data["implementation_slot"] = get_proxy_implementation_slot(contract)
         else:
             contract_data["is_proxy"] = False
 
@@ -164,9 +160,7 @@ def get_contracts_from_comma_separated_string(
 
     results = []
 
-    [addresses, implementations] = addresses_from_comma_separated_string(
-        addresses_string
-    )
+    [addresses, implementations] = addresses_from_comma_separated_string(addresses_string)
     for address in addresses:
         data = get_contract_data_from_address(
             address, implementations.get(address, ""), slither_provider, network_info

@@ -23,21 +23,15 @@ class NetworkInfoProvider:
     _rpc_provider: str
     _is_poa: bool
 
-    def __init__(
-        self, rpc_provider: str, block: str | int, is_poa: bool = False
-    ) -> None:
+    def __init__(self, rpc_provider: str, block: str | int, is_poa: bool = False) -> None:
 
         if rpc_provider != "":
             self._rpc_provider = rpc_provider
             self._w3 = Web3(Web3.HTTPProvider(rpc_provider))
 
         if not self._w3.is_connected():
-            CryticPrint.print_error(
-                "* Could not connect to the provided RPC endpoint."
-            )
-            raise ValueError(
-                f"Could not connect to the provided RPC endpoint: {rpc_provider}."
-            )
+            CryticPrint.print_error("* Could not connect to the provided RPC endpoint.")
+            raise ValueError(f"Could not connect to the provided RPC endpoint: {rpc_provider}.")
 
         if block in [0, ""]:
             self._block = int(self._w3.eth.get_block("latest")["number"])
@@ -152,9 +146,7 @@ class NetworkInfoProvider:
                 )
                 return impl_address, contract_data
 
-            CryticPrint.print_warning(
-                "      * OZ ZeppelinOS proxies storage slot is zero"
-            )
+            CryticPrint.print_warning("      * OZ ZeppelinOS proxies storage slot is zero")
 
             raise ValueError("Proxy storage slot not found")
 
@@ -173,9 +165,7 @@ class NetworkInfoProvider:
                 CryticPrint.print_warning(
                     "      * Couldn't find proxy implementation in contract storage"
                 )
-                raise ValueError(
-                    "Couldn't find proxy implementation in contract storage"
-                ) from err
+                raise ValueError("Couldn't find proxy implementation in contract storage") from err
             for imp in implementation_var:
                 slot_value = self.get_contract_variable_value(imp, address)
 
@@ -195,9 +185,7 @@ class NetworkInfoProvider:
                     contract_data["implementation_slot"] = slot_info
                     return slot_value, contract_data
 
-            CryticPrint.print_error(
-                "      * Proxy storage slot read is not an address"
-            )
+            CryticPrint.print_error("      * Proxy storage slot read is not an address")
             raise ValueError("Proxy storage slot read is not an address") from err
 
     # pylint: disable=too-many-locals
@@ -225,18 +213,12 @@ class NetworkInfoProvider:
             events.reverse()
 
             for event in events:
-                receipt = self._w3.eth.wait_for_transaction_receipt(
-                    event["transactionHash"]
-                )
-                result = contract.events.Transfer().process_receipt(
-                    receipt, errors=logs.DISCARD
-                )
+                receipt = self._w3.eth.wait_for_transaction_receipt(event["transactionHash"])
+                result = contract.events.Transfer().process_receipt(receipt, errors=logs.DISCARD)
                 event_data = list(result[0]["args"].values())
                 recipient = event_data[1]
                 amount = int(event_data[2])
-                if amount > min_token_amount and not self._w3.eth.get_code(
-                    recipient, self._block
-                ):
+                if amount > min_token_amount and not self._w3.eth.get_code(recipient, self._block):
                     holder = recipient
                     break
 

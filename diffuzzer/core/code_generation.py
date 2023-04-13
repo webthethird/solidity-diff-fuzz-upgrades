@@ -52,7 +52,7 @@ class CodeGenerator:
         version: str,
         upgrade: bool,
         protected: bool,
-        net_info: NetworkInfoProvider = None
+        net_info: NetworkInfoProvider = None,
     ):
         assert mode in ["deploy", "fork"]
 
@@ -220,9 +220,7 @@ class CodeGenerator:
     def get_contract_data(contract: Contract, suffix: str = "") -> ContractData:
         """Get ContractData object from Contract object."""
 
-        CryticPrint.print(
-            PrintMode.MESSAGE, f"  * Getting contract data from {contract.name}"
-        )
+        CryticPrint.print(PrintMode.MESSAGE, f"  * Getting contract data from {contract.name}")
 
         version = get_pragma_version_from_file(contract.file_scope.filename.absolute)
         contract_data = ContractData(
@@ -371,17 +369,21 @@ class CodeGenerator:
             target += c_data["suffix"]
         _, call_args, _, _ = self.get_args_and_returns_for_wrapping(func)
         wrapped = ""
-        wrapped += f"        (bool success{suffix}, bytes memory output{suffix}) = "\
-                   f"address({target}).call(\n"
+        wrapped += (
+            f"        (bool success{suffix}, bytes memory output{suffix}) = "
+            f"address({target}).call(\n"
+        )
         wrapped += "            abi.encodeWithSelector(\n"
-        wrapped += f"                {camel_case(c_data['name'])}{c_data['suffix']}."\
-                   f"{func['name']}"\
-                   f".selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
+        wrapped += (
+            f"                {camel_case(c_data['name'])}{c_data['suffix']}."
+            f"{func['name']}"
+            f".selector{call_args.replace('()', '').replace('(', ', ').replace(')', '')}\n"
+        )
         wrapped += "            )\n"
         wrapped += "        );\n"
         return wrapped
 
-    # pylint: disable=line-too-long,too-many-arguments
+    # pylint: disable=too-many-arguments
     def wrap_diff_function(
         self,
         v_1: ContractData,
@@ -422,7 +424,7 @@ class CodeGenerator:
         wrapped += "    }\n\n"
         return wrapped
 
-    # pylint: disable=line-too-long,too-many-branches
+    # pylint: disable=too-many-branches
     def wrap_tainted_vars(
         self,
         variables: List[Variable],
@@ -443,25 +445,23 @@ class CodeGenerator:
                 target_v1 = f"{v_1['interface_name']}(address({camel_case(proxy['name'])}))"
                 target_v2 = f"{v_2['interface_name']}(address({camel_case(proxy['name'])}))"
             else:
-                target_v1 = f"{v_1['interface_name']}(address({camel_case(proxy['name'])}{v_1['suffix']}))"
-                target_v2 = f"{v_2['interface_name']}(address({camel_case(proxy['name'])}{v_2['suffix']}))"
+                target_v1 = (
+                    f"{v_1['interface_name']}(address({camel_case(proxy['name'])}{v_1['suffix']}))"
+                )
+                target_v2 = (
+                    f"{v_2['interface_name']}(address({camel_case(proxy['name'])}{v_2['suffix']}))"
+                )
             if var.visibility in ["internal", "private"]:
                 continue
             if var.type.is_dynamic:
                 if isinstance(var.type, MappingType):
                     type_from = var.type.type_from.name
-                    wrapped += (
-                        f"    function {v_1['name']}_{var.name}({type_from} a) public {{\n"
-                    )
+                    wrapped += f"    function {v_1['name']}_{var.name}({type_from} a) public {{\n"
                     if fork:
                         wrapped += "        hevm.selectFork(fork1);\n"
-                        wrapped += (
-                            f"        {var.type.type_to} a1 = {target_v1}.{var.name}(a);\n"
-                        )
+                        wrapped += f"        {var.type.type_to} a1 = {target_v1}.{var.name}(a);\n"
                         wrapped += "        hevm.selectFork(fork2);\n"
-                        wrapped += (
-                            f"        {var.type.type_to} a2 = {target_v2}.{var.name}(a);\n"
-                        )
+                        wrapped += f"        {var.type.type_to} a2 = {target_v2}.{var.name}(a);\n"
                         wrapped += "        assert(a1 == a2);\n"
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(a) == {target_v2}.{var.name}(a));\n"
@@ -469,13 +469,9 @@ class CodeGenerator:
                     wrapped += f"    function {v_1['name']}_{var.name}(uint i) public {{\n"
                     if fork:
                         wrapped += "        hevm.selectFork(fork1);\n"
-                        wrapped += (
-                            f"        {var.type.type} a1 = {target_v1}.{var.name}(i);\n"
-                        )
+                        wrapped += f"        {var.type.type} a1 = {target_v1}.{var.name}(i);\n"
                         wrapped += "        hevm.selectFork(fork2);\n"
-                        wrapped += (
-                            f"        {var.type.type} a2 = {target_v2}.{var.name}(i);\n"
-                        )
+                        wrapped += f"        {var.type.type} a2 = {target_v2}.{var.name}(i);\n"
                         wrapped += "        assert(a1 == a2);\n"
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(i) == {target_v2}.{var.name}(i));\n"
@@ -492,7 +488,7 @@ class CodeGenerator:
             wrapped += "    }\n\n"
         return wrapped
 
-    # pylint: disable=line-too-long,too-many-branches,too-many-statements,too-many-locals
+    # pylint: disable=too-many-branches,too-many-statements,too-many-locals
     def wrap_diff_functions(
         self,
         diff: Diff,
@@ -525,7 +521,8 @@ class CodeGenerator:
             func = next(
                 func
                 for func in v_2["functions"]
-                if func["name"] == diff_func.name and len(func["inputs"]) == len(diff_func.parameters)
+                if func["name"] == diff_func.name
+                and len(func["inputs"]) == len(diff_func.parameters)
             )
             if proxy is not None:
                 wrapped += self.wrap_diff_function(v_1, v_2, func, proxy=proxy)
@@ -542,7 +539,8 @@ class CodeGenerator:
             func = next(
                 func
                 for func in v_2["functions"]
-                if func["name"] == diff_func.name and len(func["inputs"]) == len(diff_func.parameters)
+                if func["name"] == diff_func.name
+                and len(func["inputs"]) == len(diff_func.parameters)
             )
             if proxy is not None:
                 wrapped += self.wrap_diff_function(v_1, v_2, func, proxy=proxy)
@@ -563,16 +561,12 @@ class CodeGenerator:
                     wrapped += "    // is a new function, which appears to replace a function with a similar name,\n"
                     wrapped += f"    // {func_0.canonical_name}.\n"
                     wrapped += "    // If these functions have different arguments, this function may be incorrect.\n"
-                    func = next(
-                        func for func in v_1["functions"] if func["name"] == func_0.name
-                    )
+                    func = next(func for func in v_1["functions"] if func["name"] == func_0.name)
                     func2 = next(
                         func for func in v_2["functions"] if func["name"] == diff_func.name
                     )
                     if proxy is not None:
-                        wrapped += self.wrap_diff_function(
-                            v_1, v_2, func, func2, proxy
-                        )
+                        wrapped += self.wrap_diff_function(v_1, v_2, func, func2, proxy)
                     else:
                         wrapped += self.wrap_diff_function(v_1, v_2, func, func2)
 
@@ -604,9 +598,7 @@ class CodeGenerator:
                             if func["name"] == diff_func.name
                             and len(func["inputs"]) == len(diff_func.parameters)
                         )
-                        wrapped += self.wrap_diff_function(
-                            contract_data, contract_data_2, func
-                        )
+                        wrapped += self.wrap_diff_function(contract_data, contract_data_2, func)
 
         return wrapped
 
@@ -630,17 +622,13 @@ class CodeGenerator:
             for t in tainted_contracts
             if t.contract not in [v_1["contract_object"], v_2["contract_object"]]
         ]
-        CryticPrint.print(
-            PrintMode.INFORMATION, "* Getting contract data for tainted contracts."
-        )
+        CryticPrint.print(PrintMode.INFORMATION, "* Getting contract data for tainted contracts.")
         tainted_targets = [
             self.get_contract_data(t.contract)
             if t.contract.name
             not in [target["contract_object"].name for target in targets]
             + [proxy["contract_object"].name]
-            else next(
-                target for target in targets + [proxy] if t.contract.name == target["name"]
-            )
+            else next(target for target in targets + [proxy] if t.contract.name == target["name"])
             for t in tainted_contracts
         ]
         tainted_targets = [t for t in tainted_targets if t["valid_data"]]
@@ -650,9 +638,7 @@ class CodeGenerator:
 
         CryticPrint.print(PrintMode.INFORMATION, "\n* Generating exploit contract...")
         # Add solidity pragma and SPDX to avoid warnings
-        final_contract += (
-            f"// SPDX-License-Identifier: AGPLv3\npragma solidity ^{version};\n\n"
-        )
+        final_contract += f"// SPDX-License-Identifier: AGPLv3\npragma solidity ^{version};\n\n"
 
         if not fork:
             final_contract += (
@@ -664,15 +650,15 @@ class CodeGenerator:
             if proxy:
                 final_contract += f'import {{ {proxy["name"]} }} from "{proxy["path"]}";\n'
             for target in targets:
-                final_contract += (
-                    f'import {{ {target["name"]} }} from "{target["path"]}";\n'
-                )
+                final_contract += f'import {{ {target["name"]} }} from "{target["path"]}";\n'
             if tainted_targets is not None:
                 for tainted in tainted_targets:
                     contract: Contract = tainted["contract_object"]
                     if contract.name not in (t["name"] for t in other_targets):
-                        final_contract += f'import {{ {contract.name} }} from '\
-                                          f'"{contract.file_scope.filename.absolute}";\n'
+                        final_contract += (
+                            f"import {{ {contract.name} }} from "
+                            f'"{contract.file_scope.filename.absolute}";\n'
+                        )
             final_contract += "\n"
 
         # Add all interfaces first
@@ -698,13 +684,15 @@ class CodeGenerator:
         final_contract += (
             "    function store(address where, bytes32 slot, bytes32 value) external;\n"
         )
-        final_contract += "    function sign(uint256 privateKey, bytes32 digest) "\
-                          "external returns (uint8 r, bytes32 v, bytes32 s);\n"
         final_contract += (
-            "    function addr(uint256 privateKey) external returns (address add);\n"
+            "    function sign(uint256 privateKey, bytes32 digest) "
+            "external returns (uint8 r, bytes32 v, bytes32 s);\n"
         )
-        final_contract += "    function ffi(string[] calldata inputs) external returns "\
-                          "(bytes memory result);\n"
+        final_contract += "    function addr(uint256 privateKey) external returns (address add);\n"
+        final_contract += (
+            "    function ffi(string[] calldata inputs) external returns "
+            "(bytes memory result);\n"
+        )
         final_contract += "    function prank(address newSender) external;\n"
         final_contract += "    function createFork() external returns (uint256 forkId);\n"
         final_contract += "    function selectFork(uint256 forkId) external;\n}\n\n"
@@ -716,23 +704,15 @@ class CodeGenerator:
         # State variables
         CryticPrint.print(PrintMode.INFORMATION, "  * Adding state variables declarations.")
 
-        final_contract += (
-            "    IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);\n\n"
-        )
-        final_contract += (
-            "    // TODO: Deploy the contracts and put their addresses below\n"
-        )
+        final_contract += "    IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);\n\n"
+        final_contract += "    // TODO: Deploy the contracts and put their addresses below\n"
         final_contract += f"    {v_1['interface_name']} {camel_case(v_1['name'])}V1;\n"
         final_contract += f"    {v_2['interface_name']} {camel_case(v_2['name'])}V2;\n"
 
         if not fork:
             if proxy is not None:
-                final_contract += (
-                    f"    {proxy['interface_name']} {camel_case(proxy['name'])}V1;\n"
-                )
-                final_contract += (
-                    f"    {proxy['interface_name']} {camel_case(proxy['name'])}V2;\n"
-                )
+                final_contract += f"    {proxy['interface_name']} {camel_case(proxy['name'])}V1;\n"
+                final_contract += f"    {proxy['interface_name']} {camel_case(proxy['name'])}V2;\n"
 
             for target in targets:
                 final_contract += (
@@ -752,14 +732,10 @@ class CodeGenerator:
                     )
         else:
             if proxy is not None:
-                final_contract += (
-                    f"    {proxy['interface_name']} {camel_case(proxy['name'])};\n"
-                )
+                final_contract += f"    {proxy['interface_name']} {camel_case(proxy['name'])};\n"
 
             for target in targets:
-                final_contract += (
-                    f"    {target['interface_name']} {camel_case(target['name'])};\n"
-                )
+                final_contract += f"    {target['interface_name']} {camel_case(target['name'])};\n"
 
             for target in tainted_targets:
                 if target["name"] not in [t["name"] for t in other_targets]:
@@ -786,17 +762,23 @@ class CodeGenerator:
             final_contract += "    function upgradeV2() external virtual {\n"
             if proxy["implementation_slot"] is not None:
                 final_contract += "        hevm.store(\n"
-                final_contract += f"            address({camel_case(proxy['name'])}"\
-                                  f"{v_2['suffix'] if not fork else ''}),\n"
+                final_contract += (
+                    f"            address({camel_case(proxy['name'])}"
+                    f"{v_2['suffix'] if not fork else ''}),\n"
+                )
                 final_contract += (
                     f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
                 )
-                final_contract += "            bytes32(uint256(uint160(address("\
-                                  f"{camel_case(v_2['name'])}{v_2['suffix']}))))\n"
+                final_contract += (
+                    "            bytes32(uint256(uint160(address("
+                    f"{camel_case(v_2['name'])}{v_2['suffix']}))))\n"
+                )
                 final_contract += "        );\n"
             else:
-                final_contract += "        // TODO: add upgrade logic here "\
-                                  "(implementation slot could not be found automatically)\n"
+                final_contract += (
+                    "        // TODO: add upgrade logic here "
+                    "(implementation slot could not be found automatically)\n"
+                )
             final_contract += "    }\n\n"
 
         # Wrapper functions for V1/V2
@@ -825,48 +807,57 @@ class CodeGenerator:
         upgrade = self._upgrade
 
         constructor = "\n    constructor() public {\n"
-        constructor += f"        {camel_case(v_1['name'])}{v_1['suffix']} = "\
-                       f"{v_1['interface_name']}(address(new {v_1['name']}_V1()));\n"
-        constructor += f"        {camel_case(v_2['name'])}{v_2['suffix']} = "\
-                       f"{v_2['interface_name']}(address(new {v_2['name']}_V2()));\n"
+        constructor += (
+            f"        {camel_case(v_1['name'])}{v_1['suffix']} = "
+            f"{v_1['interface_name']}(address(new {v_1['name']}_V1()));\n"
+        )
+        constructor += (
+            f"        {camel_case(v_2['name'])}{v_2['suffix']} = "
+            f"{v_2['interface_name']}(address(new {v_2['name']}_V2()));\n"
+        )
         if proxy:
-            constructor += f"        {camel_case(proxy['name'])}{v_1['suffix']} = "\
-                           f"{proxy['interface_name']}(address(new {proxy['name']}()));\n"
-            constructor += f"        {camel_case(proxy['name'])}{v_2['suffix']} = "\
-                           f"{proxy['interface_name']}(address(new {proxy['name']}()));\n"
+            constructor += (
+                f"        {camel_case(proxy['name'])}{v_1['suffix']} = "
+                f"{proxy['interface_name']}(address(new {proxy['name']}()));\n"
+            )
+            constructor += (
+                f"        {camel_case(proxy['name'])}{v_2['suffix']} = "
+                f"{proxy['interface_name']}(address(new {proxy['name']}()));\n"
+            )
             if proxy["implementation_slot"] is not None:
-                constructor += (
-                    "        // Store the implementation addresses in the proxy.\n"
-                )
+                constructor += "        // Store the implementation addresses in the proxy.\n"
                 constructor += "        hevm.store(\n"
+                constructor += f"            address({camel_case(proxy['name'])}{v_1['suffix']}),\n"
+                constructor += f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
                 constructor += (
-                    f"            address({camel_case(proxy['name'])}{v_1['suffix']}),\n"
+                    "            bytes32(uint256(uint160(address("
+                    f"{camel_case(v_1['name'])}{v_1['suffix']}))))\n"
                 )
-                constructor += (
-                    f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
-                )
-                constructor += "            bytes32(uint256(uint160(address("\
-                               f"{camel_case(v_1['name'])}{v_1['suffix']}))))\n"
                 constructor += "        );\n"
                 constructor += "        hevm.store(\n"
-                constructor += (
-                    f"            address({camel_case(proxy['name'])}{v_2['suffix']}),\n"
+                constructor += f"            address({camel_case(proxy['name'])}{v_2['suffix']}),\n"
+                constructor += f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
+                v2_impl = (
+                    camel_case(v_1["name"]) + v_1["suffix"]
+                    if upgrade
+                    else camel_case(v_2["name"]) + v_2["suffix"]
                 )
-                constructor += (
-                    f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
-                )
-                v2_impl = (camel_case(v_1['name']) + v_1['suffix'] if upgrade
-                           else camel_case(v_2['name']) + v_2['suffix'])
                 constructor += f"            bytes32(uint256(uint160(address({v2_impl}))))\n"
                 constructor += "        );\n"
             else:
-                constructor += "        // TODO: Set proxy implementations "\
-                               "(proxy implementation slot not found).\n"
+                constructor += (
+                    "        // TODO: Set proxy implementations "
+                    "(proxy implementation slot not found).\n"
+                )
         for target in targets:
-            constructor += f"        {camel_case(target['name'])}{v_1['suffix']} = "\
-                           f"{target['interface_name']}(address(new {target['name']}()));\n"
-            constructor += f"        {camel_case(target['name'])}{v_2['suffix']} = "\
-                           f"{target['interface_name']}(address(new {target['name']}()));\n"
+            constructor += (
+                f"        {camel_case(target['name'])}{v_1['suffix']} = "
+                f"{target['interface_name']}(address(new {target['name']}()));\n"
+            )
+            constructor += (
+                f"        {camel_case(target['name'])}{v_2['suffix']} = "
+                f"{target['interface_name']}(address(new {target['name']}()));\n"
+            )
         other_targets = targets
         if proxy:
             other_targets.append(proxy)
@@ -875,10 +866,14 @@ class CodeGenerator:
                 if target["name"] not in (
                     target["contract_object"].name for target in other_targets
                 ):
-                    constructor += f"        {camel_case(target['name'])}{v_1['suffix']} = "\
-                                   f"{target['interface_name']}(address(new {target['name']}()));\n"
-                    constructor += f"        {camel_case(target['name'])}{v_2['suffix']} = "\
-                                   f"{target['interface_name']}(address(new {target['name']}()));\n"
+                    constructor += (
+                        f"        {camel_case(target['name'])}{v_1['suffix']} = "
+                        f"{target['interface_name']}(address(new {target['name']}()));\n"
+                    )
+                    constructor += (
+                        f"        {camel_case(target['name'])}{v_2['suffix']} = "
+                        f"{target['interface_name']}(address(new {target['name']}()));\n"
+                    )
         constructor += "    }\n\n"
         return constructor
 
@@ -897,51 +892,62 @@ class CodeGenerator:
         constructor = "\n    constructor() public {\n"
         if network_info is not None:
             constructor += f"        hevm.roll({network_info.get_block_number()});\n"
+        constructor += "        fork1 = hevm.createFork();\n        fork2 = hevm.createFork();\n"
         constructor += (
-            "        fork1 = hevm.createFork();\n        fork2 = hevm.createFork();\n"
+            f"        {camel_case(v_1['name'])}{v_1['suffix']} = "
+            f"{v_1['interface_name']}({v_1['address']});\n"
         )
-        constructor += f"        {camel_case(v_1['name'])}{v_1['suffix']} = "\
-                       f"{v_1['interface_name']}({v_1['address']});\n"
-        constructor += f"        {camel_case(v_2['name'])}{v_2['suffix']} = "\
-                       f"{v_2['interface_name']}({v_2['address']});\n"
+        constructor += (
+            f"        {camel_case(v_2['name'])}{v_2['suffix']} = "
+            f"{v_2['interface_name']}({v_2['address']});\n"
+        )
         if proxy:
-            constructor += f"        {camel_case(proxy['name'])} = "\
-                           f"{proxy['interface_name']}({proxy['address']});\n"
+            constructor += (
+                f"        {camel_case(proxy['name'])} = "
+                f"{proxy['interface_name']}({proxy['address']});\n"
+            )
             if proxy["implementation_slot"] is not None:
-                constructor += (
-                    "        // Store the implementation addresses in the proxy.\n"
-                )
+                constructor += "        // Store the implementation addresses in the proxy.\n"
                 constructor += "        hevm.selectFork(fork1);\n"
                 constructor += "        hevm.store(\n"
                 constructor += f"            address({camel_case(proxy['name'])}),\n"
+                constructor += f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
                 constructor += (
-                    f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
+                    "            bytes32(uint256(uint160(address("
+                    f"{camel_case(v_1['name'])}{v_1['suffix']}))))\n"
                 )
-                constructor += "            bytes32(uint256(uint160(address("\
-                               f"{camel_case(v_1['name'])}{v_1['suffix']}))))\n"
                 constructor += "        );\n"
                 constructor += "        hevm.selectFork(fork2);\n"
                 constructor += "        hevm.store(\n"
                 constructor += f"            address({camel_case(proxy['name'])}),\n"
-                constructor += (
-                    f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
+                constructor += f"            bytes32(uint({proxy['implementation_slot'].slot})),\n"
+                v2_impl = (
+                    camel_case(v_1["name"]) + v_1["suffix"]
+                    if upgrade
+                    else camel_case(v_2["name"]) + v_2["suffix"]
                 )
-                v2_impl = (camel_case(v_1['name']) + v_1['suffix'] if upgrade
-                           else camel_case(v_2['name']) + v_2['suffix'])
                 constructor += f"            bytes32(uint256(uint160(address({v2_impl}))))\n"
                 constructor += "        );\n"
             else:
-                constructor += "        // TODO: Set proxy implementations "\
-                               "(proxy implementation slot not found).\n"
+                constructor += (
+                    "        // TODO: Set proxy implementations "
+                    "(proxy implementation slot not found).\n"
+                )
         for target in targets:
             if "address" in target:
-                constructor += f"        {camel_case(target['name'])} = "\
-                               f"{target['interface_name']}({target['address']});\n"
+                constructor += (
+                    f"        {camel_case(target['name'])} = "
+                    f"{target['interface_name']}({target['address']});\n"
+                )
             else:
-                constructor += "        // TODO: Fill in target address below "\
-                               "(address not found automatically)\n"
-                constructor += f"        {camel_case(target['name'])} = "\
-                               f"{target['interface_name']}(MISSING_TARGET_ADDRESS);\n"
+                constructor += (
+                    "        // TODO: Fill in target address below "
+                    "(address not found automatically)\n"
+                )
+                constructor += (
+                    f"        {camel_case(target['name'])} = "
+                    f"{target['interface_name']}(MISSING_TARGET_ADDRESS);\n"
+                )
         other_targets = targets
         if proxy:
             other_targets.append(proxy)
@@ -951,12 +957,18 @@ class CodeGenerator:
                     target["contract_object"].name for target in other_targets
                 ):
                     if "address" in target:
-                        constructor += f"        {camel_case(target['name'])} = "\
-                                       f"{target['interface_name']}({target['address']});\n"
+                        constructor += (
+                            f"        {camel_case(target['name'])} = "
+                            f"{target['interface_name']}({target['address']});\n"
+                        )
                     else:
-                        constructor += "        // TODO: Fill in target address below "\
-                                       "(address not found automatically)\n"
-                        constructor += f"        {camel_case(target['name'])} = "\
-                                       f"{target['interface_name']}(MISSING_TARGET_ADDRESS);\n"
+                        constructor += (
+                            "        // TODO: Fill in target address below "
+                            "(address not found automatically)\n"
+                        )
+                        constructor += (
+                            f"        {camel_case(target['name'])} = "
+                            f"{target['interface_name']}(MISSING_TARGET_ADDRESS);\n"
+                        )
         constructor += "    }\n\n"
         return constructor

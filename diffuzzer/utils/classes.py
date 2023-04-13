@@ -13,6 +13,7 @@ from slither.tools.read_storage.read_storage import SlotInfo
 
 class FunctionInfo(TypedDict):
     """Typed dictionary of function info"""
+
     name: str
     function: Function
     inputs: List[str]
@@ -22,6 +23,7 @@ class FunctionInfo(TypedDict):
 
 class ContractData(TypedDict):
     """Typed dictionary of contract data"""
+
     # Blockchain info
     address: str
     valid_data: bool
@@ -45,6 +47,7 @@ class ContractData(TypedDict):
 
 class Diff(TypedDict):
     """Typed dictionary of V1/V2 diff"""
+
     missing_variables: List[Variable]
     new_variables: List[Variable]
     tainted_variables: List[Variable]

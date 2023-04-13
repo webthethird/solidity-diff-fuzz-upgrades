@@ -94,9 +94,7 @@ class NetworkSlitherProvider(SlitherProvider):
             self._slither_object = slither
             return slither
         try:
-            slither = Slither(
-                f"{self._network_prefix}:{address}", bscan_api_key=self._api_key
-            )
+            slither = Slither(f"{self._network_prefix}:{address}", bscan_api_key=self._api_key)
             self._slither_object = slither
             self._save_slither_to_cache()
         except SlitherError as err:
@@ -152,7 +150,6 @@ class SlitherbotSlitherProvider(SlitherProvider):
         if not os.path.exists(self._slitherbot_path):
             CryticPrint.print_error("Slitherbot contracts not found in provided path")
             raise NotADirectoryError("Slitherbot contracts not found in provided path")
-
 
     def _get_slither_from_slitherbot_cache(self) -> Slither:
         """Try to get Slither object from the slitherbot cache"""

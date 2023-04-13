@@ -66,8 +66,6 @@ def get_contract_data_from_path(
             )[0]
         contract_data["contract_object"] = contract
         contract_data = CodeGenerator.get_valid_contract_data(contract_data)
-        CryticPrint.print(
-            PrintMode.MESSAGE, f"  * Done compiling contract {contract_data['name']}"
-        )
+        CryticPrint.print(PrintMode.MESSAGE, f"  * Done compiling contract {contract_data['name']}")
 
     return contract_data

@@ -122,13 +122,9 @@ def do_diff(
                 elif isinstance(obj, TaintedExternalContract):
                     CryticPrint.print(PrintMode.WARNING, f"      * {obj.contract.name}")
                     for taint in obj.tainted_functions:
-                        CryticPrint.print(
-                            PrintMode.WARNING, f"        * {taint.signature_str}"
-                        )
+                        CryticPrint.print(PrintMode.WARNING, f"        * {taint.signature_str}")
                     for taint in obj.tainted_variables:
-                        CryticPrint.print(
-                            PrintMode.WARNING, f"        * {taint.signature_str}"
-                        )
+                        CryticPrint.print(PrintMode.WARNING, f"        * {taint.signature_str}")
     return diff
 
 
