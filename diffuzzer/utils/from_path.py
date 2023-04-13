@@ -16,7 +16,7 @@ from diffuzzer.utils.helpers import (
     get_pragma_version_from_file,
     get_compilation_unit_name,
 )
-from diffuzzer.core.code_generation import get_valid_contract_data
+from diffuzzer.core.code_generation import CodeGenerator
 
 
 def get_contracts_from_comma_separated_paths(
@@ -65,7 +65,7 @@ def get_contract_data_from_path(
                 contract_name.replace("V1", "").replace("V2", "").replace("V3", "")
             )[0]
         contract_data["contract_object"] = contract
-        contract_data = get_valid_contract_data(contract_data)
+        contract_data = CodeGenerator.get_valid_contract_data(contract_data)
         CryticPrint.print(
             PrintMode.MESSAGE, f"  * Done compiling contract {contract_data['name']}"
         )
