@@ -66,18 +66,16 @@ class ForkMode(AnalysisMode):
         if args.network in net_vars.SUPPORTED_NETWORKS or args.network == "mainnet":
             if args.network == "mainnet":
                 self._prefix = "mainet:"
-                self._api_key = os.environ["ETHERSCAN_API_KEY"]
+                api_env_var = "ETHERSCAN_API_KEY"
             else:
                 self._prefix = f"{args.network}:"
                 if (
                     net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network]
                     in os.environ
                 ):
-                    self._api_key = net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[
-                        args.network
-                    ]
+                    api_env_var = net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network]
                 else:
-                    self._api_key = os.environ["ETHERSCAN_API_KEY"]
+                    api_env_var = "ETHERSCAN_API_KEY"
             CryticPrint.print(
                 PrintMode.INFORMATION,
                 f"* Network specified via command line parameter: {args.network}",
@@ -88,7 +86,18 @@ class ForkMode(AnalysisMode):
                 f"* Network {args.network} not supported. Defaulting to Ethereum main network.",
             )
             self._prefix = "mainet:"
-            self._api_key = os.environ["ETHERSCAN_API_KEY"]
+            api_env_var = "ETHERSCAN_API_KEY"
+
+        if api_env_var in os.environ:
+            self._api_key = os.environ[api_env_var]
+        elif args.etherscan_key:
+            self._api_key = args.etherscan_key
+        else:
+            CryticPrint.print_error(
+                "* Error: Block explorer API key not found. Either specify a key using the "
+                f"--etherscan-key flag or set it with the {api_env_var} environment variable."
+            )
+            raise ValueError("No block explorer API key provided")
 
         # Try to get the network RPC endpoint
         self._network_rpc = ""
