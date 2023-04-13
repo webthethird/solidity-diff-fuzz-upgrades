@@ -16,7 +16,7 @@ from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 import diffuzzer.utils.network_vars as net_vars
 
 
-# pylint: disable=line-too-long,too-many-branches,too-many-statements
+# pylint: disable=line-too-long,too-many-statements
 def main():
     """Main method, parses arguments and calls path_mode or fork_mode."""
     # Read command line arguments
@@ -114,39 +114,28 @@ def main():
     # Silence Slither Read Storage
     logging.getLogger("Slither-read-storage").setLevel(logging.CRITICAL)
 
+    output_dir = "./"
     if args.output_dir is not None:
         output_dir = args.output_dir
         if not str(output_dir).endswith(os.path.sep):
             output_dir += os.path.sep
-    else:
-        output_dir = "./"
 
+    seq_len = 100
     if args.seq_len:
         if str(args.seq_len).isnumeric():
             seq_len = int(args.seq_len)
         else:
-            CryticPrint.print(
-                PrintMode.ERROR,
+            CryticPrint.print_error(
                 "\n* Sequence length provided is not numeric. Defaulting to 100.",
             )
-            seq_len = 100
-    else:
-        seq_len = 100
 
-    if args.version:
-        version = args.version
-    else:
-        version = "0.8.0"
-
-    if args.contract_addr:
+    contract_addr = ""
+    if args.contract_addr and is_address(args.contract_addr):
         contract_addr = args.contract_addr
-        CryticPrint.print(
-            PrintMode.INFORMATION,
+        CryticPrint.print_information(
             "\n* Exploit contract address specified via command line parameter: "
             f"{contract_addr}",
         )
-    else:
-        contract_addr = ""
 
     # Start the analysis
     analysis: AnalysisMode
@@ -165,7 +154,7 @@ def main():
     else:
         CryticPrint.print(PrintMode.ERROR, f"\nFile not found: {args.v2}")
         raise FileNotFoundError(args.v2)
-    
+
     write_to_file(f"{output_dir}DiffFuzzUpgrades.sol", contract)
     CryticPrint.print(
         PrintMode.SUCCESS,
