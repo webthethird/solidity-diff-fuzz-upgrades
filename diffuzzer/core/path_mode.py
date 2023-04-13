@@ -5,10 +5,7 @@
 import argparse
 from typing import Optional
 
-from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
-from diffuzzer.utils.helpers import write_to_file
-from diffuzzer.core.code_generation import generate_test_contract
-from diffuzzer.utils.classes import ContractData
+from diffuzzer.utils.crytic_print import CryticPrint
 from diffuzzer.utils.from_path import (
     get_contracts_from_comma_separated_paths,
     get_contract_data_from_path,
@@ -17,8 +14,10 @@ from diffuzzer.utils.slither_provider import FileSlitherProvider
 from diffuzzer.core.analysis_mode import AnalysisMode
 
 
+# pylint: disable=too-many-instance-attributes
 class PathMode(AnalysisMode):
     """Class for handling targets provided as file paths."""
+
     _v1_path: str
     _v2_path: str
     _proxy_path: Optional[str]
@@ -31,12 +30,13 @@ class PathMode(AnalysisMode):
         super().__init__(args)
 
     def parse_args(self, args: argparse.Namespace) -> None:
+        """Parse arguments for path mode."""
         super().parse_args(args)
 
         if args.network:
             CryticPrint.print_warning(
-                "* Network specified via command line argument, but you are using 'path mode'. "
-                "To use fork mode, provide addresses instead of file paths.\n  Ignoring network...\n",
+                "* Network specified via command line argument, but you are using 'path mode'. To"
+                " use fork mode, provide addresses instead of file paths.\n  Ignoring network...\n",
             )
         if args.block:
             CryticPrint.print_warning(
@@ -51,7 +51,7 @@ class PathMode(AnalysisMode):
 
         self._v1_path = args.v1
         self._v2_path = args.v2
-        
+
         if args.proxy is not None:
             CryticPrint.print_information(
                 "\n* Proxy contract specified via command line parameter:",
@@ -69,10 +69,16 @@ class PathMode(AnalysisMode):
             self._target_paths = None
 
     def analyze_contracts(self) -> None:
-        assert(self._v1_path != "" and self._v2_path != "")
-        
-        self._v1 = get_contract_data_from_path(self._v1_path, self._provider, suffix="V1")
-        self._v2 = get_contract_data_from_path(self._v2_path, self._provider, suffix="V2")
+        """Get ContractData objects from the file paths provided."""
+        assert self._v1_path != "" and self._v2_path != ""
+        assert isinstance(self._provider, FileSlitherProvider)
+
+        self._v1 = get_contract_data_from_path(
+            self._v1_path, self._provider, suffix="V1"
+        )
+        self._v2 = get_contract_data_from_path(
+            self._v2_path, self._provider, suffix="V2"
+        )
 
         if self._proxy_path:
             self._proxy = get_contract_data_from_path(self._proxy_path, self._provider)
@@ -83,7 +89,7 @@ class PathMode(AnalysisMode):
                 self._proxy = None
         else:
             self._proxy = None
-        
+
         if self._target_paths:
             self._targets = get_contracts_from_comma_separated_paths(
                 self._target_paths, self._provider
