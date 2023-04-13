@@ -1,11 +1,11 @@
-# Diffuzzer: Differential Fuzzing of Upgradeable Contract Implementations
+# DiffuzzerUSC: Differential Fuzzing of Upgradeable Smart Contract Implementations
 
 This project has two parts so far:
 
 1. [A POC for differential fuzzing on the Compound Comptroller](contracts/test/compound/Comptroller-diff.sol), in order to trigger the [COMP token distribution bug](https://twitter.com/Mudit__Gupta/status/1443454940165263360) introduced in an upgrade following [governance proposal 62](https://compound.finance/governance/proposals/62) in September 2021. This fuzz testing contract was manually written and requires setup (see below). The `build.sh` script deploys the entire Compound protocol twice using a fork of Compound's `compound-eureka` repo, saves the deployment transaction sequence to `echidna-init.json`, and stores the necessary addresses to `contracts/test/addresses.sol`.
     - A lot of this part (including most of this readme) is from the [solidity-fuzzing-boilerplate](https://github.com/patrickd-/solidity-fuzzing-boilerplate) template by [@patrickd](https://github.com/patrickd-).
 
-2. Diffuzzer, a tool for automatically generating differential fuzz testing contracts for comparing upgradeable implementations. The goal is to generalize the approach to detect unexpected discrepancies between any two implementation contracts, so as to prevent the introduction of bugs and vulnerabilities during a smart contract upgrade. The tool has two modes, basic '`path mode`' and '`fork mode`', with the mode used depending on how the input smart contracts are provided via the command line. 
+2. DiffuzzerUSC, a tool for automatically generating differential fuzz testing contracts for comparing upgradeable implementations. The goal is to generalize the approach to detect unexpected discrepancies between any two implementation contracts, so as to prevent the introduction of bugs and vulnerabilities during a smart contract upgrade. The tool has two modes, basic '`path mode`' and '`fork mode`', with the mode used depending on how the input smart contracts are provided via the command line. 
     - `Path mode` works with file paths, and (optionally) deploys all target contracts in the test contract's constructor, though it may be necessary to add additional custom initialization logic by modifying the auto-generated code or using inheritance/overriding functions. 
     
     - `Fork mode` works with addresses of contracts that have already been deployed to a network, and requires an RPC endpoint URL to create two forks of the network. This requires less custom initialization, though it is slower due to the need for RPC queries and may be less flexible than custom initialization in some cases.
@@ -39,16 +39,20 @@ contracts
 src
 ├── diffuzzer.py       # Main module for Diffuzzer tool (part 2).
 └── diffuzzer
-    ├── classes.py     # Helper classes.
     ├── core
-    |   ├── code_generation.py      # Code generation module.
-    |   ├── fork_mode.py            # Main fork-mode module.
-    |   └── path_mode.py            # Main path-mode module
+    |   ├── analysis_mode.py           # Base class for fork-mode and path-mode modules.
+    |   ├── code_generation.py         # Code generation module.
+    |   ├── fork_mode.py               # Main fork-mode module.
+    |   └── path_mode.py               # Main path-mode module
     └── utils
-        ├── from_address.py         # Address-related utilities
-        ├── from_path.py            # Path-related utilities
-        ├── helpers.py              # General-purpose helper functions
-        └── printer.py              # Printing to console
+        ├── classes.py                 # Helper classes.
+        ├── crytic_print.py            # Printing to console
+        ├── from_address.py            # Address-related utilities
+        ├── from_path.py               # Path-related utilities
+        ├── helpers.py                 # General-purpose helper functions
+        ├── network_info_provider.py   # Class for getting data from the network
+        ├── network_vars.py            # Lists and dicts of supported networks and env variables
+        └── slither_provider.py        # Classes for getting Slither objects
 ```
 
 ## Part 1: Setup

@@ -20,12 +20,15 @@ class NetworkInfoProvider:
 
     _w3: Web3
     _block: int
+    _rpc_provider: str
+    _is_poa: bool
 
     def __init__(
         self, rpc_provider: str, block: str | int, is_poa: bool = False
     ) -> None:
 
         if rpc_provider != "":
+            self._rpc_provider = rpc_provider
             self._w3 = Web3(Web3.HTTPProvider(rpc_provider))
 
         if not self._w3.is_connected():
@@ -43,7 +46,10 @@ class NetworkInfoProvider:
 
         # Workaround for PoA networks
         if is_poa:
+            self._is_poa = True
             self._w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        else:
+            self._is_poa = False
 
     def get_block_timestamp(self) -> int:
         """Timestamp getter."""
@@ -58,11 +64,13 @@ class NetworkInfoProvider:
     def get_contract_variable_value(self, variable: StateVariable, address: str) -> Any:
         """Get the value of a state variable from a contract's storage."""
         contract = variable.contract
-        srs = SlitherReadStorage(contract, 20)
+        srs = SlitherReadStorage([contract], 20)
 
         srs.storage_address = address
         srs.block = self._block
-        srs._web3 = self._w3
+        srs.rpc = self._rpc_provider
+        if self._is_poa:
+            srs.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
         try:
             slot = srs.get_storage_slot(variable, contract)
