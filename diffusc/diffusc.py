@@ -7,13 +7,13 @@ import logging
 import os
 
 from eth_utils import is_address
-from diffuzzer.core.path_mode import PathMode
-from diffuzzer.core.fork_mode import ForkMode
-from diffuzzer.core.analysis_mode import AnalysisMode
-from diffuzzer.core.code_generation import CodeGenerator
-from diffuzzer.utils.helpers import write_to_file
-from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
-import diffuzzer.utils.network_vars as net_vars
+from diffusc.core.path_mode import PathMode
+from diffusc.core.fork_mode import ForkMode
+from diffusc.core.analysis_mode import AnalysisMode
+from diffusc.core.code_generation import CodeGenerator
+from diffusc.utils.helpers import write_to_file
+from diffusc.utils.crytic_print import PrintMode, CryticPrint
+import diffusc.utils.network_vars as net_vars
 
 
 # pylint: disable=too-many-statements

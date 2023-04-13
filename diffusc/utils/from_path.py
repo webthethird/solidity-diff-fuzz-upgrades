@@ -9,14 +9,14 @@ from solc_select.solc_select import (
     get_installable_versions,
 )
 from slither.exceptions import SlitherError
-from diffuzzer.utils.classes import ContractData
-from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
-from diffuzzer.utils.slither_provider import FileSlitherProvider
-from diffuzzer.utils.helpers import (
+from diffusc.utils.classes import ContractData
+from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.slither_provider import FileSlitherProvider
+from diffusc.utils.helpers import (
     get_pragma_version_from_file,
     get_compilation_unit_name,
 )
-from diffuzzer.core.code_generation import CodeGenerator
+from diffusc.core.code_generation import CodeGenerator
 
 
 def get_contracts_from_comma_separated_paths(

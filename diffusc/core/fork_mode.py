@@ -6,15 +6,15 @@ import argparse
 import os
 from typing import Optional
 from eth_utils import is_address
-from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
-from diffuzzer.utils.slither_provider import NetworkSlitherProvider
-from diffuzzer.utils.network_info_provider import NetworkInfoProvider
-import diffuzzer.utils.network_vars as net_vars
-from diffuzzer.utils.from_address import (
+from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.slither_provider import NetworkSlitherProvider
+from diffusc.utils.network_info_provider import NetworkInfoProvider
+import diffusc.utils.network_vars as net_vars
+from diffusc.utils.from_address import (
     get_contracts_from_comma_separated_string,
     get_contract_data_from_address,
 )
-from diffuzzer.core.analysis_mode import AnalysisMode
+from diffusc.core.analysis_mode import AnalysisMode
 
 # pylint: disable=too-many-instance-attributes
 class ForkMode(AnalysisMode):

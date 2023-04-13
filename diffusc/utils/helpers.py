@@ -13,8 +13,8 @@ from slither.utils.upgradeability import (
 )
 from slither.core.declarations import Function
 from slither.core.variables.state_variable import StateVariable
-from diffuzzer.utils.classes import ContractData, Diff
-from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.classes import ContractData, Diff
+from diffusc.utils.crytic_print import PrintMode, CryticPrint
 
 
 def get_compilation_unit_name(slither_object) -> str:

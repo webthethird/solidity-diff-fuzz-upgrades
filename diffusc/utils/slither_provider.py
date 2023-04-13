@@ -11,7 +11,7 @@ from crytic_compile import CryticCompile
 from crytic_compile.utils.zip import load_from_zip, save_to_zip
 from eth_utils import to_checksum_address, is_address
 
-from diffuzzer.utils.crytic_print import CryticPrint
+from diffusc.utils.crytic_print import CryticPrint
 
 
 class SlitherProvider:

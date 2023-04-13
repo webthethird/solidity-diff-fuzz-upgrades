@@ -11,8 +11,8 @@ from slither.tools.read_storage.utils import get_storage_data
 from slither.utils.upgradeability import get_proxy_implementation_slot
 from eth_utils import is_address, to_checksum_address
 
-from diffuzzer.utils.crytic_print import CryticPrint
-from diffuzzer.utils.classes import ContractData, SlotInfo
+from diffusc.utils.crytic_print import CryticPrint
+from diffusc.utils.classes import ContractData, SlotInfo
 
 
 class NetworkInfoProvider:

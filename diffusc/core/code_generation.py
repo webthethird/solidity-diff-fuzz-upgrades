@@ -28,10 +28,10 @@ from slither.core.solidity_types import (
     MappingType,
 )
 from slither.core.declarations.structure import Structure
-from diffuzzer.utils.classes import FunctionInfo, ContractData, Diff
-from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
-from diffuzzer.utils.network_info_provider import NetworkInfoProvider
-from diffuzzer.utils.helpers import (
+from diffusc.utils.classes import FunctionInfo, ContractData, Diff
+from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.network_info_provider import NetworkInfoProvider
+from diffusc.utils.helpers import (
     get_pragma_version_from_file,
     similar,
     camel_case,

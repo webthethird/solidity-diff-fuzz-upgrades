@@ -2,11 +2,11 @@
 
 import argparse
 from typing import List, Optional
-from diffuzzer.utils.classes import ContractData
-from diffuzzer.utils.crytic_print import CryticPrint
-from diffuzzer.utils.slither_provider import SlitherProvider
-from diffuzzer.utils.network_info_provider import NetworkInfoProvider
-from diffuzzer.core.code_generation import CodeGenerator
+from diffusc.utils.classes import ContractData
+from diffusc.utils.crytic_print import CryticPrint
+from diffusc.utils.slither_provider import SlitherProvider
+from diffusc.utils.network_info_provider import NetworkInfoProvider
+from diffusc.core.code_generation import CodeGenerator
 
 
 # pylint: disable=too-many-instance-attributes

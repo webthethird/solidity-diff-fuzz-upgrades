@@ -5,13 +5,13 @@
 import argparse
 from typing import Optional
 
-from diffuzzer.utils.crytic_print import CryticPrint
-from diffuzzer.utils.from_path import (
+from diffusc.utils.crytic_print import CryticPrint
+from diffusc.utils.from_path import (
     get_contracts_from_comma_separated_paths,
     get_contract_data_from_path,
 )
-from diffuzzer.utils.slither_provider import FileSlitherProvider
-from diffuzzer.core.analysis_mode import AnalysisMode
+from diffusc.utils.slither_provider import FileSlitherProvider
+from diffusc.core.analysis_mode import AnalysisMode
 
 
 # pylint: disable=too-many-instance-attributes

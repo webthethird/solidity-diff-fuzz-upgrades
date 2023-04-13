@@ -6,14 +6,14 @@ from slither import Slither
 from slither.exceptions import SlitherError
 from slither.core.declarations import Contract
 from slither.utils.upgradeability import get_proxy_implementation_slot
-from diffuzzer.utils.classes import ContractData
-from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
-from diffuzzer.utils.slither_provider import NetworkSlitherProvider
-from diffuzzer.utils.network_info_provider import NetworkInfoProvider
-from diffuzzer.utils.helpers import (
+from diffusc.utils.classes import ContractData
+from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.slither_provider import NetworkSlitherProvider
+from diffusc.utils.network_info_provider import NetworkInfoProvider
+from diffusc.utils.helpers import (
     get_compilation_unit_name,
 )
-from diffuzzer.core.code_generation import CodeGenerator
+from diffusc.core.code_generation import CodeGenerator
 
 
 def get_deployed_contract(
