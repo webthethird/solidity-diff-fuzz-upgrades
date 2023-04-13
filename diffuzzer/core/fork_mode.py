@@ -24,6 +24,7 @@ class ForkMode(AnalysisMode):
     _v2_address: str
     _proxy_address: Optional[str]
     _target_addresses: Optional[str]
+    _api_env_var: str
     _api_key: str
     _prefix: str
     _network_rpc: str
@@ -38,89 +39,40 @@ class ForkMode(AnalysisMode):
             self._network_rpc, self._block_number, self._is_poa
         )
 
-    # pylint: disable=too-many-branches
     def parse_args(self, args: argparse.Namespace) -> None:
-        """Parse arguments for fork mode"""
+        """Parse arguments for fork mode."""
         super().parse_args(args)
 
         self._v1_address = args.v1
         self._v2_address = args.v2
 
+        self._proxy_address = None
         if args.proxy is not None:
             CryticPrint.print_information(
                 "\n* Proxy contract specified via command line parameter:",
             )
             self._proxy_address = args.proxy
-        else:
-            self._proxy_address = None
 
+        self._target_addresses = None
         if args.targets is not None:
             CryticPrint.print_information(
                 "\n* Additional targets specified via command line parameter:",
             )
             self._target_addresses = args.targets
-        else:
-            self._target_addresses = None
 
-        # Get prefix for current network and Etherscan API key
-        if args.network in net_vars.SUPPORTED_NETWORKS or args.network == "mainnet":
-            if args.network == "mainnet":
-                self._prefix = "mainet:"
-                api_env_var = "ETHERSCAN_API_KEY"
-            else:
-                self._prefix = f"{args.network}:"
-                if (
-                    net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network]
-                    in os.environ
-                ):
-                    api_env_var = net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network]
-                else:
-                    api_env_var = "ETHERSCAN_API_KEY"
-            CryticPrint.print(
-                PrintMode.INFORMATION,
-                f"* Network specified via command line parameter: {args.network}",
-            )
-        else:
-            CryticPrint.print(
-                PrintMode.WARNING,
-                f"* Network {args.network} not supported. Defaulting to Ethereum main network.",
-            )
-            self._prefix = "mainet:"
-            api_env_var = "ETHERSCAN_API_KEY"
+        self.parse_network_args(args)
 
-        if api_env_var in os.environ:
-            self._api_key = os.environ[api_env_var]
-        elif args.etherscan_key:
-            self._api_key = args.etherscan_key
-        else:
-            CryticPrint.print_error(
-                "* Error: Block explorer API key not found. Either specify a key using the "
-                f"--etherscan-key flag or set it with the {api_env_var} environment variable."
-            )
-            raise ValueError("No block explorer API key provided")
-
-        # Try to get the network RPC endpoint
-        self._network_rpc = ""
-        if args.network_rpc:
-            self._network_rpc = args.network_rpc
-            CryticPrint.print(
-                PrintMode.INFORMATION,
-                f"* RPC specified via command line parameter: {self._network_rpc}",
-            )
-        else:
-            for env_var in net_vars.WEB3_RPC_ENV_VARS:
-                if env_var in os.environ:
-                    self._network_rpc = os.environ[env_var]
-                    CryticPrint.print(
-                        PrintMode.INFORMATION,
-                        f"* RPC specified via {env_var} environment variable: {self._network_rpc}",
-                    )
-                    break
-        if self._network_rpc == "":
+        if self._network_rpc is None or self._network_rpc == "":
             CryticPrint.print_error(
                 "* RPC not provided, I can't fetch information from the network."
             )
             raise ValueError("No RPC provided")
+        if self._api_key is None or self._api_key == "":
+            CryticPrint.print_error(
+                "* Error: Block explorer API key not found. Either specify a key using the "
+                f"--etherscan-key flag or set it with the {self._api_env_var} environment variable."
+            )
+            raise ValueError("No block explorer API key provided")
 
         # Workaround for PoA networks
         self._is_poa = False
@@ -141,6 +93,56 @@ class ForkMode(AnalysisMode):
                 "* Block number specified via ECHIDNA_RPC_BLOCK environment variable: "
                 f"{self._block_number}",
             )
+
+    def parse_network_args(self, args: argparse.Namespace):
+        """Parse arguments related to network info."""
+        # Get prefix for current network and Etherscan API key
+        if args.network in net_vars.SUPPORTED_NETWORKS or args.network == "mainnet":
+            if args.network == "mainnet":
+                self._prefix = "mainet:"
+                self._api_env_var = "ETHERSCAN_API_KEY"
+            else:
+                self._prefix = f"{args.network}:"
+                if (
+                        net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network]
+                        in os.environ
+                ):
+                    self._api_env_var = net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network]
+                else:
+                    self._api_env_var = "ETHERSCAN_API_KEY"
+            CryticPrint.print(
+                PrintMode.INFORMATION,
+                f"* Network specified via command line parameter: {args.network}",
+            )
+        else:
+            CryticPrint.print(
+                PrintMode.WARNING,
+                f"* Network {args.network} not supported. Defaulting to Ethereum main network.",
+            )
+            self._prefix = "mainet:"
+            self._api_env_var = "ETHERSCAN_API_KEY"
+
+        if self._api_env_var in os.environ:
+            self._api_key = os.environ[self._api_env_var]
+        elif args.etherscan_key:
+            self._api_key = args.etherscan_key
+
+        # Try to get the network RPC endpoint
+        if args.network_rpc:
+            self._network_rpc = args.network_rpc
+            CryticPrint.print(
+                PrintMode.INFORMATION,
+                f"* RPC specified via command line parameter: {self._network_rpc}",
+            )
+        else:
+            for env_var in net_vars.WEB3_RPC_ENV_VARS:
+                if env_var in os.environ:
+                    self._network_rpc = os.environ[env_var]
+                    CryticPrint.print(
+                        PrintMode.INFORMATION,
+                        f"* RPC specified via {env_var} environment variable: {self._network_rpc}",
+                    )
+                    break
 
     def analyze_contracts(self) -> None:
         """Get ContractData objects from the addresses provided."""
