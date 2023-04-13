@@ -8,7 +8,7 @@ import os
 
 from eth_utils import is_address
 from diffuzzer.core.path_mode import PathMode
-from diffuzzer.core.fork_mode import fork_mode
+from diffuzzer.core.fork_mode import ForkMode
 from diffuzzer.core.analysis_mode import AnalysisMode
 from diffuzzer.core.code_generation import generate_config_file
 from diffuzzer.utils.helpers import write_to_file
@@ -95,6 +95,11 @@ def main():
         action="store_true",
         help="Specifies whether to include wrappers for protected functions.",
     )
+    parser.add_argument(
+        "--etherscan-key",
+        dest="etherscan_key",
+        help="Specifies the API key to use with Etherscan.",
+    )
 
     args = parser.parse_args()
 
@@ -148,7 +153,8 @@ def main():
     CryticPrint.print(PrintMode.INFORMATION, "* Inspecting V1 and V2 contracts:")
     if is_address(args.v1) and is_address(args.v2):
         CryticPrint.print(PrintMode.INFORMATION, "* Using 'fork mode':")
-        fork_mode(args, output_dir, version)
+        analysis = ForkMode(args)
+        contract = analysis.write_test_contract()
     elif os.path.exists(args.v1) and os.path.exists(args.v2):
         CryticPrint.print(PrintMode.INFORMATION, "* Using 'path mode' (no fork):")
         analysis = PathMode(args)
