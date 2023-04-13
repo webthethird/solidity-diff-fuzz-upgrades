@@ -1,4 +1,5 @@
-import os
+"""Module with base class for ForkMode and PathMode."""
+
 import argparse
 from typing import List, Optional
 from diffuzzer.utils.classes import ContractData
@@ -8,27 +9,27 @@ from diffuzzer.utils.network_info_provider import NetworkInfoProvider
 from diffuzzer.core.code_generation import CodeGenerator
 
 
+# pylint: disable=too-many-instance-attributes
 class AnalysisMode:
+    """Base class inherited by PathMode and ForkMode."""
+
     _mode: str
-    _provider: SlitherProvider
+    _provider: Optional[SlitherProvider]
     _net_info: Optional[NetworkInfoProvider]
     _v1: Optional[ContractData]
     _v2: Optional[ContractData]
     _proxy: Optional[ContractData]
     _targets: Optional[List[ContractData]]
-    _output_dir: str
     _version: str
-    _seq_len: int
-    _contract_addr: str
     _upgrade: bool
     _protected: bool
 
     def __init__(self, args: argparse.Namespace) -> None:
-        self.parse_args(args)
         self._v1 = None
         self._v2 = None
         self._proxy = None
         self._targets = None
+        self.parse_args(args)
 
     def parse_args(self, args: argparse.Namespace) -> None:
         """Parse arguments that are used in both analysis modes."""
@@ -50,6 +51,10 @@ class AnalysisMode:
         self._protected = bool(args.include_protected)
 
     def analyze_contracts(self) -> None:
+        """
+        Must be implemented by subclasses. Should get ContractData for all contracts and
+        set self._v1 and self._v2, plus self._proxy and self._targets if necessary.
+        """
         raise NotImplementedError()
 
     def write_test_contract(self) -> str:
