@@ -31,36 +31,12 @@ class AnalysisMode:
         self._targets = None
 
     def parse_args(self, args: argparse.Namespace) -> None:
-        if args.output_dir is not None:
-            self._output_dir = args.output_dir
-            if not str(self._output_dir).endswith(os.path.sep):
-                self._output_dir += os.path.sep
-        else:
-            self._output_dir = "./"
-        if args.seq_len:
-            if str(args.seq_len).isnumeric():
-                self._seq_len = int(args.seq_len)
-            else:
-                CryticPrint.print_error(
-                    "\n* Sequence length provided is not numeric. Defaulting to 100.",
-                )
-                self._seq_len = 100
-        else:
-            self._seq_len = 100
+        """Parse arguments that are used in both analysis modes."""
 
         if args.version:
             self._version = args.version
         else:
             self._version = "0.8.0"
-
-        if args.contract_addr:
-            self._contract_addr = args.contract_addr
-            CryticPrint.print_information(
-                "\n* Exploit contract address specified via command line parameter: "
-                f"{self._contract_addr}",
-            )
-        else:
-            self._contract_addr = ""
 
         if args.fuzz_upgrade and not args.proxy:
             CryticPrint.print_warning(
