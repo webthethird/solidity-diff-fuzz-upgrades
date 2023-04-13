@@ -170,10 +170,8 @@ RECORD_END () {
 ## ---------------------- MAKE CHANGES HERE ----------------------- ##
 
 # Fetch implementations to fuzz
-FETCH ./src/implementation/example/BytesLib.sol "https://raw.githubusercontent.com/GNSPS/solidity-bytes-utils/master/contracts/BytesLib.sol"
-FETCH ./src/implementation/example/BytesUtil.sol "https://raw.githubusercontent.com/libertylocked/solidity-bytesutil/master/contracts/BytesUtil.sol"
-# FETCH ./src/implementation/echidna-exercises/token.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/token.sol"
-# FETCH ./src/implementation/echidna-exercises/mintable.sol "https://raw.githubusercontent.com/crytic/building-secure-contracts/master/program-analysis/echidna/exercises/exercise3/mintable.sol"
+# FETCH ./src/implementation/example/BytesLib.sol "https://raw.githubusercontent.com/GNSPS/solidity-bytes-utils/master/contracts/BytesLib.sol"
+# FETCH ./src/implementation/example/BytesUtil.sol "https://raw.githubusercontent.com/libertylocked/solidity-bytesutil/master/contracts/BytesUtil.sol"
 
 # Compile contracts
 BUILD
@@ -186,14 +184,11 @@ RECORD_START
 # SAVE_CONSTRUCTOR_ARGS "${args[@]}"
 
 # Deploy contract
-# DEPLOY_WITH_ARGS ./src/implementation/echidna-exercises/mintable.sol MintableToken
-DEPLOY ./src/expose/example/BytesLib.sol ExposedBytesLib
-DEPLOY ./src/expose/example/BytesUtil.sol ExposedBytesUtil
 DEPLOY_COMPOUND_WITH_SUFFIX BEFORE
 # UPGRADE_COMPOUND_WITH_VERSION_KEY ./compound-eureka/networks/development-BEFORE.json ComptrollerBefore
 DEPLOY_COMPOUND_WITH_SUFFIX AFTER
 # UPGRADE_COMPOUND_WITH_VERSION_KEY ./compound-eureka/networks/development-AFTER.json ComptrollerAfter
-DEPLOY_CTOKEN_WITH_UNDERLYING TestBefore BFOR BEFORE ./compound-eureka/networks/development-BEFORE.json Base200bps_Slope1000bps
-DEPLOY_CTOKEN_WITH_UNDERLYING TestAfter AFTR AFTER ./compound-eureka/networks/development-AFTER.json Base200bps_Slope1000bps
+# DEPLOY_CTOKEN_WITH_UNDERLYING TestBefore BFOR BEFORE ./compound-eureka/networks/development-BEFORE.json Base200bps_Slope1000bps
+# DEPLOY_CTOKEN_WITH_UNDERLYING TestAfter AFTR AFTER ./compound-eureka/networks/development-AFTER.json Base200bps_Slope1000bps
 
 RECORD_END

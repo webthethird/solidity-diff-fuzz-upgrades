@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPLv3
 pragma solidity ^0.8.10;
 
-import { Comptroller as Comptroller_V1 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/simplified-compound/ComptrollerV1.sol";
-import { Comptroller as Comptroller_V2 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/simplified-compound/ComptrollerV2.sol";
-import { Unitroller } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/simplified-compound/Unitroller.sol";
-import { CErc20 } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/simplified-compound/CErc20.sol";
-import { Comp } from "/home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/simplified-compound/Comp.sol";
+import { Comptroller as Comptroller_V1 } from "../../implementation/compound/compound-0.8.10/ComptrollerV1.sol";
+import { Comptroller as Comptroller_V2 } from "../../implementation/compound/compound-0.8.10/ComptrollerV2.sol";
+import { Unitroller } from "../../implementation/compound/compound-0.8.10/Unitroller.sol";
+import { CErc20 } from "../../implementation/compound/compound-0.8.10/CErc20.sol";
+import { Comp } from "../../implementation/compound/compound-0.8.10/Comp.sol";
 
 interface IComptrollerV1 {
     enum Error { NO_ERROR, UNAUTHORIZED, COMPTROLLER_MISMATCH, INSUFFICIENT_SHORTFALL, INSUFFICIENT_LIQUIDITY, INVALID_CLOSE_FACTOR, INVALID_COLLATERAL_FACTOR, INVALID_LIQUIDATION_INCENTIVE, MARKET_NOT_ENTERED, MARKET_NOT_LISTED, MARKET_ALREADY_LISTED, MATH_ERROR, NONZERO_BORROW_BALANCE, PRICE_ERROR, REJECTION, SNAPSHOT_ERROR, TOO_MANY_ASSETS, TOO_MUCH_REPAY }
