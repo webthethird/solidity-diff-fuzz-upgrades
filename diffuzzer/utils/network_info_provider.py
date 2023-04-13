@@ -1,7 +1,7 @@
 """Module containing class for getting and storing network information."""
 
 # pylint: disable= no-name-in-module
-from typing import Any
+from typing import Any, Tuple
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
 from slither.core.variables.state_variable import StateVariable
@@ -9,7 +9,7 @@ from slither.core.declarations.contract import Contract
 from slither.tools.read_storage import SlitherReadStorage
 from slither.tools.read_storage.utils import get_storage_data
 from slither.utils.upgradeability import get_proxy_implementation_slot
-from eth_utils import is_address
+from eth_utils import is_address, to_checksum_address
 
 from diffuzzer.utils.crytic_print import CryticPrint
 from diffuzzer.utils.classes import ContractData, SlotInfo
@@ -73,7 +73,7 @@ class NetworkInfoProvider:
 
     def get_proxy_implementation(
         self, contract: Contract, contract_data: ContractData
-    ) -> str:
+    ) -> Tuple[str, ContractData]:
         """Get a proxy's implementation address from the proxy's storage."""
 
         address = contract_data["address"]
@@ -83,8 +83,8 @@ class NetworkInfoProvider:
 
         slot: SlotInfo = get_proxy_implementation_slot(contract)
         if slot is not None:
-
-            imp = get_storage_data(self._w3, address, bytes(slot.slot), self._block)
+            slot_bytes = int.to_bytes(slot.slot, 32, byteorder="big")
+            imp = get_storage_data(self._w3, to_checksum_address(address), slot_bytes, self._block)
             impl_address = "0x" + imp.hex()[-40:]
 
             if impl_address != "0x0000000000000000000000000000000000000000":
@@ -97,8 +97,8 @@ class NetworkInfoProvider:
             # Start by reading EIP1967 storage slot keccak256('eip1967.proxy.implementation') - 1
             imp = get_storage_data(
                 self._w3,
-                address,
-                0x360894A13BA1A3210667C828492DB98DCA3E2076CC3735A920A3CA505D382BBC,
+                to_checksum_address(address),
+                int.to_bytes(0x360894A13BA1A3210667C828492DB98DCA3E2076CC3735A920A3CA505D382BBC, 32, "big"),
                 self._block,
             )
             impl_address = "0x" + imp.hex()[-40:]
@@ -121,8 +121,8 @@ class NetworkInfoProvider:
             # Try slot keccak256('org.zeppelinos.proxy.implementation') used by early OZ proxies
             imp = get_storage_data(
                 self._w3,
-                address,
-                0x7050C9E0F4CA769C69BD3A8EF740BC37934F8E2C036E5A723FD8EE048ED3F8C3,
+                to_checksum_address(address),
+                int.to_bytes(0x7050C9E0F4CA769C69BD3A8EF740BC37934F8E2C036E5A723FD8EE048ED3F8C3, 32, "big"),
                 self._block,
             )
             impl_address = "0x" + imp.hex()[-40:]
