@@ -13,7 +13,7 @@ from diffuzzer.utils.network_info_provider import NetworkInfoProvider
 from diffuzzer.utils.helpers import (
     get_compilation_unit_name,
 )
-from diffuzzer.core.code_generation import get_contract_interface
+from diffuzzer.core.code_generation import CodeGenerator
 
 
 def get_deployed_contract(
@@ -106,7 +106,7 @@ def get_contract_data_from_address(
         else:
             contract_data["is_proxy"] = False
 
-        contract_data = get_contract_interface(contract_data)
+        contract_data = CodeGenerator.get_contract_interface(contract_data)
 
         CryticPrint.print(
             PrintMode.SUCCESS,

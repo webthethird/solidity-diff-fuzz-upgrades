@@ -98,7 +98,9 @@ class NetworkInfoProvider:
             imp = get_storage_data(
                 self._w3,
                 to_checksum_address(address),
-                int.to_bytes(0x360894A13BA1A3210667C828492DB98DCA3E2076CC3735A920A3CA505D382BBC, 32, "big"),
+                int.to_bytes(
+                    0x360894A13BA1A3210667C828492DB98DCA3E2076CC3735A920A3CA505D382BBC, 32, "big"
+                ),
                 self._block,
             )
             impl_address = "0x" + imp.hex()[-40:]
@@ -122,7 +124,9 @@ class NetworkInfoProvider:
             imp = get_storage_data(
                 self._w3,
                 to_checksum_address(address),
-                int.to_bytes(0x7050C9E0F4CA769C69BD3A8EF740BC37934F8E2C036E5A723FD8EE048ED3F8C3, 32, "big"),
+                int.to_bytes(
+                    0x7050C9E0F4CA769C69BD3A8EF740BC37934F8E2C036E5A723FD8EE048ED3F8C3, 32, "big"
+                ),
                 self._block,
             )
             impl_address = "0x" + imp.hex()[-40:]
