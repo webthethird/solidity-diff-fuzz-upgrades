@@ -5,7 +5,7 @@ from diffuzzer.utils.classes import ContractData
 from diffuzzer.utils.crytic_print import CryticPrint
 from diffuzzer.utils.slither_provider import SlitherProvider
 from diffuzzer.utils.network_info_provider import NetworkInfoProvider
-from diffuzzer.core.code_generation import generate_test_contract
+from diffuzzer.core.code_generation import CodeGenerator
 
 
 class AnalysisMode:
@@ -77,17 +77,24 @@ class AnalysisMode:
         raise NotImplementedError()
 
     def write_test_contract(self) -> str:
+        """
+        Calls CodeGenerator.generate_test_contract and returns the generated contract code.
+        :return: The test contract code as a string.
+        """
         if not self._v1 or not self._v2:
             self.analyze_contracts()
-        contract = generate_test_contract(
+
+        code_generator = CodeGenerator(
             self._v1,
             self._v2,
             self._mode,
             self._version,
-            targets=self._targets,
-            proxy=self._proxy,
-            upgrade=self._upgrade,
-            protected=self._protected,
-            network_info=self._net_info
+            self._upgrade,
+            self._protected,
+            self._net_info
         )
+        code_generator.proxy = self._proxy
+        code_generator.targets = self._targets
+
+        contract = code_generator.generate_test_contract()
         return contract

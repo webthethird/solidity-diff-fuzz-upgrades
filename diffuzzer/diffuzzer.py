@@ -10,7 +10,7 @@ from eth_utils import is_address
 from diffuzzer.core.path_mode import PathMode
 from diffuzzer.core.fork_mode import ForkMode
 from diffuzzer.core.analysis_mode import AnalysisMode
-from diffuzzer.core.code_generation import generate_config_file
+from diffuzzer.core.code_generation import CodeGenerator
 from diffuzzer.utils.helpers import write_to_file
 from diffuzzer.utils.crytic_print import PrintMode, CryticPrint
 import diffuzzer.utils.network_vars as net_vars
@@ -161,7 +161,7 @@ def main():
         f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.",
     )
 
-    config_file = generate_config_file(
+    config_file = CodeGenerator.generate_config_file(
         f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
     )
     write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
