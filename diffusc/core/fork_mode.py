@@ -117,12 +117,14 @@ class ForkMode(AnalysisMode):
             self._prefix = "mainet:"
             self._api_env_var = "ETHERSCAN_API_KEY"
 
+        self._api_key = ""
         if self._api_env_var in os.environ:
             self._api_key = os.environ[self._api_env_var]
         elif args.etherscan_key:
             self._api_key = args.etherscan_key
 
         # Try to get the network RPC endpoint
+        self._network_rpc = ""
         if args.network_rpc:
             self._network_rpc = args.network_rpc
             CryticPrint.print(
