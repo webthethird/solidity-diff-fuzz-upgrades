@@ -319,7 +319,7 @@ class CodeGenerator:
 
         targets = self.targets
         proxy = self.proxy
-        if len(targets) == 0:
+        if targets is None or len(targets) == 0:
             return wrapped
         if tainted is None:
             tainted = []
@@ -610,6 +610,8 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
+        if targets is None:
+            targets = []
         version = self._version
         fork = self._fork
         upgrade = self._upgrade
@@ -804,6 +806,8 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
+        if targets is None:
+            targets = []
         upgrade = self._upgrade
 
         constructor = "\n    constructor() public {\n"
@@ -886,6 +890,8 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
+        if targets is None:
+            targets = []
         upgrade = self._upgrade
         network_info = self._network_info
 
