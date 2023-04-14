@@ -628,8 +628,8 @@ class CodeGenerator:
         tainted_targets = [
             self.get_contract_data(t.contract)
             if t.contract.name
-            not in [target["contract_object"].name for target in targets]
-            + [proxy["contract_object"].name]
+            not in [target["contract_object"].name if target["valid_data"] else "" for target in targets]
+            + [proxy["contract_object"].name if proxy is not None and proxy["valid_data"] else ""]
             else next(target for target in targets + [proxy] if t.contract.name == target["name"])
             for t in tainted_contracts
         ]
