@@ -1,5 +1,0 @@
-testMode: assertion
-testLimit: 1000000000000
-corpusDir: ./contracts/test/sorare-bridge/corpus
-codeSize: 0xffff
-seqLen: 100
