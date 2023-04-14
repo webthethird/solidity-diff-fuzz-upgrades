@@ -1,4 +1,0 @@
-testMode: assertion
-testLimit: 1000000000000
-corpusDir: src/test/example/corpus
-codeSize: 0xffff
