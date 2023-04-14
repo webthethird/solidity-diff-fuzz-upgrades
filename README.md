@@ -22,7 +22,7 @@ contracts
 |   |   ├── compound-0.8.10         # V1/V2 contracts, updated to Solidity 0.8.10.
 |   |   ├── Comptroller-before      # Original V1 contracts, using Solidity 0.5.16.
 |   |   └── Comptroller-after       # Original V2 contracts, using Solidity 0.5.16.
-|   ├── safemoon       # Another bug introduced in an upgrade.
+|   ├── @openzeppelin  # OpenZeppelin contracts used by Compound POC test contracts.
 │   └── ...
 └── test               # Actual fuzzing testcases.
     ├── compound
