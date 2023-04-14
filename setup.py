@@ -6,8 +6,8 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="diffuzzer",
-    description="Diffuzzer automatically generates differential fuzz testing contracts for use with Echidna.",
+    name="diffusc",
+    description="diffusc automatically generates differential fuzz testing contracts for use with Echidna.",
     url="https://github.com/webthethird/solidity-diff-fuzz-upgrades",
     author="Trail of Bits",
     version="0.1.0",
@@ -35,7 +35,7 @@ setup(
     long_description_content_type="text/markdown",
     entry_points={
         "console_scripts": [
-            "diffuzzer = diffuzzer.diffuzzer:main",
+            "diffusc = diffusc.diffusc:main",
         ]
     },
 )
