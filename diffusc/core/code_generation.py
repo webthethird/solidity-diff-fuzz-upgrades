@@ -319,7 +319,7 @@ class CodeGenerator:
 
         targets = self.targets
         proxy = self.proxy
-        if len(targets) == 0:
+        if targets is None or len(targets) == 0:
             return wrapped
         if tainted is None:
             tainted = []
@@ -610,6 +610,8 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
+        if targets is None:
+            targets = []
         version = self._version
         fork = self._fork
         upgrade = self._upgrade
@@ -626,8 +628,10 @@ class CodeGenerator:
         tainted_targets = [
             self.get_contract_data(t.contract)
             if t.contract.name
-            not in [target["contract_object"].name for target in targets]
-            + [proxy["contract_object"].name]
+            not in [
+                target["contract_object"].name if target["valid_data"] else "" for target in targets
+            ]
+            + [proxy["contract_object"].name if proxy is not None and proxy["valid_data"] else ""]
             else next(target for target in targets + [proxy] if t.contract.name == target["name"])
             for t in tainted_contracts
         ]
@@ -804,6 +808,8 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
+        if targets is None:
+            targets = []
         upgrade = self._upgrade
 
         constructor = "\n    constructor() public {\n"
@@ -886,6 +892,8 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
+        if targets is None:
+            targets = []
         upgrade = self._upgrade
         network_info = self._network_info
 
