@@ -2,7 +2,7 @@
 
 from typing import List, Tuple, Optional
 
-# pylint: disable= no-name-in-module
+# pylint: disable= no-name-in-module,too-many-lines
 from solc_select.solc_select import (
     switch_global_version,
     installed_versions,
@@ -405,10 +405,6 @@ class CodeGenerator:
         if not func2["protected"]:
             wrapped += "        hevm.prank(msg.sender);\n"
         wrapped += self.wrap_low_level_call(v_2, func2, "V2", proxy)
-        # if len(return_vals) > 0:
-        #     wrapped +=  f"        {return_vals[0]} = {v1['name']}V1.{func[0]}{call_args};\n"
-        # else:
-        #     wrapped +=  f"        {v1['name']}V1.{func[0]}{call_args};\n"
         if self._fork:
             wrapped += "        hevm.selectFork(fork1);\n"
         if not func["protected"]:
@@ -416,11 +412,60 @@ class CodeGenerator:
         wrapped += self.wrap_low_level_call(v_1, func, "V1", proxy)
         wrapped += "        assert(successV1 == successV2); \n"
         wrapped += "        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));\n"
-        # if len(return_vals) > 0:
-        #     wrapped +=  f"        {return_vals[1]} = {v2['name']}V2.{func[0]}{call_args};\n"
-        #     wrapped +=  f"        return {returns_to_compare[0]} == {returns_to_compare [1]};\n"
-        # else:
-        #     wrapped +=  f"        {v2['name']}V2.{func[0]}{call_args};\n"
+        wrapped += "    }\n\n"
+        return wrapped
+
+    def wrap_replacement_function(
+        self,
+        v_1: ContractData,
+        v_2: ContractData,
+        old_func: FunctionInfo,
+        new_func: FunctionInfo,
+        proxy: ContractData,
+    ) -> str:
+        """Create wrapper function for new function in V2 replacing one in V1."""
+
+        wrapped = ""
+
+        new_args, _, _, _ = self.get_args_and_returns_for_wrapping(new_func)
+        old_args, _, _, _ = self.get_args_and_returns_for_wrapping(old_func)
+        args = new_args if len(new_args) > len(old_args) else old_args
+
+        wrapped += f"    function {v_2['name']}_{new_func['name']}{args} public virtual {{\n"
+        if self._fork:
+            wrapped += "        hevm.selectFork(fork1);\n"
+        if not old_func["protected"]:
+            wrapped += "        hevm.prank(msg.sender);\n"
+        wrapped += self.wrap_low_level_call(v_1, old_func, "V1", proxy)
+        if self._fork:
+            wrapped += "        hevm.selectFork(fork2);\n"
+        impl_slot = int.to_bytes(proxy["implementation_slot"].slot, 32, "big").hex()
+        wrapped += (
+            "        address impl = address(uint160(uint256(\n"
+            f"            hevm.load(address({camel_case(proxy['name'])}),0x{impl_slot})\n"
+            "        )));\n"
+        )
+        if not new_func["protected"]:
+            wrapped += "        hevm.prank(msg.sender);\n"
+        wrapped += "        bool successV2;\n"
+        wrapped += "        bytes memory outputV2;\n"
+        wrapped += f"        if(impl == address({camel_case(v_2['name'])}{v_2['suffix']})) {{\n"
+        wrapped += (
+            self.wrap_low_level_call(v_2, new_func, "V2", proxy)
+            .replace("bool ", "")
+            .replace("bytes memory ", "")
+            .replace("        ", "            ")
+        )
+        wrapped += "        } else {\n"
+        wrapped += (
+            self.wrap_low_level_call(v_1, old_func, "V2", proxy)
+            .replace("bool ", "")
+            .replace("bytes memory ", "")
+            .replace("        ", "            ")
+        )
+        wrapped += "        }\n"
+        wrapped += "        assert(successV1 == successV2); \n"
+        wrapped += "        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));\n"
         wrapped += "    }\n\n"
         return wrapped
 
@@ -566,7 +611,7 @@ class CodeGenerator:
                         func for func in v_2["functions"] if func["name"] == diff_func.name
                     )
                     if proxy is not None:
-                        wrapped += self.wrap_diff_function(v_1, v_2, func, func2, proxy)
+                        wrapped += self.wrap_replacement_function(v_1, v_2, func, func2, proxy)
                     else:
                         wrapped += self.wrap_diff_function(v_1, v_2, func, func2)
 
