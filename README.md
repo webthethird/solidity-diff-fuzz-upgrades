@@ -1,4 +1,4 @@
-# diffusc: Differential Fuzzing of Upgradeable Smart Contract Implementations
+# Diffusc: Differential Fuzzing of Upgradeable Smart Contract Implementations
 
 This project has two parts so far:
 
@@ -55,7 +55,8 @@ src
         └── slither_provider.py        # Classes for getting Slither objects
 ```
 
-## Part 1: Setup
+## Part 1: Compound PoC
+### Setup
 
 Before any fuzzing can be run, `build.sh` needs to be executed, which has the following dependencies:
 
@@ -66,13 +67,72 @@ Before any fuzzing can be run, `build.sh` needs to be executed, which has the fo
 
 After the buildscript was successfully executed, the addresses.sol contract should be populated, there'll be a `echidna-init.json` file and a ganache instance will still be running in the background.
 
-## Part 1: Running Echidna Fuzzing
 
 ```bash
 # Differential fuzzing with protocol deployment via initialization file:
 echidna --contract ComptrollerDiffFuzz --config echidna.yaml contracts/test/compound/Comp-diff.sol
 ```
 
+### Running Echidna Fuzzing
+
+## Part 2: Diffusc
+Diffusc is a Python tool that uses static analysis to automatically generate differential fuzz testing invariants in Solidity for comparing two upgradeable smart contract implementations, which can uncover unexpected differences in behavior before an upgrade is performed on-chain. It also works just as well on two versions of a non-upgradeable contract.
+
+Diffusc currently supports two modes: local mode and fork mode. Local mode, or path mode, takes file paths as inputs, whereas fork mode works with addresses of deployed contracts.
+In local mode, the contracts under test will be deployed by the test contract's constructor, and some manual effort is likely to be necessary for initializing the contracts correctly.
+Fork mode, on the other hand, inherits the on-chain state of the contracts under test, so less custom initialization is required. However, this mode requires an RPC node URL, and can be slower than local mode due to RPC queries.
+
+### Setup
+
+After cloning this repo, run the setup script (ideally in a virtual environment):
+```bash
+git clone https://github.com/webthethird/solidity-diff-fuzz-upgrades.git
+cd solidity-diff-fuzz-upgrades
+python3 setup.py install
+```
+You will also need to install [Echidna >=2.1.1](https://github.com/crytic/echidna/releases/tag/v2.1.1) in order to fuzz with te auto-generated test contracts.
+
+### Running Diffusc
+The minimum required arguments for running Diffusc are two contracts, provided as either file paths or addresses:
+
+`diffusc v1 v2 [ADDITIONAL_ARGS]`
+```bash
+diffusc contracts/implementation/compound/compound-0.8.10/ComptrollerV1.sol contracts/implementation/compound/compound-0.8.10/ComptrollerV2.sol
+echidna DiffFuzzUpgrades.sol --contract DiffFuzzUpgrades --config CryticConfig.yaml
+```
+
+#### Command Line Arguments
+Additional options unlock greater functionality:
+* `-p, --proxy`: Specifies the proxy to use (either a file path or an address, same mode as V1/V2).
+* `-T, --targets`: Comma separated list of additional target contracts (either file paths or addresses, same as V1/V2).
+* `-d, --output-dir`: Directory to store the test contract and config file in.
+* `-A, --contract-addr`: Address to which to deploy the test contract.
+* `-l, --seq-len`: Transaction sequence length for Echidna fuzzing (default 100).
+* `-n, --network`: The network the contracts are deployed on (for fork mode). This parameter should have the same name as Slither supported networks. The current list of supported network prefixes is:
+  * `mainet` for Ethereum main network (default if no `--network` is specified)
+  * `optim` for Optimism
+  * `bsc` for Binance Smart Chain
+  * `arbi` for Arbitrum
+  * `poly` for Polygon
+  * `avax` for Avalanche
+  * `ftm` for Fantom
+  
+  Also, the following test networks are supported:
+  * `ropsten` for Ropsten (deprecated)
+  * `kovan` for Kovan (deprecated)
+  * `rinkeby` for Rinkeby (deprecated)
+  * `goerli` for Goerli
+  * `testnet.bsc` for Binance Smart Chain
+  * `testnet.arbi` for Arbitrum
+  * `mumbai` for Polygon
+  * `testnet.avax` for Avalanche
+  * `tobalaba` for Energy Web
+* `-b, --block`: The block to use (for fork mode). Can also be set using the `ECHIDNA_RPC_BLOCK` environment variable.
+* `-R, --network-rpc`: The RPC node URL to use (for fork mode). Can also be set using the `ECHIDNA_RPC_URL` environment variable.
+* `--etherscan-key`: The block explorer API key to use (for fork mode). Can also be set using the `ETHERSCAN_API_KEY` environment variable.
+* `-v, --version`: The solc compiler version to use (default 0.8.0).
+* `-u, --fuzz-upgrade`: Flag to include an upgrade function in test contract, to upgrade to V2 mid-transaction sequence (default false).
+* `--protected`: Flag to include test wrappers for protected functions, i.e., with modifier like `onlyOwner` (default false).
 
 ##### ✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - SNIP - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
