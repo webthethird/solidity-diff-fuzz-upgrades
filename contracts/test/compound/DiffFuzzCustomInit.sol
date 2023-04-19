@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPLv3
 pragma solidity ^0.8.10;
 
-import "./DiffFuzzUpgrades.sol";
+import "./DiffFuzzModified.sol";
 import "../../implementation/@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../../implementation/@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol";
 import "../../implementation/compound/master-contracts/WhitePaperInterestRateModel.sol";
