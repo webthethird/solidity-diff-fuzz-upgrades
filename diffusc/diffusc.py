@@ -155,9 +155,19 @@ def main():
         f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.",
     )
 
-    config_file = CodeGenerator.generate_config_file(
-        f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
-    )
+    if isinstance(analysis, ForkMode):
+        config_file = CodeGenerator.generate_config_file(
+            f"{output_dir}corpus",
+            "1000000000000",
+            contract_addr,
+            seq_len,
+            block=analysis.block_number,
+            rpc_url=analysis.network_rpc,
+        )
+    else:
+        config_file = CodeGenerator.generate_config_file(
+            f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
+        )
     write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
     CryticPrint.print(
         PrintMode.SUCCESS,

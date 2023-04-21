@@ -98,7 +98,7 @@ class CodeGenerator:
 
     @staticmethod
     def generate_config_file(
-        corpus_dir: str, campaign_length: str, contract_addr: str, seq_len: int
+        corpus_dir: str, campaign_length: str, contract_addr: str, seq_len: int, block: int = 0, rpc_url: str = ""
     ) -> str:
         """Generate an Echidna config file."""
         CryticPrint.print(
@@ -113,6 +113,10 @@ class CodeGenerator:
         config_file += f"seqLen: {seq_len}\n"
         if contract_addr != "":
             config_file += f"contractAddr: '{contract_addr}'\n"
+        if block > 0:
+            config_file += f"rpcBlock: {block}\n"
+        if rpc_url != "":
+            config_file += f"rpcUrl: {rpc_url}\n"
 
         return config_file
 
@@ -563,12 +567,15 @@ class CodeGenerator:
                 continue
             if diff_func.visibility in ["internal", "private"]:
                 continue
-            func = next(
-                func
-                for func in v_2["functions"]
-                if func["name"] == diff_func.name
-                and len(func["inputs"]) == len(diff_func.parameters)
-            )
+            try:
+                func = next(
+                    func
+                    for func in v_2["functions"]
+                    if func["name"] == diff_func.name
+                    and len(func["inputs"]) == len(diff_func.parameters)
+                )
+            except StopIteration as e:
+                continue
             if proxy is not None:
                 wrapped += self.wrap_diff_function(v_1, v_2, func, proxy=proxy)
             else:

@@ -37,6 +37,14 @@ class ForkMode(AnalysisMode):
         self._provider = NetworkSlitherProvider(self._prefix, self._api_key)
         self._net_info = NetworkInfoProvider(self._network_rpc, self._block_number, self._is_poa)
 
+    @property
+    def network_rpc(self) -> str:
+        return self._network_rpc
+
+    @property
+    def block_number(self) -> int:
+        return self._block_number
+
     def parse_args(self, args: argparse.Namespace) -> None:
         """Parse arguments for fork mode."""
         super().parse_args(args)
@@ -162,7 +170,13 @@ class ForkMode(AnalysisMode):
                 self._proxy = get_contract_data_from_address(
                     self._proxy_address, "", self._provider, self._net_info
                 )
-                if not self._proxy["is_proxy"]:
+                if not self._proxy["valid_data"]:
+                    CryticPrint.print(
+                        PrintMode.ERROR,
+                        f"\n  * Failed to get proxy at {self._proxy['address']}. Ignoring...",
+                    )
+                    self._proxy = None
+                elif not self._proxy["is_proxy"]:
                     CryticPrint.print(
                         PrintMode.ERROR,
                         f"\n  * {self._proxy['name']} does not appear to be a proxy. Ignoring...",
