@@ -98,9 +98,17 @@ class CodeGenerator:
 
     @staticmethod
     def generate_config_file(
-        corpus_dir: str, campaign_length: str, contract_addr: str, seq_len: int, block: int = 0, rpc_url: str = ""
+        corpus_dir: str,
+        campaign_length: str,
+        contract_addr: str,
+        seq_len: int,
+        block: int = 0,
+        rpc_url: str = "",
+        senders: List[str] = None,
     ) -> str:
         """Generate an Echidna config file."""
+        if senders is None:
+            senders = []
         CryticPrint.print(
             PrintMode.INFORMATION,
             f"* Generating Echidna configuration file with campaign limit {campaign_length}"
@@ -117,7 +125,8 @@ class CodeGenerator:
             config_file += f"rpcBlock: {block}\n"
         if rpc_url != "":
             config_file += f"rpcUrl: {rpc_url}\n"
-
+        if len(senders) > 0:
+            config_file += "sender: ['" + "','".join(sender for sender in senders) + "']\n"
         return config_file
 
     @staticmethod
