@@ -2,8 +2,8 @@
 
 # pylint: disable= no-name-in-module
 from time import sleep
-from requests.exceptions import HTTPError
 from typing import Any, Tuple, List
+from requests.exceptions import HTTPError
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
 from slither.core.variables.state_variable import StateVariable
@@ -239,7 +239,9 @@ class NetworkInfoProvider:
         )
 
     # pylint: disable=too-many-locals
-    def get_token_holders(self, min_token_amount: int, max_holders: int, address: str, abi: str) -> List[str]:
+    def get_token_holders(
+        self, min_token_amount: int, max_holders: int, address: str, abi: str
+    ) -> List[str]:
         """Get the address of a holder of the token at the given address."""
 
         block_from = int(self._block) - 2000
@@ -267,19 +269,25 @@ class NetworkInfoProvider:
 
                 for event in events:
                     receipt = self._w3.eth.wait_for_transaction_receipt(event["transactionHash"])
-                    result = contract.events.Transfer().process_receipt(receipt, errors=logs.DISCARD)
+                    result = contract.events.Transfer().process_receipt(
+                        receipt, errors=logs.DISCARD
+                    )
                     event_data = list(result[0]["args"].values())
                     recipient = event_data[1]
                     if recipient in holders:
                         continue
                     amount = int(event_data[2])
-                    if amount > min_token_amount:
-                        if not self._w3.eth.get_code(recipient, self._block):
-                            CryticPrint.print_information(f"  * Found holder with balance of {amount} at {recipient}")
-                            holders.append(recipient)
-                            max_retries += 1
-                            if len(holders) == max_holders:
-                                return holders
+                    if amount < min_token_amount:
+                        continue
+                    if self._w3.eth.get_code(recipient, self._block):
+                        continue
+                    CryticPrint.print_information(
+                        f"  * Found holder with balance of {amount} at {recipient}"
+                    )
+                    holders.append(recipient)
+                    max_retries += 1
+                    if len(holders) == max_holders:
+                        return holders
                 max_retries -= 1
                 block_from -= 2000
                 block_to -= 2000
@@ -289,7 +297,9 @@ class NetworkInfoProvider:
                 continue
 
         if len(holders) > 0:
-            CryticPrint.print_warning(f"* {max_holders} token holders requested, but only {len(holders)} found.")
+            CryticPrint.print_warning(
+                f"* {max_holders} token holders requested, but only {len(holders)} found."
+            )
             return holders
 
         CryticPrint.print_error(

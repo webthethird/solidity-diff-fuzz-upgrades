@@ -6,7 +6,7 @@ import argparse
 import os
 from typing import Optional, List
 from eth_utils import is_address
-from diffusc.utils.classes import ContractData, Diff
+from diffusc.utils.classes import ContractData
 from diffusc.utils.helpers import do_diff
 from diffusc.utils.crytic_print import PrintMode, CryticPrint
 from diffusc.utils.slither_provider import NetworkSlitherProvider
@@ -34,7 +34,7 @@ class ForkMode(AnalysisMode):
     _is_poa: bool
     _block_number: int
     _tokens: List[ContractData]
-    _token_holders: List[str]
+    _token_holders: Optional[List[str]]
 
     def __init__(self, args: argparse.Namespace) -> None:
         self._mode = "fork"
@@ -42,7 +42,6 @@ class ForkMode(AnalysisMode):
         self._provider = NetworkSlitherProvider(self._prefix, self._api_key)
         self._net_info = NetworkInfoProvider(self._network_rpc, self._block_number, self._is_poa)
         self._tokens = []
-        self._token_holders = []
 
     @property
     def network_rpc(self) -> str:
@@ -57,7 +56,7 @@ class ForkMode(AnalysisMode):
         return self._tokens
 
     @property
-    def token_holders(self) -> List[str]:
+    def token_holders(self) -> Optional[List[str]]:
         return self._token_holders
 
     def parse_args(self, args: argparse.Namespace) -> None:
@@ -114,6 +113,10 @@ class ForkMode(AnalysisMode):
                 "* Block number specified via ECHIDNA_RPC_BLOCK environment variable: "
                 f"{self._block_number}",
             )
+
+        self._token_holders = None
+        if args.holders:
+            self._token_holders = []
 
     def parse_network_args(self, args: argparse.Namespace):
         """Parse arguments related to network info."""
@@ -231,7 +234,10 @@ class ForkMode(AnalysisMode):
                 abi = contract.file_scope.abi(
                     slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
                 )
-                self._token_holders.extend(self._net_info.get_token_holders(10000, 10, self._proxy["address"], abi))
+                if self._token_holders is not None:
+                    self._token_holders.extend(
+                        self._net_info.get_token_holders(10000, 10, self._proxy["address"], abi)
+                    )
             else:
                 self._tokens.extend([self._v1, self._v2])
                 contract = self._v1["contract_object"]
@@ -239,7 +245,10 @@ class ForkMode(AnalysisMode):
                 abi = contract.file_scope.abi(
                     slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
                 )
-                self._token_holders.extend(self._net_info.get_token_holders(10000, 10, self._v1["address"], abi))
+                if self._token_holders is not None:
+                    self._token_holders.extend(
+                        self._net_info.get_token_holders(10000, 10, self._v1["address"], abi)
+                    )
         if self._targets is not None:
             for target in self._targets:
                 if target["is_erc20"]:
@@ -249,9 +258,14 @@ class ForkMode(AnalysisMode):
                     abi = contract.file_scope.abi(
                         slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
                     )
-                    self._token_holders.extend(self._net_info.get_token_holders(10000, 10, target["address"], abi))
+                    if self._token_holders is not None:
+                        self._token_holders.extend(
+                            self._net_info.get_token_holders(10000, 10, target["address"], abi)
+                        )
         for token in self._tokens:
-            CryticPrint.print_information(f"  * Found token {token['name']} at address {token['address']}")
+            CryticPrint.print_information(
+                f"  * Found token {token['name']} at address {token['address']}"
+            )
 
     # def recursive_search(self) -> None:
     #

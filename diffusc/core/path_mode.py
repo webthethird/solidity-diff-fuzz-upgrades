@@ -4,7 +4,6 @@
 
 import argparse
 from typing import Optional
-from diffusc.utils.classes import Diff
 from diffusc.utils.helpers import do_diff
 from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.from_path import (

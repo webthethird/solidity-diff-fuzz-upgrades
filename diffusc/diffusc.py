@@ -93,7 +93,7 @@ def main():
         dest="holders",
         action="store_true",
         help="Specifies whether to automatically detect token holders to send transactions from when fuzzing "
-             "(default false)."
+        "(default false).",
     )
     parser.add_argument(
         "--protected",
@@ -164,9 +164,7 @@ def main():
     )
 
     if isinstance(analysis, ForkMode):
-        holders = []
-        if args.holders:
-            holders.extend(analysis.token_holders)
+        holders = analysis.token_holders
         config_file = CodeGenerator.generate_config_file(
             f"{output_dir}corpus",
             "1000000000000",
@@ -174,7 +172,7 @@ def main():
             seq_len,
             block=analysis.block_number,
             rpc_url=analysis.network_rpc,
-            senders=holders
+            senders=holders,
         )
     else:
         config_file = CodeGenerator.generate_config_file(
