@@ -664,7 +664,7 @@ class CodeGenerator:
         return wrapped
 
     # pylint: disable=too-many-branches,too-many-statements,too-many-locals
-    def generate_test_contract(self) -> str:
+    def generate_test_contract(self, diff: Diff) -> str:
         """Main function for generating a diff fuzzing test contract."""
 
         v_1 = self.v_1
@@ -678,7 +678,6 @@ class CodeGenerator:
         upgrade = self._upgrade
 
         final_contract = ""
-        diff: Diff = do_diff(v_1, v_2, targets)
         tainted_contracts: List[TaintedExternalContract] = diff["tainted_contracts"]
         tainted_contracts = [
             t
