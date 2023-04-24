@@ -35,7 +35,6 @@ from diffusc.utils.helpers import (
     get_pragma_version_from_file,
     similar,
     camel_case,
-    do_diff,
 )
 
 
@@ -583,7 +582,7 @@ class CodeGenerator:
                     if func["name"] == diff_func.name
                     and len(func["inputs"]) == len(diff_func.parameters)
                 )
-            except StopIteration as e:
+            except StopIteration:
                 continue
             if proxy is not None:
                 wrapped += self.wrap_diff_function(v_1, v_2, func, proxy=proxy)
