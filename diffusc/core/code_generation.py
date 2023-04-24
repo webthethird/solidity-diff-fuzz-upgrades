@@ -35,7 +35,6 @@ from diffusc.utils.helpers import (
     get_pragma_version_from_file,
     similar,
     camel_case,
-    do_diff,
 )
 
 
@@ -98,9 +97,17 @@ class CodeGenerator:
 
     @staticmethod
     def generate_config_file(
-        corpus_dir: str, campaign_length: str, contract_addr: str, seq_len: int
+        corpus_dir: str,
+        campaign_length: str,
+        contract_addr: str,
+        seq_len: int,
+        block: int = 0,
+        rpc_url: str = "",
+        senders: List[str] = None,
     ) -> str:
         """Generate an Echidna config file."""
+        if senders is None:
+            senders = []
         CryticPrint.print(
             PrintMode.INFORMATION,
             f"* Generating Echidna configuration file with campaign limit {campaign_length}"
@@ -113,7 +120,12 @@ class CodeGenerator:
         config_file += f"seqLen: {seq_len}\n"
         if contract_addr != "":
             config_file += f"contractAddr: '{contract_addr}'\n"
-
+        if block > 0:
+            config_file += f"rpcBlock: {block}\n"
+        if rpc_url != "":
+            config_file += f"rpcUrl: {rpc_url}\n"
+        if len(senders) > 0:
+            config_file += "sender: ['" + "','".join(sender for sender in senders) + "']\n"
         return config_file
 
     @staticmethod
@@ -563,12 +575,15 @@ class CodeGenerator:
                 continue
             if diff_func.visibility in ["internal", "private"]:
                 continue
-            func = next(
-                func
-                for func in v_2["functions"]
-                if func["name"] == diff_func.name
-                and len(func["inputs"]) == len(diff_func.parameters)
-            )
+            try:
+                func = next(
+                    func
+                    for func in v_2["functions"]
+                    if func["name"] == diff_func.name
+                    and len(func["inputs"]) == len(diff_func.parameters)
+                )
+            except StopIteration:
+                continue
             if proxy is not None:
                 wrapped += self.wrap_diff_function(v_1, v_2, func, proxy=proxy)
             else:
@@ -648,7 +663,7 @@ class CodeGenerator:
         return wrapped
 
     # pylint: disable=too-many-branches,too-many-statements,too-many-locals
-    def generate_test_contract(self) -> str:
+    def generate_test_contract(self, diff: Diff) -> str:
         """Main function for generating a diff fuzzing test contract."""
 
         v_1 = self.v_1
@@ -662,7 +677,6 @@ class CodeGenerator:
         upgrade = self._upgrade
 
         final_contract = ""
-        diff: Diff = do_diff(v_1, v_2, targets)
         tainted_contracts: List[TaintedExternalContract] = diff["tainted_contracts"]
         tainted_contracts = [
             t

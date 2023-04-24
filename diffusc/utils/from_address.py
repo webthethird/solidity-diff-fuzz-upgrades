@@ -75,8 +75,6 @@ def get_contract_data_from_address(
     )
 
     contract_data["address"] = to_checksum_address(address)
-    contract_data["block"] = network_info.get_block_number()
-    contract_data["prefix"] = slither_provider.get_network_prefix()
     contract_data["suffix"] = suffix
     try:
         contract_data["slither"] = slither_provider.get_slither_from_address(
@@ -99,8 +97,10 @@ def get_contract_data_from_address(
             contract_data["implementation_slither"] = impl_slither
             contract_data["implementation_object"] = impl_contract
             contract_data["implementation_slot"] = get_proxy_implementation_slot(contract)
+            contract_data["is_erc20"] = impl_contract.is_erc20()
         else:
             contract_data["is_proxy"] = False
+            contract_data["is_erc20"] = contract.is_erc20()
 
         contract_data = CodeGenerator.get_contract_interface(contract_data)
 

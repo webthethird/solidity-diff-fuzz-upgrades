@@ -30,7 +30,7 @@ def main():
     parser.add_argument("v2", help="The upgraded version of the contract.")
     parser.add_argument("-p", "--proxy", dest="proxy", help="Specifies the proxy contract to use.")
     parser.add_argument(
-        "-T",
+        "-t",
         "--targets",
         dest="targets",
         help="Specifies the additional contracts to target.",
@@ -88,10 +88,18 @@ def main():
         help="Specifies network RPC endpoint for reading operations.",
     )
     parser.add_argument(
+        "-T",
+        "--token-holders",
+        dest="holders",
+        action="store_true",
+        help="Specifies whether to automatically detect token holders to send transactions from when fuzzing "
+        "(default false).",
+    )
+    parser.add_argument(
         "--protected",
         dest="include_protected",
         action="store_true",
-        help="Specifies whether to include wrappers for protected functions.",
+        help="Specifies whether to include wrappers for protected functions (default false).",
     )
     parser.add_argument(
         "--etherscan-key",
@@ -155,9 +163,21 @@ def main():
         f"  * Fuzzing contract generated and written to {output_dir}DiffFuzzUpgrades.sol.",
     )
 
-    config_file = CodeGenerator.generate_config_file(
-        f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
-    )
+    if isinstance(analysis, ForkMode):
+        holders = analysis.token_holders
+        config_file = CodeGenerator.generate_config_file(
+            f"{output_dir}corpus",
+            "1000000000000",
+            contract_addr,
+            seq_len,
+            block=analysis.block_number,
+            rpc_url=analysis.network_rpc,
+            senders=holders,
+        )
+    else:
+        config_file = CodeGenerator.generate_config_file(
+            f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
+        )
     write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
     CryticPrint.print(
         PrintMode.SUCCESS,

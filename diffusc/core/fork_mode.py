@@ -4,8 +4,10 @@
 
 import argparse
 import os
-from typing import Optional
+from typing import Optional, List
 from eth_utils import is_address
+from diffusc.utils.classes import ContractData
+from diffusc.utils.helpers import do_diff
 from diffusc.utils.crytic_print import PrintMode, CryticPrint
 from diffusc.utils.slither_provider import NetworkSlitherProvider
 from diffusc.utils.network_info_provider import NetworkInfoProvider
@@ -15,6 +17,7 @@ from diffusc.utils.from_address import (
     get_contract_data_from_address,
 )
 from diffusc.core.analysis_mode import AnalysisMode
+
 
 # pylint: disable=too-many-instance-attributes
 class ForkMode(AnalysisMode):
@@ -30,12 +33,31 @@ class ForkMode(AnalysisMode):
     _network_rpc: str
     _is_poa: bool
     _block_number: int
+    _tokens: List[ContractData]
+    _token_holders: Optional[List[str]]
 
     def __init__(self, args: argparse.Namespace) -> None:
         self._mode = "fork"
         super().__init__(args)
         self._provider = NetworkSlitherProvider(self._prefix, self._api_key)
         self._net_info = NetworkInfoProvider(self._network_rpc, self._block_number, self._is_poa)
+        self._tokens = []
+
+    @property
+    def network_rpc(self) -> str:
+        return self._network_rpc
+
+    @property
+    def block_number(self) -> int:
+        return self._block_number
+
+    @property
+    def tokens(self) -> List[ContractData]:
+        return self._tokens
+
+    @property
+    def token_holders(self) -> Optional[List[str]]:
+        return self._token_holders
 
     def parse_args(self, args: argparse.Namespace) -> None:
         """Parse arguments for fork mode."""
@@ -91,6 +113,10 @@ class ForkMode(AnalysisMode):
                 "* Block number specified via ECHIDNA_RPC_BLOCK environment variable: "
                 f"{self._block_number}",
             )
+
+        self._token_holders = None
+        if args.holders:
+            self._token_holders = []
 
     def parse_network_args(self, args: argparse.Namespace):
         """Parse arguments related to network info."""
@@ -162,7 +188,13 @@ class ForkMode(AnalysisMode):
                 self._proxy = get_contract_data_from_address(
                     self._proxy_address, "", self._provider, self._net_info
                 )
-                if not self._proxy["is_proxy"]:
+                if not self._proxy["valid_data"]:
+                    CryticPrint.print(
+                        PrintMode.ERROR,
+                        f"\n  * Failed to get proxy at {self._proxy['address']}. Ignoring...",
+                    )
+                    self._proxy = None
+                elif not self._proxy["is_proxy"]:
                     CryticPrint.print(
                         PrintMode.ERROR,
                         f"\n  * {self._proxy['name']} does not appear to be a proxy. Ignoring...",
@@ -187,3 +219,90 @@ class ForkMode(AnalysisMode):
             )
         else:
             self._targets = None
+
+        if not self._diff:
+            self._diff = do_diff(self._v1, self._v2, self._targets)
+
+        self.analyze_tokens()
+
+    def analyze_tokens(self) -> None:
+        if self._v1["is_erc20"] and self._v2["is_erc20"]:
+            if self._proxy is not None:
+                self._tokens.append(self._proxy)
+                contract = self._proxy["contract_object"]
+                slither = self._proxy["slither"]
+                abi = contract.file_scope.abi(
+                    slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
+                )
+                if self._token_holders is not None:
+                    self._token_holders.extend(
+                        self._net_info.get_token_holders(10000, 10, self._proxy["address"], abi)
+                    )
+            else:
+                self._tokens.extend([self._v1, self._v2])
+                contract = self._v1["contract_object"]
+                slither = self._v1["slither"]
+                abi = contract.file_scope.abi(
+                    slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
+                )
+                if self._token_holders is not None:
+                    self._token_holders.extend(
+                        self._net_info.get_token_holders(10000, 10, self._v1["address"], abi)
+                    )
+        if self._targets is not None:
+            for target in self._targets:
+                if target["is_erc20"]:
+                    self._tokens.append(target)
+                    contract = target["contract_object"]
+                    slither = target["slither"]
+                    abi = contract.file_scope.abi(
+                        slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
+                    )
+                    if self._token_holders is not None:
+                        self._token_holders.extend(
+                            self._net_info.get_token_holders(10000, 10, target["address"], abi)
+                        )
+        for token in self._tokens:
+            CryticPrint.print_information(
+                f"  * Found token {token['name']} at address {token['address']}"
+            )
+
+    # def recursive_search(self) -> None:
+    #
+    #     all_data = []
+    #     all_data.extend(self._tokens)
+    #     different = [t for t in self._targets if t not in self._tokens]
+    #     all_data.extend(different)
+    #
+    #     address_list: list[str]=[]
+    #     address_list = [t["address"] for t in all_data if t["address"] not in address_list]
+    #
+    #     possible: list[AddressData]=[]
+    #     recursive_finds: list[AddressData]=[]
+    #
+    #     CryticPrint.print_information(f"  * Starting recursive search from {', '.join(address_list)}")
+    #
+    #     for t in all_data:
+    #         current = self._find_possible_contracts(t)
+    #         current = [to_checksum_address(t) for t in current]
+    #         possible.extend(current)
+    #
+    #     for p in possible:
+    #         if not p in address_list:
+    #             address_list.append(p)
+    #             d = get_contract_data_from_address(p, "", self._provider, self._net_info)
+    #             if d["valid_data"]:
+    #                 recursive_finds.append(d)
+    #             else:
+    #                 CryticPrint.print_error(f"    * Contract at {p} has no source code.")
+    #
+    #     for r in recursive_finds:
+    #         if r["is_erc20"]:
+    #             self._tokens.append(r)
+    #             CryticPrint.print_success(f"    * Recursive search found token {r['name']} at {r['address']}.")
+    #         else:
+    #             self._targets.append(r)
+    #             CryticPrint.print_success(f"    * Recursive search found target {r['name']} at {r['address']}.")
+    #
+    #     if len(recursive_finds) == 0:
+    #         CryticPrint.print_warning(f"    * Couldn't find any references.")

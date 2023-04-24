@@ -38,6 +38,7 @@ class ContractData(TypedDict):
     functions: List[FunctionInfo]
     slither: Slither
     contract_object: Contract
+    is_erc20: bool
     # Proxy info
     is_proxy: bool
     implementation_object: Contract

@@ -1,7 +1,9 @@
 """Module containing class for getting and storing network information."""
 
 # pylint: disable= no-name-in-module
-from typing import Any, Tuple
+from time import sleep
+from typing import Any, Tuple, List
+from requests.exceptions import HTTPError
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
 from slither.core.variables.state_variable import StateVariable
@@ -197,7 +199,7 @@ class NetworkInfoProvider:
         max_retries = 10
         holder = None
 
-        contract = self._w3.eth.contract(address=address, abi=abi)
+        contract = self._w3.eth.contract(address=to_checksum_address(address), abi=abi)
 
         while max_retries > 0:
             block_filter = contract.events.Transfer.create_filter(
@@ -227,6 +229,78 @@ class NetworkInfoProvider:
             max_retries -= 1
             block_from -= 2000
             block_to -= 2000
+
+        CryticPrint.print_error(
+            f"* Could not find a token holder for {address}. "
+            "Please use --token-holder to set it manually."
+        )
+        raise ValueError(
+            "Could not find a token holder. Please use --token-holder to set it manually."
+        )
+
+    # pylint: disable=too-many-locals
+    def get_token_holders(
+        self, min_token_amount: int, max_holders: int, address: str, abi: str
+    ) -> List[str]:
+        """Get the address of a holder of the token at the given address."""
+
+        block_from = int(self._block) - 2000
+        block_to = int(self._block)
+        max_retries = 10
+        holders = []
+
+        CryticPrint.print_information(f"* Looking for {max_holders} holders of token at {address}")
+
+        contract = self._w3.eth.contract(address=to_checksum_address(address), abi=abi)
+
+        while max_retries > 0 and len(holders) < max_holders:
+            try:
+                block_filter = contract.events.Transfer.create_filter(
+                    fromBlock=block_from, toBlock=block_to
+                )
+                events = block_filter.get_all_entries()
+                if not events:
+                    max_retries -= 1
+                    block_from -= 2000
+                    block_to -= 2000
+                    continue
+
+                events.reverse()
+
+                for event in events:
+                    receipt = self._w3.eth.wait_for_transaction_receipt(event["transactionHash"])
+                    result = contract.events.Transfer().process_receipt(
+                        receipt, errors=logs.DISCARD
+                    )
+                    event_data = list(result[0]["args"].values())
+                    recipient = event_data[1]
+                    if recipient in holders:
+                        continue
+                    amount = int(event_data[2])
+                    if amount < min_token_amount:
+                        continue
+                    if self._w3.eth.get_code(recipient, self._block):
+                        continue
+                    CryticPrint.print_information(
+                        f"  * Found holder with balance of {amount} at {recipient}"
+                    )
+                    holders.append(recipient)
+                    max_retries += 1
+                    if len(holders) == max_holders:
+                        return holders
+                max_retries -= 1
+                block_from -= 2000
+                block_to -= 2000
+            except HTTPError:
+                sleep(10)
+                max_retries -= 1
+                continue
+
+        if len(holders) > 0:
+            CryticPrint.print_warning(
+                f"* {max_holders} token holders requested, but only {len(holders)} found."
+            )
+            return holders
 
         CryticPrint.print_error(
             f"* Could not find a token holder for {address}. "

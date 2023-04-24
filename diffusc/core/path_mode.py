@@ -4,7 +4,7 @@
 
 import argparse
 from typing import Optional
-
+from diffusc.utils.helpers import do_diff
 from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.from_path import (
     get_contracts_from_comma_separated_paths,
@@ -92,3 +92,6 @@ class PathMode(AnalysisMode):
             )
         else:
             self._targets = None
+
+        if not self._diff:
+            self._diff = do_diff(self._v1, self._v2, self._targets)
