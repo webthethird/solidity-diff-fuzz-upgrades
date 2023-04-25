@@ -413,15 +413,17 @@ class CodeGenerator:
 
         wrapped += f"    function {v_2['name']}_{func2['name']}{args} public virtual {{\n"
         if self._fork:
-            wrapped += "        hevm.selectFork(fork2);\n"
-        if not func2["protected"]:
-            wrapped += "        hevm.prank(msg.sender);\n"
-        wrapped += self.wrap_low_level_call(v_2, func2, "V2", proxy)
-        if self._fork:
             wrapped += "        hevm.selectFork(fork1);\n"
+            wrapped += "        emit SwitchedFork(fork1);\n"
         if not func["protected"]:
             wrapped += "        hevm.prank(msg.sender);\n"
         wrapped += self.wrap_low_level_call(v_1, func, "V1", proxy)
+        if self._fork:
+            wrapped += "        hevm.selectFork(fork2);\n"
+            wrapped += "        emit SwitchedFork(fork2);\n"
+        if not func2["protected"]:
+            wrapped += "        hevm.prank(msg.sender);\n"
+        wrapped += self.wrap_low_level_call(v_2, func2, "V2", proxy)
         wrapped += "        assert(successV1 == successV2); \n"
         wrapped += "        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));\n"
         wrapped += "    }\n\n"
@@ -446,11 +448,13 @@ class CodeGenerator:
         wrapped += f"    function {v_2['name']}_{new_func['name']}{args} public virtual {{\n"
         if self._fork:
             wrapped += "        hevm.selectFork(fork1);\n"
+            wrapped += "        emit SwitchedFork(fork1);\n"
         if not old_func["protected"]:
             wrapped += "        hevm.prank(msg.sender);\n"
         wrapped += self.wrap_low_level_call(v_1, old_func, "V1", proxy)
         if self._fork:
             wrapped += "        hevm.selectFork(fork2);\n"
+            wrapped += "        emit SwitchedFork(fork2);\n"
         impl_slot = int.to_bytes(proxy["implementation_slot"].slot, 32, "big").hex()
         wrapped += (
             "        address impl = address(uint160(uint256(\n"
@@ -516,8 +520,10 @@ class CodeGenerator:
                     wrapped += f"    function {v_1['name']}_{var.name}({type_from} a) public {{\n"
                     if fork:
                         wrapped += "        hevm.selectFork(fork1);\n"
+                        wrapped += "        emit SwitchedFork(fork1);\n"
                         wrapped += f"        {var.type.type_to} a1 = {target_v1}.{var.name}(a);\n"
                         wrapped += "        hevm.selectFork(fork2);\n"
+                        wrapped += "        emit SwitchedFork(fork2);\n"
                         wrapped += f"        {var.type.type_to} a2 = {target_v2}.{var.name}(a);\n"
                         wrapped += "        assert(a1 == a2);\n"
                     else:
@@ -526,8 +532,10 @@ class CodeGenerator:
                     wrapped += f"    function {v_1['name']}_{var.name}(uint i) public {{\n"
                     if fork:
                         wrapped += "        hevm.selectFork(fork1);\n"
+                        wrapped += "        emit SwitchedFork(fork1);\n"
                         wrapped += f"        {var.type.type} a1 = {target_v1}.{var.name}(i);\n"
                         wrapped += "        hevm.selectFork(fork2);\n"
+                        wrapped += "        emit SwitchedFork(fork2);\n"
                         wrapped += f"        {var.type.type} a2 = {target_v2}.{var.name}(i);\n"
                         wrapped += "        assert(a1 == a2);\n"
                     else:
@@ -536,8 +544,10 @@ class CodeGenerator:
                 wrapped += f"    function {v_1['name']}_{var.full_name} public {{\n"
                 if fork:
                     wrapped += "        hevm.selectFork(fork1);\n"
+                    wrapped += "        emit SwitchedFork(fork1);\n"
                     wrapped += f"        {'address' if isinstance(var.type, UserDefinedType) and isinstance(var.type.type, Contract) else var.type} a1 = {target_v1}.{var.full_name};\n"
                     wrapped += "        hevm.selectFork(fork2);\n"
+                    wrapped += "        emit SwitchedFork(fork2);\n"
                     wrapped += f"        {'address' if isinstance(var.type, UserDefinedType) and isinstance(var.type.type, Contract) else var.type} a2 = {target_v2}.{var.full_name};\n"
                     wrapped += "        assert(a1 == a2);\n"
                 else:
@@ -806,6 +816,7 @@ class CodeGenerator:
                         f"    {target['interface_name']} {camel_case(target['name'])};\n"
                     )
             final_contract += "    uint256 fork1;\n    uint256 fork2;\n"
+            final_contract += "\n    event SwitchedFork(uint256 forkId);\n"
 
         # Constructor
         CryticPrint.print(PrintMode.INFORMATION, "  * Generating constructor.")
