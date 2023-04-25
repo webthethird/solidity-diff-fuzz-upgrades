@@ -834,6 +834,8 @@ class CodeGenerator:
                 "    // TODO: Consider replacing this with the actual upgrade method\n"
             )
             final_contract += "    function upgradeV2() external virtual {\n"
+            if fork:
+                final_contract += "        hevm.selectFork(fork2);\n"
             if proxy["implementation_slot"] is not None:
                 final_contract += "        hevm.store(\n"
                 final_contract += (
@@ -853,6 +855,17 @@ class CodeGenerator:
                     "        // TODO: add upgrade logic here "
                     "(implementation slot could not be found automatically)\n"
                 )
+            if fork:
+                final_contract += "        hevm.selectFork(fork1);\n"
+                if proxy["implementation_slot"] is not None:
+                    final_contract += "        bytes32 impl1 = hevm.load(\n"
+                    final_contract += f"            address({camel_case(proxy['name'])}"
+                    final_contract += f"{v_2['suffix'] if not fork else ''}),\n"
+                    final_contract += f"            bytes32(uint({proxy['implementation_slot'].slot}))\n"
+                    final_contract += "        );\n"
+                    final_contract += "        bytes32 implV1 = bytes32(uint256(uint160(address("
+                    final_contract += f"{camel_case(v_1['name'])}{v_1['suffix']}))));\n"
+                    final_contract += "        assert(impl1 == implV1);\n"
             final_contract += "    }\n\n"
 
         # Wrapper functions for V1/V2
