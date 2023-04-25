@@ -276,13 +276,13 @@ class NetworkInfoProvider:
                     recipient = event_data[1]
                     if recipient in holders:
                         continue
-                    amount = int(event_data[2])
-                    if amount < min_token_amount:
+                    balance = contract.functions.balanceOf(recipient).call(block_identifier=int(self._block))
+                    if balance < min_token_amount:
                         continue
                     if self._w3.eth.get_code(recipient, self._block):
                         continue
                     CryticPrint.print_information(
-                        f"  * Found holder with balance of {amount} at {recipient}"
+                        f"  * Found holder with balance of {balance} at {recipient}"
                     )
                     holders.append(recipient)
                     max_retries += 1
