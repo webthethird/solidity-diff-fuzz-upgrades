@@ -3,3 +3,6 @@ testLimit: 1000000000000
 corpusDir: /home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/corpus
 codeSize: 0xffff
 seqLen: 100
+#rpcBlock: 13322798
+rpcUrl: https://mainnet.infura.io/v3/b7ba0894032b4f069f93b1826f1b9059
+sender: ["0xb3bd459e0598dde1fe84b1d0a1430be175b5d5be","0xc5119db28adde44a8e1453e733381025a2910f7d","0x309d413391e975b553b7b8d19bc11f8a6c2eb889"]
