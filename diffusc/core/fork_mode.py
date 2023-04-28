@@ -236,7 +236,7 @@ class ForkMode(AnalysisMode):
                 )
                 if self._token_holders is not None:
                     self._token_holders.extend(
-                        self._net_info.get_token_holders(10000, 10, self._proxy["address"], abi)
+                        self._net_info.get_token_holders(10000, 5, self._proxy["address"], abi)
                     )
             else:
                 self._tokens.extend([self._v1, self._v2])
@@ -247,7 +247,7 @@ class ForkMode(AnalysisMode):
                 )
                 if self._token_holders is not None:
                     self._token_holders.extend(
-                        self._net_info.get_token_holders(10000, 10, self._v1["address"], abi)
+                        self._net_info.get_token_holders(10000, 5, self._v1["address"], abi)
                     )
         if self._targets is not None:
             for target in self._targets:
@@ -260,7 +260,7 @@ class ForkMode(AnalysisMode):
                     )
                     if self._token_holders is not None:
                         self._token_holders.extend(
-                            self._net_info.get_token_holders(10000, 10, target["address"], abi)
+                            self._net_info.get_token_holders(10000, 5, target["address"], abi)
                         )
         for token in self._tokens:
             CryticPrint.print_information(
