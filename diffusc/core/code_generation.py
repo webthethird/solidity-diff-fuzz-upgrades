@@ -425,7 +425,9 @@ class CodeGenerator:
             wrapped += "        hevm.prank(msg.sender);\n"
         wrapped += self.wrap_low_level_call(v_2, func2, "V2", proxy)
         wrapped += "        assert(successV1 == successV2); \n"
-        wrapped += "        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));\n"
+        wrapped += "        if(successV1 && successV2) {\n"
+        wrapped += "            assert(keccak256(outputV1) == keccak256(outputV2);\n"
+        wrapped += "        }\n"
         wrapped += "    }\n\n"
         return wrapped
 
@@ -481,7 +483,9 @@ class CodeGenerator:
         )
         wrapped += "        }\n"
         wrapped += "        assert(successV1 == successV2); \n"
-        wrapped += "        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));\n"
+        wrapped += "        if(successV1 && successV2) {\n"
+        wrapped += "            assert(keccak256(outputV1) == keccak256(outputV2);\n"
+        wrapped += "        }\n"
         wrapped += "    }\n\n"
         return wrapped
 
