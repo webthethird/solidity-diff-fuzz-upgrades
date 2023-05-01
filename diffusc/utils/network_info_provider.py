@@ -8,7 +8,7 @@ from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
 from slither.core.variables.state_variable import StateVariable
 from slither.core.declarations.contract import Contract
-from slither.tools.read_storage import SlitherReadStorage
+from slither.tools.read_storage import SlitherReadStorage   # , RpcInfo
 from slither.tools.read_storage.utils import get_storage_data
 from slither.utils.upgradeability import get_proxy_implementation_slot
 from eth_utils import is_address, to_checksum_address
@@ -60,6 +60,8 @@ class NetworkInfoProvider:
     def get_contract_variable_value(self, variable: StateVariable, address: str) -> Any:
         """Get the value of a state variable from a contract's storage."""
         contract = variable.contract
+        # rpc_info = RpcInfo(self._rpc_provider, self._block)
+        # srs = SlitherReadStorage([contract], 20, rpc_info)
         srs = SlitherReadStorage([contract], 20)
 
         srs.storage_address = address
