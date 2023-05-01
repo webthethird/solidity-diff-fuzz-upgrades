@@ -987,6 +987,7 @@ class CodeGenerator:
         constructor = "\n    constructor() public {\n"
         if network_info is not None:
             constructor += f"        hevm.roll({network_info.get_block_number()});\n"
+            constructor += f"        hevm.warp({network_info.get_block_timestamp()});\n"
         constructor += "        fork1 = hevm.createFork();\n        fork2 = hevm.createFork();\n"
         constructor += (
             f"        {camel_case(v_1['name'])}{v_1['suffix']} = "
