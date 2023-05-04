@@ -521,7 +521,8 @@ class CodeGenerator:
             if var.type.is_dynamic:
                 if isinstance(var.type, MappingType):
                     type_from = var.type.type_from.name
-                    wrapped += f"    function {v_1['name']}_{var.name}({type_from} a) public {{\n"
+                    type_to = var.type.type_to.name
+                    wrapped += f"    function {v_1['name']}_{var.name}({type_from} a) public returns ({type_to}) {{\n"
                     if fork:
                         wrapped += "        hevm.selectFork(fork1);\n"
                         wrapped += "        emit SwitchedFork(fork1);\n"
@@ -533,7 +534,8 @@ class CodeGenerator:
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(a) == {target_v2}.{var.name}(a));\n"
                 elif isinstance(var.type, ArrayType):
-                    wrapped += f"    function {v_1['name']}_{var.name}(uint i) public {{\n"
+                    base_type = var.type.type.name
+                    wrapped += f"    function {v_1['name']}_{var.name}(uint i) public returns ({base_type}) {{\n"
                     if fork:
                         wrapped += "        hevm.selectFork(fork1);\n"
                         wrapped += "        emit SwitchedFork(fork1);\n"
@@ -545,7 +547,7 @@ class CodeGenerator:
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(i) == {target_v2}.{var.name}(i));\n"
             else:
-                wrapped += f"    function {v_1['name']}_{var.full_name} public {{\n"
+                wrapped += f"    function {v_1['name']}_{var.full_name} public returns ({var.type}) {{\n"
                 if fork:
                     wrapped += "        hevm.selectFork(fork1);\n"
                     wrapped += "        emit SwitchedFork(fork1);\n"
@@ -556,6 +558,10 @@ class CodeGenerator:
                     wrapped += "        assert(a1 == a2);\n"
                 else:
                     wrapped += f"        assert({target_v1}.{var.full_name} == {target_v2}.{var.full_name});\n"
+            if fork:
+                wrapped += "        return a1;\n"
+            else:
+                wrapped += f"        return {target_v1}.{var.full_name};\n"
             wrapped += "    }\n\n"
         return wrapped
 
@@ -782,7 +788,6 @@ class CodeGenerator:
         CryticPrint.print(PrintMode.INFORMATION, "  * Adding state variables declarations.")
 
         final_contract += "    IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);\n\n"
-        final_contract += "    // TODO: Deploy the contracts and put their addresses below\n"
         final_contract += f"    {v_1['interface_name']} {camel_case(v_1['name'])}V1;\n"
         final_contract += f"    {v_2['interface_name']} {camel_case(v_2['name'])}V2;\n"
 
