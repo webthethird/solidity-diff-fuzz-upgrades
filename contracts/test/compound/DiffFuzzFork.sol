@@ -494,7 +494,6 @@ contract DiffFuzzUpgrades {
 
     IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
-    // TODO: Deploy the contracts and put their addresses below
     IComptrollerV1 comptrollerV1;
     IComptrollerV2 comptrollerV2;
     IUnitroller unitroller;
