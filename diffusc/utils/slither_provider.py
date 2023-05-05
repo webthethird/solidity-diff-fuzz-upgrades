@@ -74,6 +74,7 @@ class SlitherProvider:
 
 class NetworkSlitherProvider(SlitherProvider):
     """SlitherProvider for contracts specified by network address."""
+    _api_key: str
 
     def __init__(self, network_prefix: str, api_key: str):
         super().__init__()
@@ -81,6 +82,9 @@ class NetworkSlitherProvider(SlitherProvider):
         self._network_prefix = network_prefix
         if self._network_prefix[-1] == ":":
             self._network_prefix = self._network_prefix[:-1]
+
+    def get_api_key(self) -> str:
+        return self._api_key
 
     def get_slither_from_address(self, address: str) -> Slither:
         """Try to get Slither object from cache, and fetch it from web if not cached."""
@@ -94,12 +98,37 @@ class NetworkSlitherProvider(SlitherProvider):
             self._slither_object = slither
             return slither
         try:
-            slither = Slither(f"{self._network_prefix}:{address}", bscan_api_key=self._api_key)
+            args = self._generate_api_key_dict()
+            slither = Slither(f"{self._network_prefix}:{address}", **args)
             self._slither_object = slither
             self._save_slither_to_cache()
         except SlitherError as err:
             raise SlitherError(str(err)) from err
         return slither
+
+    def _generate_api_key_dict(self) -> dict:
+        out_dict = dict()
+        match self._network_prefix:
+            case "mainet:":
+                out_dict['etherscan_api_key'] = self._api_key
+            case "arbi:":
+                out_dict['arbiscan_api_key'] = self._api_key
+            case "poly:":
+                out_dict['polygonscan_api_key'] = self._api_key
+            case "mumbai:":
+                out_dict['test_polygonscan_api_key'] = self._api_key
+            case "avax:":
+                out_dict['avax_api_key'] = self._api_key
+            case "ftm:":
+                out_dict['ftmscan_api_key'] = self._api_key
+            case "bsc:":
+                out_dict['bscan_api_key'] = self._api_key
+            case "optim:":
+                out_dict['optim_api_key'] = self._api_key
+            case _:
+                out_dict['etherscan_api_key'] = self._api_key
+
+        return out_dict
 
 
 class FileSlitherProvider(SlitherProvider):
