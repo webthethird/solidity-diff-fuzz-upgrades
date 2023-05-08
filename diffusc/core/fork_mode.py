@@ -221,8 +221,8 @@ class ForkMode(AnalysisMode):
         if self._v1["is_erc20"] and self._v2["is_erc20"]:
             if self._proxy is not None:
                 self._tokens.append(self._proxy)
-                contract = self._proxy["contract_object"]
-                slither = self._proxy["slither"]
+                contract = self._proxy["implementation_object"]
+                slither = self._proxy["implementation_slither"]
                 assert contract and slither
                 abi = contract.file_scope.abi(
                     slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
