@@ -83,6 +83,7 @@ def do_diff(
     v_1: ContractData, v_2: ContractData, additional_targets: Optional[List[ContractData]] = None
 ) -> Diff:
     """Use slither.utils.upgradeability to perform a diff between two contract versions."""
+    assert v_1["valid_data"] and v_2["valid_data"]
 
     CryticPrint.print_message("* Performing diff of V1 and V2")
     (
