@@ -42,6 +42,9 @@ allFiredEvents
 .coverage_cache
 .coverage_contracts
 
+# Test Cache
+.mypy_cache/
+
 # OSX artifacts
 .DS_Store
 ._*

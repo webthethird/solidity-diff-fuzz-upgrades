@@ -15,6 +15,7 @@ from slither.utils.code_generation import generate_interface
 from slither.utils.upgradeability import (
     get_proxy_implementation_slot,
     TaintedExternalContract,
+    SlotInfo,
 )
 from slither.core.declarations.contract import Contract
 from slither.core.variables.variable import Variable
@@ -29,7 +30,7 @@ from slither.core.solidity_types import (
 )
 from slither.core.declarations.structure import Structure
 from diffusc.utils.classes import FunctionInfo, ContractData, Diff
-from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.network_info_provider import NetworkInfoProvider
 from diffusc.utils.helpers import (
     get_pragma_version_from_file,
@@ -108,8 +109,7 @@ class CodeGenerator:
         """Generate an Echidna config file."""
         if senders is None:
             senders = []
-        CryticPrint.print(
-            PrintMode.INFORMATION,
+        CryticPrint.print_information(
             f"* Generating Echidna configuration file with campaign limit {campaign_length}"
             f" and corpus directory {corpus_dir}",
         )
@@ -158,7 +158,7 @@ class CodeGenerator:
     @staticmethod
     def get_solidity_function_returns(return_type: List[Type]) -> List[str]:
         """Get function return types as solidity types."""
-        outputs = []
+        outputs: List[str] = []
 
         if not return_type:
             return outputs
@@ -232,7 +232,7 @@ class CodeGenerator:
     def get_contract_data(contract: Contract, suffix: str = "") -> ContractData:
         """Get ContractData object from Contract object."""
 
-        CryticPrint.print(PrintMode.MESSAGE, f"  * Getting contract data from {contract.name}")
+        CryticPrint.print_message(f"  * Getting contract data from {contract.name}")
 
         version = get_pragma_version_from_file(contract.file_scope.filename.absolute)
         contract_data = ContractData(
@@ -240,6 +240,18 @@ class CodeGenerator:
             suffix=suffix,
             path=contract.file_scope.filename.absolute,
             solc_version=version,
+            address="",
+            valid_data=False,
+            name="",
+            interface=None,
+            interface_name=None,
+            functions=[],
+            slither=None,
+            is_proxy=False,
+            is_erc20=False,
+            implementation_slither=None,
+            implementation_slot=None,
+            implementation_object=None,
         )
         if version in installed_versions() or version in get_installable_versions():
             switch_global_version(version, True)
@@ -261,6 +273,7 @@ class CodeGenerator:
         """Complete the ContractData object after getting valid data from Slither."""
 
         assert contract_data["valid_data"]
+        assert isinstance(contract_data["contract_object"], Contract)
 
         if contract_data["contract_object"].is_upgradeable_proxy:
             contract_data["is_proxy"] = True
@@ -281,8 +294,8 @@ class CodeGenerator:
 
         args = "("
         call_args = "("
-        return_vals = []
-        returns_to_compare = []
+        return_vals: List[str] = []
+        returns_to_compare: List[str] = []
         counter = 0
         if len(func["inputs"]) == 0:
             args += ")"
@@ -295,7 +308,7 @@ class CodeGenerator:
             args = f"{args[0:-2]})"
             call_args = f"{call_args[0:-2]})"
         if len(func["outputs"]) == 0:
-            return_vals = ""
+            return_vals = [""]
         elif len(func["outputs"]) == 1:
             for j in range(0, 2):
                 return_vals.append(f"{func['outputs'][0]} {chr(ord('a') + counter)}")
@@ -336,11 +349,9 @@ class CodeGenerator:
         if tainted is None:
             tainted = []
         if proxy is None:
-            proxy = ContractData(name="")
+            proxy = ContractData(name="")  # type: ignore[typeddict-item]
         tainted_contracts = [taint.contract for taint in tainted]
-        CryticPrint.print(
-            PrintMode.INFORMATION, "  * Adding wrapper functions for additional targets."
-        )
+        CryticPrint.print_information("  * Adding wrapper functions for additional targets.")
 
         wrapped += "\n    /*** Additional Targets ***/ \n\n"
         for target in targets:
@@ -369,7 +380,7 @@ class CodeGenerator:
         c_data: ContractData,
         func: FunctionInfo,
         suffix: str,
-        proxy=None,
+        proxy: ContractData = None,
     ) -> str:
         """Generate code for a low-level call to use in wrapper functions."""
 
@@ -442,6 +453,7 @@ class CodeGenerator:
         """Create wrapper function for new function in V2 replacing one in V1."""
 
         wrapped = ""
+        assert isinstance(proxy["implementation_slot"], SlotInfo)
 
         new_args, _, _, _ = self.get_args_and_returns_for_wrapping(new_func)
         old_args, _, _, _ = self.get_args_and_returns_for_wrapping(old_func)
@@ -489,7 +501,7 @@ class CodeGenerator:
         wrapped += "    }\n\n"
         return wrapped
 
-    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-branches,too-many-statements
     def wrap_tainted_vars(
         self,
         variables: List[Variable],
@@ -547,7 +559,9 @@ class CodeGenerator:
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(i) == {target_v2}.{var.name}(i));\n"
             else:
-                wrapped += f"    function {v_1['name']}_{var.full_name} public returns ({var.type}) {{\n"
+                wrapped += (
+                    f"    function {v_1['name']}_{var.full_name} public returns ({var.type}) {{\n"
+                )
                 if fork:
                     wrapped += "        hevm.selectFork(fork1);\n"
                     wrapped += "        emit SwitchedFork(fork1);\n"
@@ -578,6 +592,10 @@ class CodeGenerator:
         proxy = self.proxy
         fork = self._fork
         protected = self._protected
+
+        assert isinstance(v_1["contract_object"], Contract) and isinstance(
+            v_2["contract_object"], Contract
+        )
 
         protected_mods = [
             "onlyOwner",
@@ -690,8 +708,6 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
-        if targets is None:
-            targets = []
         version = self._version
         fork = self._fork
         upgrade = self._upgrade
@@ -703,15 +719,24 @@ class CodeGenerator:
             for t in tainted_contracts
             if t.contract not in [v_1["contract_object"], v_2["contract_object"]]
         ]
-        CryticPrint.print(PrintMode.INFORMATION, "* Getting contract data for tainted contracts.")
+        CryticPrint.print_information("* Getting contract data for tainted contracts.")
         tainted_targets = [
             self.get_contract_data(t.contract)
             if t.contract.name
             not in [
-                target["contract_object"].name if target["valid_data"] else "" for target in targets
+                target["contract_object"].name if target["contract_object"] is not None else ""
+                for target in targets
             ]
-            + [proxy["contract_object"].name if proxy is not None and proxy["valid_data"] else ""]
-            else next(target for target in targets + [proxy] if t.contract.name == target["name"])
+            + [
+                proxy["contract_object"].name
+                if proxy is not None and proxy["contract_object"] is not None
+                else ""
+            ]
+            else next(
+                target
+                for target in targets + [proxy]
+                if target is not None and t.contract.name == target["name"]
+            )
             for t in tainted_contracts
         ]
         tainted_targets = [t for t in tainted_targets if t["valid_data"]]
@@ -719,7 +744,7 @@ class CodeGenerator:
         if proxy:
             other_targets.append(proxy)
 
-        CryticPrint.print(PrintMode.INFORMATION, "\n* Generating exploit contract...")
+        CryticPrint.print_information("\n* Generating exploit contract...")
         # Add solidity pragma and SPDX to avoid warnings
         final_contract += f"// SPDX-License-Identifier: AGPLv3\npragma solidity ^{version};\n\n"
 
@@ -745,17 +770,19 @@ class CodeGenerator:
             final_contract += "\n"
 
         # Add all interfaces first
-        CryticPrint.print(PrintMode.INFORMATION, "  * Adding interfaces.")
-        final_contract += v_1["interface"]
-        final_contract += v_2["interface"]
+        CryticPrint.print_information("  * Adding interfaces.")
+        final_contract += str(v_1["interface"])
+        final_contract += str(v_2["interface"])
 
         for target in targets:
-            final_contract += target["interface"]
+            final_contract += str(target["interface"])
         for target in tainted_targets:
-            if target["name"] not in (t["contract_object"].name for t in other_targets):
-                final_contract += target["interface"]
+            if target["name"] not in (
+                t["contract_object"].name for t in other_targets if t["contract_object"]
+            ):
+                final_contract += str(target["interface"])
         if proxy is not None:
-            final_contract += proxy["interface"]
+            final_contract += str(proxy["interface"])
 
         # Add the hevm interface
         final_contract += "interface IHevm {\n"
@@ -781,11 +808,11 @@ class CodeGenerator:
         final_contract += "    function selectFork(uint256 forkId) external;\n}\n\n"
 
         # Create the exploit contract
-        CryticPrint.print(PrintMode.INFORMATION, "  * Creating the exploit contract.")
+        CryticPrint.print_information("  * Creating the exploit contract.")
         final_contract += "contract DiffFuzzUpgrades {\n"
 
         # State variables
-        CryticPrint.print(PrintMode.INFORMATION, "  * Adding state variables declarations.")
+        CryticPrint.print_information("  * Adding state variables declarations.")
 
         final_contract += "    IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);\n\n"
         final_contract += f"    {v_1['interface_name']} {camel_case(v_1['name'])}V1;\n"
@@ -828,7 +855,7 @@ class CodeGenerator:
             final_contract += "\n    event SwitchedFork(uint256 forkId);\n"
 
         # Constructor
-        CryticPrint.print(PrintMode.INFORMATION, "  * Generating constructor.")
+        CryticPrint.print_information("  * Generating constructor.")
 
         if not fork:
             final_contract += self.generate_deploy_constructor(tainted_targets)
@@ -837,7 +864,7 @@ class CodeGenerator:
 
         # Upgrade function
         if upgrade and proxy is not None:
-            CryticPrint.print(PrintMode.INFORMATION, "  * Adding upgrade function.")
+            CryticPrint.print_information("  * Adding upgrade function.")
             final_contract += "    /*** Upgrade Function ***/ \n\n"
             final_contract += (
                 "    // TODO: Consider replacing this with the actual upgrade method\n"
@@ -870,7 +897,9 @@ class CodeGenerator:
                     final_contract += "        bytes32 impl1 = hevm.load(\n"
                     final_contract += f"            address({camel_case(proxy['name'])}"
                     final_contract += f"{v_2['suffix'] if not fork else ''}),\n"
-                    final_contract += f"            bytes32(uint({proxy['implementation_slot'].slot}))\n"
+                    final_contract += (
+                        f"            bytes32(uint({proxy['implementation_slot'].slot}))\n"
+                    )
                     final_contract += "        );\n"
                     final_contract += "        bytes32 implV1 = bytes32(uint256(uint160(address("
                     final_contract += f"{camel_case(v_1['name'])}{v_1['suffix']}))));\n"
@@ -878,7 +907,7 @@ class CodeGenerator:
             final_contract += "    }\n\n"
 
         # Wrapper functions for V1/V2
-        CryticPrint.print(PrintMode.INFORMATION, "  * Adding wrapper functions for V1/V2.")
+        CryticPrint.print_information("  * Adding wrapper functions for V1/V2.")
 
         final_contract += self.wrap_diff_functions(diff, tainted_targets)
 
@@ -900,8 +929,6 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
-        if targets is None:
-            targets = []
         upgrade = self._upgrade
 
         constructor = "\n    constructor() public {\n"
@@ -962,7 +989,9 @@ class CodeGenerator:
         if tainted_targets is not None:
             for target in tainted_targets:
                 if target["name"] not in (
-                    target["contract_object"].name for target in other_targets
+                    other["contract_object"].name
+                    for other in other_targets
+                    if other["contract_object"]
                 ):
                     constructor += (
                         f"        {camel_case(target['name'])}{v_1['suffix']} = "
@@ -984,8 +1013,6 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
-        if targets is None:
-            targets = []
         upgrade = self._upgrade
         network_info = self._network_info
 
@@ -1035,7 +1062,7 @@ class CodeGenerator:
                     "(proxy implementation slot not found).\n"
                 )
         for target in targets:
-            if "address" in target:
+            if target["address"] != "":
                 constructor += (
                     f"        {camel_case(target['name'])} = "
                     f"{target['interface_name']}({target['address']});\n"
@@ -1055,9 +1082,11 @@ class CodeGenerator:
         if tainted_targets is not None:
             for target in tainted_targets:
                 if target["name"] not in (
-                    target["contract_object"].name for target in other_targets
+                    other["contract_object"].name
+                    for other in other_targets
+                    if other["contract_object"]
                 ):
-                    if "address" in target:
+                    if target["address"] != "":
                         constructor += (
                             f"        {camel_case(target['name'])} = "
                             f"{target['interface_name']}({target['address']});\n"

@@ -23,7 +23,7 @@ class SlitherProvider:
     _cache_path: str
     _cache_filename: str
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._slither_object = None
         self._network_prefix = ""
         self._filename = ""
@@ -52,6 +52,7 @@ class SlitherProvider:
 
     def _save_slither_to_cache(self) -> None:
         """Cache a Slither compilation."""
+        assert isinstance(self._slither_object, Slither)
         if not os.path.exists(self._cache_path):
             os.makedirs(self._cache_path)
         save_to_zip(
@@ -75,12 +76,17 @@ class SlitherProvider:
 class NetworkSlitherProvider(SlitherProvider):
     """SlitherProvider for contracts specified by network address."""
 
-    def __init__(self, network_prefix: str, api_key: str):
+    _api_key: str
+
+    def __init__(self, network_prefix: str, api_key: str) -> None:
         super().__init__()
         self._api_key = api_key
         self._network_prefix = network_prefix
         if self._network_prefix[-1] == ":":
             self._network_prefix = self._network_prefix[:-1]
+
+    def get_api_key(self) -> str:
+        return self._api_key
 
     def get_slither_from_address(self, address: str) -> Slither:
         """Try to get Slither object from cache, and fetch it from web if not cached."""
@@ -94,18 +100,42 @@ class NetworkSlitherProvider(SlitherProvider):
             self._slither_object = slither
             return slither
         try:
-            slither = Slither(f"{self._network_prefix}:{address}", bscan_api_key=self._api_key)
+            args = self._generate_api_key_dict()
+            slither = Slither(f"{self._network_prefix}:{address}", **args)
             self._slither_object = slither
             self._save_slither_to_cache()
         except SlitherError as err:
             raise SlitherError(str(err)) from err
         return slither
 
+    def _generate_api_key_dict(self) -> dict:
+        out_dict = {}
+        if self._network_prefix == "mainet:":
+            out_dict["etherscan_api_key"] = self._api_key
+        elif self._network_prefix == "arbi:":
+            out_dict["arbiscan_api_key"] = self._api_key
+        elif self._network_prefix == "poly:":
+            out_dict["polygonscan_api_key"] = self._api_key
+        elif self._network_prefix == "mumbai:":
+            out_dict["test_polygonscan_api_key"] = self._api_key
+        elif self._network_prefix == "avax:":
+            out_dict["avax_api_key"] = self._api_key
+        elif self._network_prefix == "ftm:":
+            out_dict["ftmscan_api_key"] = self._api_key
+        elif self._network_prefix == "bsc:":
+            out_dict["bscan_api_key"] = self._api_key
+        elif self._network_prefix == "optim:":
+            out_dict["optim_api_key"] = self._api_key
+        else:
+            out_dict["etherscan_api_key"] = self._api_key
+
+        return out_dict
+
 
 class FileSlitherProvider(SlitherProvider):
     """SlitherProvider for contracts specified by file path."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._network_prefix = "testnet"
 
@@ -138,7 +168,7 @@ class SlitherbotSlitherProvider(SlitherProvider):
 
     _slitherbot_path: str
 
-    def __init__(self, slitherbot_path: str):
+    def __init__(self, slitherbot_path: str) -> None:
         super().__init__()
         self._network_prefix = "mainet"
         self._slitherbot_path = slitherbot_path
