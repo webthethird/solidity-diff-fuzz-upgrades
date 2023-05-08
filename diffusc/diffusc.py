@@ -17,7 +17,7 @@ import diffusc.utils.network_vars as net_vars
 
 
 # pylint: disable=too-many-statements
-def main():
+def main() -> None:
     """Main method, parses arguments and calls path_mode or fork_mode."""
     # Read command line arguments
 
