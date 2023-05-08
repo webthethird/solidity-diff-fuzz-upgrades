@@ -75,6 +75,7 @@ class SlitherProvider:
 
 class NetworkSlitherProvider(SlitherProvider):
     """SlitherProvider for contracts specified by network address."""
+
     _api_key: str
 
     def __init__(self, network_prefix: str, api_key: str) -> None:
@@ -109,25 +110,24 @@ class NetworkSlitherProvider(SlitherProvider):
 
     def _generate_api_key_dict(self) -> dict:
         out_dict = {}
-        match self._network_prefix:
-            case "mainet:":
-                out_dict['etherscan_api_key'] = self._api_key
-            case "arbi:":
-                out_dict['arbiscan_api_key'] = self._api_key
-            case "poly:":
-                out_dict['polygonscan_api_key'] = self._api_key
-            case "mumbai:":
-                out_dict['test_polygonscan_api_key'] = self._api_key
-            case "avax:":
-                out_dict['avax_api_key'] = self._api_key
-            case "ftm:":
-                out_dict['ftmscan_api_key'] = self._api_key
-            case "bsc:":
-                out_dict['bscan_api_key'] = self._api_key
-            case "optim:":
-                out_dict['optim_api_key'] = self._api_key
-            case _:
-                out_dict['etherscan_api_key'] = self._api_key
+        if self._network_prefix == "mainet:":
+            out_dict["etherscan_api_key"] = self._api_key
+        elif self._network_prefix == "arbi:":
+            out_dict["arbiscan_api_key"] = self._api_key
+        elif self._network_prefix == "poly:":
+            out_dict["polygonscan_api_key"] = self._api_key
+        elif self._network_prefix == "mumbai:":
+            out_dict["test_polygonscan_api_key"] = self._api_key
+        elif self._network_prefix == "avax:":
+            out_dict["avax_api_key"] = self._api_key
+        elif self._network_prefix == "ftm:":
+            out_dict["ftmscan_api_key"] = self._api_key
+        elif self._network_prefix == "bsc:":
+            out_dict["bscan_api_key"] = self._api_key
+        elif self._network_prefix == "optim:":
+            out_dict["optim_api_key"] = self._api_key
+        else:
+            out_dict["etherscan_api_key"] = self._api_key
 
         return out_dict
 
