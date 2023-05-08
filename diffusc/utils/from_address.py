@@ -1,7 +1,7 @@
 """Module containing helper functions used by fork mode."""
 
 # pylint: disable= no-name-in-module
-from typing import List, Set, Optional, Tuple, Union, Dict
+from typing import List, Set, Tuple, Dict
 from eth_utils import to_checksum_address, is_address
 from eth_utils.typing import ChecksumAddress
 from slither import Slither
@@ -9,7 +9,7 @@ from slither.exceptions import SlitherError
 from slither.core.declarations import Contract
 from slither.utils.upgradeability import get_proxy_implementation_slot
 from diffusc.utils.classes import ContractData
-from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.slither_provider import NetworkSlitherProvider
 from diffusc.utils.network_info_provider import NetworkInfoProvider
 from diffusc.utils.helpers import (

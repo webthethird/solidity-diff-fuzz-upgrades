@@ -108,7 +108,7 @@ class NetworkSlitherProvider(SlitherProvider):
         return slither
 
     def _generate_api_key_dict(self) -> dict:
-        out_dict = dict()
+        out_dict = {}
         match self._network_prefix:
             case "mainet:":
                 out_dict['etherscan_api_key'] = self._api_key

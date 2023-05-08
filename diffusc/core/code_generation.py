@@ -15,7 +15,7 @@ from slither.utils.code_generation import generate_interface
 from slither.utils.upgradeability import (
     get_proxy_implementation_slot,
     TaintedExternalContract,
-    SlotInfo
+    SlotInfo,
 )
 from slither.core.declarations.contract import Contract
 from slither.core.variables.variable import Variable
@@ -30,7 +30,7 @@ from slither.core.solidity_types import (
 )
 from slither.core.declarations.structure import Structure
 from diffusc.utils.classes import FunctionInfo, ContractData, Diff
-from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.network_info_provider import NetworkInfoProvider
 from diffusc.utils.helpers import (
     get_pragma_version_from_file,
@@ -251,7 +251,7 @@ class CodeGenerator:
             is_erc20=False,
             implementation_slither=None,
             implementation_slot=None,
-            implementation_object=None
+            implementation_object=None,
         )
         if version in installed_versions() or version in get_installable_versions():
             switch_global_version(version, True)
@@ -349,7 +349,7 @@ class CodeGenerator:
         if tainted is None:
             tainted = []
         if proxy is None:
-            proxy = ContractData(name="")   # type: ignore[typeddict-item]
+            proxy = ContractData(name="")  # type: ignore[typeddict-item]
         tainted_contracts = [taint.contract for taint in tainted]
         CryticPrint.print_information("  * Adding wrapper functions for additional targets.")
 
@@ -501,7 +501,7 @@ class CodeGenerator:
         wrapped += "    }\n\n"
         return wrapped
 
-    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-branches,too-many-statements
     def wrap_tainted_vars(
         self,
         variables: List[Variable],
@@ -559,7 +559,9 @@ class CodeGenerator:
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(i) == {target_v2}.{var.name}(i));\n"
             else:
-                wrapped += f"    function {v_1['name']}_{var.full_name} public returns ({var.type}) {{\n"
+                wrapped += (
+                    f"    function {v_1['name']}_{var.full_name} public returns ({var.type}) {{\n"
+                )
                 if fork:
                     wrapped += "        hevm.selectFork(fork1);\n"
                     wrapped += "        emit SwitchedFork(fork1);\n"
@@ -591,7 +593,9 @@ class CodeGenerator:
         fork = self._fork
         protected = self._protected
 
-        assert isinstance(v_1["contract_object"], Contract) and isinstance(v_2["contract_object"], Contract)
+        assert isinstance(v_1["contract_object"], Contract) and isinstance(
+            v_2["contract_object"], Contract
+        )
 
         protected_mods = [
             "onlyOwner",
@@ -720,12 +724,17 @@ class CodeGenerator:
             self.get_contract_data(t.contract)
             if t.contract.name
             not in [
-                target["contract_object"].name if target["contract_object"] is not None
-                else "" for target in targets
+                target["contract_object"].name if target["contract_object"] is not None else ""
+                for target in targets
             ]
-            + [proxy["contract_object"].name if proxy is not None and proxy["contract_object"] is not None else ""]
+            + [
+                proxy["contract_object"].name
+                if proxy is not None and proxy["contract_object"] is not None
+                else ""
+            ]
             else next(
-                target for target in targets + [proxy]
+                target
+                for target in targets + [proxy]
                 if target is not None and t.contract.name == target["name"]
             )
             for t in tainted_contracts
@@ -768,7 +777,9 @@ class CodeGenerator:
         for target in targets:
             final_contract += str(target["interface"])
         for target in tainted_targets:
-            if target["name"] not in (t["contract_object"].name for t in other_targets if t["contract_object"]):
+            if target["name"] not in (
+                t["contract_object"].name for t in other_targets if t["contract_object"]
+            ):
                 final_contract += str(target["interface"])
         if proxy is not None:
             final_contract += str(proxy["interface"])
@@ -886,7 +897,9 @@ class CodeGenerator:
                     final_contract += "        bytes32 impl1 = hevm.load(\n"
                     final_contract += f"            address({camel_case(proxy['name'])}"
                     final_contract += f"{v_2['suffix'] if not fork else ''}),\n"
-                    final_contract += f"            bytes32(uint({proxy['implementation_slot'].slot}))\n"
+                    final_contract += (
+                        f"            bytes32(uint({proxy['implementation_slot'].slot}))\n"
+                    )
                     final_contract += "        );\n"
                     final_contract += "        bytes32 implV1 = bytes32(uint256(uint160(address("
                     final_contract += f"{camel_case(v_1['name'])}{v_1['suffix']}))));\n"
@@ -976,7 +989,9 @@ class CodeGenerator:
         if tainted_targets is not None:
             for target in tainted_targets:
                 if target["name"] not in (
-                    other["contract_object"].name for other in other_targets if other["contract_object"]
+                    other["contract_object"].name
+                    for other in other_targets
+                    if other["contract_object"]
                 ):
                     constructor += (
                         f"        {camel_case(target['name'])}{v_1['suffix']} = "
@@ -1067,7 +1082,9 @@ class CodeGenerator:
         if tainted_targets is not None:
             for target in tainted_targets:
                 if target["name"] not in (
-                    other["contract_object"].name for other in other_targets if other["contract_object"]
+                    other["contract_object"].name
+                    for other in other_targets
+                    if other["contract_object"]
                 ):
                     if target["address"] != "":
                         constructor += (

@@ -14,7 +14,7 @@ from slither.utils.upgradeability import (
 from slither.core.declarations import Function
 from slither.core.variables.state_variable import StateVariable
 from diffusc.utils.classes import ContractData, Diff
-from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.crytic_print import CryticPrint
 
 if TYPE_CHECKING:
     from slither import Slither

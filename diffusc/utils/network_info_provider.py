@@ -8,7 +8,7 @@ from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
 from slither.core.variables.state_variable import StateVariable
 from slither.core.declarations.contract import Contract
-from slither.tools.read_storage import SlitherReadStorage   # , RpcInfo
+from slither.tools.read_storage import SlitherReadStorage  # , RpcInfo
 from slither.tools.read_storage.utils import get_storage_data
 from slither.utils.upgradeability import get_proxy_implementation_slot
 from eth_utils import is_address, to_checksum_address
@@ -278,7 +278,9 @@ class NetworkInfoProvider:
                     recipient = event_data[1]
                     if recipient in holders:
                         continue
-                    balance = contract.functions.balanceOf(recipient).call(block_identifier=int(self._block))
+                    balance = contract.functions.balanceOf(recipient).call(
+                        block_identifier=int(self._block)
+                    )
                     if balance < min_token_amount:
                         continue
                     if self._w3.eth.get_code(recipient, self._block):

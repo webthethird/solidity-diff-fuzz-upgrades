@@ -12,7 +12,7 @@ from diffusc.core.fork_mode import ForkMode
 from diffusc.core.analysis_mode import AnalysisMode
 from diffusc.core.code_generation import CodeGenerator
 from diffusc.utils.helpers import write_to_file
-from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.crytic_print import CryticPrint
 import diffusc.utils.network_vars as net_vars
 
 

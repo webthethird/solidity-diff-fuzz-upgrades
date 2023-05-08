@@ -10,7 +10,7 @@ from solc_select.solc_select import (
 )
 from slither.exceptions import SlitherError
 from diffusc.utils.classes import ContractData
-from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.slither_provider import FileSlitherProvider
 from diffusc.utils.helpers import (
     get_pragma_version_from_file,

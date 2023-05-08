@@ -8,7 +8,7 @@ from typing import Optional, List
 from eth_utils import is_address
 from diffusc.utils.classes import ContractData
 from diffusc.utils.helpers import do_diff
-from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.slither_provider import NetworkSlitherProvider
 from diffusc.utils.network_info_provider import NetworkInfoProvider
 import diffusc.utils.network_vars as net_vars
