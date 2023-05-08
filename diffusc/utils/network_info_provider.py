@@ -249,7 +249,7 @@ class NetworkInfoProvider:
         block_from = int(self._block) - 2000
         block_to = int(self._block)
         max_retries = 10
-        holders = []
+        holders: List[str] = []
 
         CryticPrint.print_information(f"* Looking for {max_holders} holders of token at {address}")
 
