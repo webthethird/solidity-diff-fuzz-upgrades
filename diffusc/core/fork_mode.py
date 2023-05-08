@@ -102,14 +102,12 @@ class ForkMode(AnalysisMode):
         # Get block number
         if args.block:
             self._block_number = int(args.block)
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 f"* Block number specified via command line parameter: {self._block_number}",
             )
         elif "ECHIDNA_RPC_BLOCK" in os.environ:
             self._block_number = int(os.environ["ECHIDNA_RPC_BLOCK"])
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 "* Block number specified via ECHIDNA_RPC_BLOCK environment variable: "
                 f"{self._block_number}",
             )
@@ -131,13 +129,11 @@ class ForkMode(AnalysisMode):
                     self._api_env_var = net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network]
                 else:
                     self._api_env_var = "ETHERSCAN_API_KEY"
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 f"* Network specified via command line parameter: {args.network}",
             )
         else:
-            CryticPrint.print(
-                PrintMode.WARNING,
+            CryticPrint.print_warning(
                 f"* Network {args.network} not supported. Defaulting to Ethereum main network.",
             )
             self._prefix = "mainet:"
@@ -153,16 +149,14 @@ class ForkMode(AnalysisMode):
         self._network_rpc = ""
         if args.network_rpc:
             self._network_rpc = args.network_rpc
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 f"* RPC specified via command line parameter: {self._network_rpc}",
             )
         else:
             for env_var in net_vars.WEB3_RPC_ENV_VARS:
                 if env_var in os.environ:
                     self._network_rpc = os.environ[env_var]
-                    CryticPrint.print(
-                        PrintMode.INFORMATION,
+                    CryticPrint.print_information(
                         f"* RPC specified via {env_var} environment variable: {self._network_rpc}",
                     )
                     break
@@ -180,8 +174,7 @@ class ForkMode(AnalysisMode):
         )
 
         if self._proxy_address is not None:
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 "\n* Proxy contract specified via command line parameter:",
             )
             if is_address(self._proxy_address):
@@ -189,20 +182,17 @@ class ForkMode(AnalysisMode):
                     self._proxy_address, "", self._provider, self._net_info
                 )
                 if not self._proxy["valid_data"]:
-                    CryticPrint.print(
-                        PrintMode.ERROR,
+                    CryticPrint.print_error(
                         f"\n  * Failed to get proxy at {self._proxy['address']}. Ignoring...",
                     )
                     self._proxy = None
                 elif not self._proxy["is_proxy"]:
-                    CryticPrint.print(
-                        PrintMode.ERROR,
+                    CryticPrint.print_error(
                         f"\n  * {self._proxy['name']} does not appear to be a proxy. Ignoring...",
                     )
                     self._proxy = None
             else:
-                CryticPrint.print(
-                    PrintMode.ERROR,
+                CryticPrint.print_error(
                     "\n  * When using fork mode, the proxy must be specified as an address.",
                 )
                 self._proxy = None
@@ -210,8 +200,7 @@ class ForkMode(AnalysisMode):
             self._proxy = None
 
         if self._target_addresses is not None:
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 "\n* Additional targets specified via command line parameter:",
             )
             self._targets, _, _ = get_contracts_from_comma_separated_string(

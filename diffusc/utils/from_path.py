@@ -38,7 +38,7 @@ def get_contract_data_from_path(
     """Get a ContractData object from file path, including Slither object."""
     contract_data = ContractData()
 
-    CryticPrint.print(PrintMode.MESSAGE, f"* Getting contract data from {filepath}")
+    CryticPrint.print_message(f"* Getting contract data from {filepath}")
 
     contract_data["path"] = filepath
     contract_data["suffix"] = suffix
@@ -51,7 +51,7 @@ def get_contract_data_from_path(
         contract_data["slither"] = provider.get_slither_from_filepath(filepath)
         contract_data["valid_data"] = True
     except SlitherError:
-        CryticPrint.print(PrintMode.ERROR, "  * Error getting Slither object")
+        CryticPrint.print_error("  * Error getting Slither object")
         contract_data["slither"] = None
         contract_data["valid_data"] = False
 
@@ -66,6 +66,6 @@ def get_contract_data_from_path(
             )[0]
         contract_data["contract_object"] = contract
         contract_data = CodeGenerator.get_valid_contract_data(contract_data)
-        CryticPrint.print(PrintMode.MESSAGE, f"  * Done compiling contract {contract_data['name']}")
+        CryticPrint.print_message(f"  * Done compiling contract {contract_data['name']}")
 
     return contract_data

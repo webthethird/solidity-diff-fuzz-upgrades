@@ -108,8 +108,7 @@ class CodeGenerator:
         """Generate an Echidna config file."""
         if senders is None:
             senders = []
-        CryticPrint.print(
-            PrintMode.INFORMATION,
+        CryticPrint.print_information(
             f"* Generating Echidna configuration file with campaign limit {campaign_length}"
             f" and corpus directory {corpus_dir}",
         )
@@ -232,7 +231,7 @@ class CodeGenerator:
     def get_contract_data(contract: Contract, suffix: str = "") -> ContractData:
         """Get ContractData object from Contract object."""
 
-        CryticPrint.print(PrintMode.MESSAGE, f"  * Getting contract data from {contract.name}")
+        CryticPrint.print_message(f"  * Getting contract data from {contract.name}")
 
         version = get_pragma_version_from_file(contract.file_scope.filename.absolute)
         contract_data = ContractData(
@@ -338,9 +337,7 @@ class CodeGenerator:
         if proxy is None:
             proxy = ContractData(name="")
         tainted_contracts = [taint.contract for taint in tainted]
-        CryticPrint.print(
-            PrintMode.INFORMATION, "  * Adding wrapper functions for additional targets."
-        )
+        CryticPrint.print_information("  * Adding wrapper functions for additional targets.")
 
         wrapped += "\n    /*** Additional Targets ***/ \n\n"
         for target in targets:
@@ -703,7 +700,7 @@ class CodeGenerator:
             for t in tainted_contracts
             if t.contract not in [v_1["contract_object"], v_2["contract_object"]]
         ]
-        CryticPrint.print(PrintMode.INFORMATION, "* Getting contract data for tainted contracts.")
+        CryticPrint.print_information("* Getting contract data for tainted contracts.")
         tainted_targets = [
             self.get_contract_data(t.contract)
             if t.contract.name
@@ -719,7 +716,7 @@ class CodeGenerator:
         if proxy:
             other_targets.append(proxy)
 
-        CryticPrint.print(PrintMode.INFORMATION, "\n* Generating exploit contract...")
+        CryticPrint.print_information("\n* Generating exploit contract...")
         # Add solidity pragma and SPDX to avoid warnings
         final_contract += f"// SPDX-License-Identifier: AGPLv3\npragma solidity ^{version};\n\n"
 
@@ -745,7 +742,7 @@ class CodeGenerator:
             final_contract += "\n"
 
         # Add all interfaces first
-        CryticPrint.print(PrintMode.INFORMATION, "  * Adding interfaces.")
+        CryticPrint.print_information("  * Adding interfaces.")
         final_contract += v_1["interface"]
         final_contract += v_2["interface"]
 
@@ -781,11 +778,11 @@ class CodeGenerator:
         final_contract += "    function selectFork(uint256 forkId) external;\n}\n\n"
 
         # Create the exploit contract
-        CryticPrint.print(PrintMode.INFORMATION, "  * Creating the exploit contract.")
+        CryticPrint.print_information("  * Creating the exploit contract.")
         final_contract += "contract DiffFuzzUpgrades {\n"
 
         # State variables
-        CryticPrint.print(PrintMode.INFORMATION, "  * Adding state variables declarations.")
+        CryticPrint.print_information("  * Adding state variables declarations.")
 
         final_contract += "    IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);\n\n"
         final_contract += f"    {v_1['interface_name']} {camel_case(v_1['name'])}V1;\n"
@@ -828,7 +825,7 @@ class CodeGenerator:
             final_contract += "\n    event SwitchedFork(uint256 forkId);\n"
 
         # Constructor
-        CryticPrint.print(PrintMode.INFORMATION, "  * Generating constructor.")
+        CryticPrint.print_information("  * Generating constructor.")
 
         if not fork:
             final_contract += self.generate_deploy_constructor(tainted_targets)
@@ -837,7 +834,7 @@ class CodeGenerator:
 
         # Upgrade function
         if upgrade and proxy is not None:
-            CryticPrint.print(PrintMode.INFORMATION, "  * Adding upgrade function.")
+            CryticPrint.print_information("  * Adding upgrade function.")
             final_contract += "    /*** Upgrade Function ***/ \n\n"
             final_contract += (
                 "    // TODO: Consider replacing this with the actual upgrade method\n"
@@ -878,7 +875,7 @@ class CodeGenerator:
             final_contract += "    }\n\n"
 
         # Wrapper functions for V1/V2
-        CryticPrint.print(PrintMode.INFORMATION, "  * Adding wrapper functions for V1/V2.")
+        CryticPrint.print_information("  * Adding wrapper functions for V1/V2.")
 
         final_contract += self.wrap_diff_functions(diff, tainted_targets)
 

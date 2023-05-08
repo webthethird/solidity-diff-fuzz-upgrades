@@ -81,7 +81,7 @@ def do_diff(
 ) -> Diff:
     """Use slither.utils.upgradeability to perform a diff between two contract versions."""
 
-    CryticPrint.print(PrintMode.MESSAGE, "* Performing diff of V1 and V2")
+    CryticPrint.print_message("* Performing diff of V1 and V2")
     (
         missing_vars,
         new_vars,
@@ -113,18 +113,18 @@ def do_diff(
     )
     for key, lst in diff.items():
         if len(lst) > 0:
-            CryticPrint.print(PrintMode.WARNING, f'  * {str(key).replace("-", " ")}:')
+            CryticPrint.print_warning(f'  * {str(key).replace("-", " ")}:')
             for obj in lst:
                 if isinstance(obj, StateVariable):
-                    CryticPrint.print(PrintMode.WARNING, f"      * {obj.full_name}")
+                    CryticPrint.print_warning(f"      * {obj.full_name}")
                 elif isinstance(obj, Function):
-                    CryticPrint.print(PrintMode.WARNING, f"      * {obj.signature_str}")
+                    CryticPrint.print_warning(f"      * {obj.signature_str}")
                 elif isinstance(obj, TaintedExternalContract):
-                    CryticPrint.print(PrintMode.WARNING, f"      * {obj.contract.name}")
+                    CryticPrint.print_warning(f"      * {obj.contract.name}")
                     for taint in obj.tainted_functions:
-                        CryticPrint.print(PrintMode.WARNING, f"        * {taint.signature_str}")
+                        CryticPrint.print_warning(f"        * {taint.signature_str}")
                     for taint in obj.tainted_variables:
-                        CryticPrint.print(PrintMode.WARNING, f"        * {taint.signature_str}")
+                        CryticPrint.print_warning(f"        * {taint.signature_str}")
     return diff
 
 
