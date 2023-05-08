@@ -30,5 +30,8 @@ jobs:
       - name: Install mypy
         run: python3 -m pip install mypy==1.2.0
 
+      - name: Install dependencies
+        run: pip3 install -r requirements.txt
+
       - name: Check types
         run: mypy diffusc/diffusc.py
