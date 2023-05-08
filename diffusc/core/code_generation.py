@@ -426,7 +426,7 @@ class CodeGenerator:
         wrapped += self.wrap_low_level_call(v_2, func2, "V2", proxy)
         wrapped += "        assert(successV1 == successV2); \n"
         wrapped += "        if(successV1 && successV2) {\n"
-        wrapped += "            assert(keccak256(outputV1) == keccak256(outputV2);\n"
+        wrapped += "            assert(keccak256(outputV1) == keccak256(outputV2));\n"
         wrapped += "        }\n"
         wrapped += "    }\n\n"
         return wrapped
@@ -484,7 +484,7 @@ class CodeGenerator:
         wrapped += "        }\n"
         wrapped += "        assert(successV1 == successV2); \n"
         wrapped += "        if(successV1 && successV2) {\n"
-        wrapped += "            assert(keccak256(outputV1) == keccak256(outputV2);\n"
+        wrapped += "            assert(keccak256(outputV1) == keccak256(outputV2));\n"
         wrapped += "        }\n"
         wrapped += "    }\n\n"
         return wrapped
@@ -547,7 +547,8 @@ class CodeGenerator:
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(i) == {target_v2}.{var.name}(i));\n"
             else:
-                wrapped += f"    function {v_1['name']}_{var.full_name} public returns ({var.type}) {{\n"
+                wrapped += f"    function {v_1['name']}_{var.full_name} public returns " \
+                           f"({'address' if isinstance(var.type, UserDefinedType) and isinstance(var.type.type, Contract) else var.type}) {{\n"
                 if fork:
                     wrapped += "        hevm.selectFork(fork1);\n"
                     wrapped += "        emit SwitchedFork(fork1);\n"
