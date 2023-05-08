@@ -23,7 +23,7 @@ class SlitherProvider:
     _cache_path: str
     _cache_filename: str
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._slither_object = None
         self._network_prefix = ""
         self._filename = ""
@@ -52,6 +52,7 @@ class SlitherProvider:
 
     def _save_slither_to_cache(self) -> None:
         """Cache a Slither compilation."""
+        assert isinstance(self._slither_object, Slither)
         if not os.path.exists(self._cache_path):
             os.makedirs(self._cache_path)
         save_to_zip(
@@ -76,7 +77,7 @@ class NetworkSlitherProvider(SlitherProvider):
     """SlitherProvider for contracts specified by network address."""
     _api_key: str
 
-    def __init__(self, network_prefix: str, api_key: str):
+    def __init__(self, network_prefix: str, api_key: str) -> None:
         super().__init__()
         self._api_key = api_key
         self._network_prefix = network_prefix
@@ -134,7 +135,7 @@ class NetworkSlitherProvider(SlitherProvider):
 class FileSlitherProvider(SlitherProvider):
     """SlitherProvider for contracts specified by file path."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._network_prefix = "testnet"
 
@@ -167,7 +168,7 @@ class SlitherbotSlitherProvider(SlitherProvider):
 
     _slitherbot_path: str
 
-    def __init__(self, slitherbot_path: str):
+    def __init__(self, slitherbot_path: str) -> None:
         super().__init__()
         self._network_prefix = "mainet"
         self._slitherbot_path = slitherbot_path
