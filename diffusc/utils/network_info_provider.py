@@ -8,7 +8,7 @@ from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
 from slither.core.variables.state_variable import StateVariable
 from slither.core.declarations.contract import Contract
-from slither.tools.read_storage import SlitherReadStorage
+from slither.tools.read_storage import SlitherReadStorage  # , RpcInfo
 from slither.tools.read_storage.utils import get_storage_data
 from slither.utils.upgradeability import get_proxy_implementation_slot
 from eth_utils import is_address, to_checksum_address
@@ -60,6 +60,8 @@ class NetworkInfoProvider:
     def get_contract_variable_value(self, variable: StateVariable, address: str) -> Any:
         """Get the value of a state variable from a contract's storage."""
         contract = variable.contract
+        # rpc_info = RpcInfo(self._rpc_provider, self._block)
+        # srs = SlitherReadStorage([contract], 20, rpc_info)
         srs = SlitherReadStorage([contract], 20)
 
         srs.storage_address = address
@@ -202,7 +204,7 @@ class NetworkInfoProvider:
         contract = self._w3.eth.contract(address=to_checksum_address(address), abi=abi)
 
         while max_retries > 0:
-            block_filter = contract.events.Transfer.create_filter(
+            block_filter = contract.events.Transfer.create_filter(  # type: ignore[attr-defined]
                 fromBlock=block_from, toBlock=block_to
             )
             events = block_filter.get_all_entries()
@@ -247,7 +249,7 @@ class NetworkInfoProvider:
         block_from = int(self._block) - 2000
         block_to = int(self._block)
         max_retries = 10
-        holders = []
+        holders: List[str] = []
 
         CryticPrint.print_information(f"* Looking for {max_holders} holders of token at {address}")
 
@@ -255,7 +257,7 @@ class NetworkInfoProvider:
 
         while max_retries > 0 and len(holders) < max_holders:
             try:
-                block_filter = contract.events.Transfer.create_filter(
+                block_filter = contract.events.Transfer.create_filter(  # type: ignore[attr-defined]
                     fromBlock=block_from, toBlock=block_to
                 )
                 events = block_filter.get_all_entries()
@@ -276,13 +278,15 @@ class NetworkInfoProvider:
                     recipient = event_data[1]
                     if recipient in holders:
                         continue
-                    amount = int(event_data[2])
-                    if amount < min_token_amount:
+                    balance = contract.functions.balanceOf(recipient).call(
+                        block_identifier=int(self._block)
+                    )
+                    if balance < min_token_amount:
                         continue
                     if self._w3.eth.get_code(recipient, self._block):
                         continue
                     CryticPrint.print_information(
-                        f"  * Found holder with balance of {amount} at {recipient}"
+                        f"  * Found holder with balance of {balance} at {recipient}"
                     )
                     holders.append(recipient)
                     max_retries += 1

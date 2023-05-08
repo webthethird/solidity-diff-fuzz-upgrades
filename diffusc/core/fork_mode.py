@@ -8,7 +8,7 @@ from typing import Optional, List
 from eth_utils import is_address
 from diffusc.utils.classes import ContractData
 from diffusc.utils.helpers import do_diff
-from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.slither_provider import NetworkSlitherProvider
 from diffusc.utils.network_info_provider import NetworkInfoProvider
 import diffusc.utils.network_vars as net_vars
@@ -102,14 +102,12 @@ class ForkMode(AnalysisMode):
         # Get block number
         if args.block:
             self._block_number = int(args.block)
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 f"* Block number specified via command line parameter: {self._block_number}",
             )
         elif "ECHIDNA_RPC_BLOCK" in os.environ:
             self._block_number = int(os.environ["ECHIDNA_RPC_BLOCK"])
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 "* Block number specified via ECHIDNA_RPC_BLOCK environment variable: "
                 f"{self._block_number}",
             )
@@ -118,7 +116,7 @@ class ForkMode(AnalysisMode):
         if args.holders:
             self._token_holders = []
 
-    def parse_network_args(self, args: argparse.Namespace):
+    def parse_network_args(self, args: argparse.Namespace) -> None:
         """Parse arguments related to network info."""
         # Get prefix for current network and Etherscan API key
         if args.network in net_vars.SUPPORTED_NETWORKS or args.network == "mainnet":
@@ -131,13 +129,11 @@ class ForkMode(AnalysisMode):
                     self._api_env_var = net_vars.SUPPORTED_BLOCK_EXPLORER_ENV_VARS[args.network]
                 else:
                     self._api_env_var = "ETHERSCAN_API_KEY"
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 f"* Network specified via command line parameter: {args.network}",
             )
         else:
-            CryticPrint.print(
-                PrintMode.WARNING,
+            CryticPrint.print_warning(
                 f"* Network {args.network} not supported. Defaulting to Ethereum main network.",
             )
             self._prefix = "mainet:"
@@ -153,16 +149,14 @@ class ForkMode(AnalysisMode):
         self._network_rpc = ""
         if args.network_rpc:
             self._network_rpc = args.network_rpc
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 f"* RPC specified via command line parameter: {self._network_rpc}",
             )
         else:
             for env_var in net_vars.WEB3_RPC_ENV_VARS:
                 if env_var in os.environ:
                     self._network_rpc = os.environ[env_var]
-                    CryticPrint.print(
-                        PrintMode.INFORMATION,
+                    CryticPrint.print_information(
                         f"* RPC specified via {env_var} environment variable: {self._network_rpc}",
                     )
                     break
@@ -171,6 +165,7 @@ class ForkMode(AnalysisMode):
         """Get ContractData objects from the addresses provided."""
         assert self._v1_address != "" and self._v2_address != ""
         assert isinstance(self._provider, NetworkSlitherProvider)
+        assert isinstance(self._net_info, NetworkInfoProvider)
 
         self._v1 = get_contract_data_from_address(
             self._v1_address, "", self._provider, self._net_info, suffix="V1"
@@ -180,8 +175,7 @@ class ForkMode(AnalysisMode):
         )
 
         if self._proxy_address is not None:
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 "\n* Proxy contract specified via command line parameter:",
             )
             if is_address(self._proxy_address):
@@ -189,20 +183,17 @@ class ForkMode(AnalysisMode):
                     self._proxy_address, "", self._provider, self._net_info
                 )
                 if not self._proxy["valid_data"]:
-                    CryticPrint.print(
-                        PrintMode.ERROR,
+                    CryticPrint.print_error(
                         f"\n  * Failed to get proxy at {self._proxy['address']}. Ignoring...",
                     )
                     self._proxy = None
                 elif not self._proxy["is_proxy"]:
-                    CryticPrint.print(
-                        PrintMode.ERROR,
+                    CryticPrint.print_error(
                         f"\n  * {self._proxy['name']} does not appear to be a proxy. Ignoring...",
                     )
                     self._proxy = None
             else:
-                CryticPrint.print(
-                    PrintMode.ERROR,
+                CryticPrint.print_error(
                     "\n  * When using fork mode, the proxy must be specified as an address.",
                 )
                 self._proxy = None
@@ -210,8 +201,7 @@ class ForkMode(AnalysisMode):
             self._proxy = None
 
         if self._target_addresses is not None:
-            CryticPrint.print(
-                PrintMode.INFORMATION,
+            CryticPrint.print_information(
                 "\n* Additional targets specified via command line parameter:",
             )
             self._targets, _, _ = get_contracts_from_comma_separated_string(
@@ -226,28 +216,32 @@ class ForkMode(AnalysisMode):
         self.analyze_tokens()
 
     def analyze_tokens(self) -> None:
+        assert self._v1 and self._v2 and self._net_info
+
         if self._v1["is_erc20"] and self._v2["is_erc20"]:
             if self._proxy is not None:
                 self._tokens.append(self._proxy)
                 contract = self._proxy["contract_object"]
                 slither = self._proxy["slither"]
+                assert contract and slither
                 abi = contract.file_scope.abi(
                     slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
                 )
                 if self._token_holders is not None:
                     self._token_holders.extend(
-                        self._net_info.get_token_holders(10000, 10, self._proxy["address"], abi)
+                        self._net_info.get_token_holders(10000, 5, self._proxy["address"], abi)
                     )
             else:
                 self._tokens.extend([self._v1, self._v2])
                 contract = self._v1["contract_object"]
                 slither = self._v1["slither"]
+                assert contract and slither
                 abi = contract.file_scope.abi(
                     slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
                 )
                 if self._token_holders is not None:
                     self._token_holders.extend(
-                        self._net_info.get_token_holders(10000, 10, self._v1["address"], abi)
+                        self._net_info.get_token_holders(10000, 5, self._v1["address"], abi)
                     )
         if self._targets is not None:
             for target in self._targets:
@@ -255,12 +249,13 @@ class ForkMode(AnalysisMode):
                     self._tokens.append(target)
                     contract = target["contract_object"]
                     slither = target["slither"]
+                    assert contract and slither
                     abi = contract.file_scope.abi(
                         slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
                     )
                     if self._token_holders is not None:
                         self._token_holders.extend(
-                            self._net_info.get_token_holders(10000, 10, target["address"], abi)
+                            self._net_info.get_token_holders(10000, 5, target["address"], abi)
                         )
         for token in self._tokens:
             CryticPrint.print_information(

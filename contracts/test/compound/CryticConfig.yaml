@@ -1,5 +1,9 @@
 testMode: assertion
 testLimit: 1000000000000
-corpusDir: /home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/contracts/test/compound/corpus
+corpusDir: ./corpus
 codeSize: 0xffff
 seqLen: 100
+rpcBlock: 13322798
+rpcUrl: https://eth-mainnet.g.alchemy.com/v2/AVRqMCK6gpeQ9TE53xTDcB5t7ERaMyTR
+psender: "0x309d413391e975B553B7B8D19bC11F8a6c2eB889"
+sender: ["0x309d413391e975B553B7B8D19bC11F8a6c2eB889"]

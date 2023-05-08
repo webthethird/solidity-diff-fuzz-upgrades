@@ -1,6 +1,6 @@
 """Module containing classes common to path mode and fork mode."""
 
-from typing import TypedDict, List
+from typing import TypedDict, List, Optional
 
 # pylint: disable= no-name-in-module
 from slither import Slither
@@ -33,17 +33,17 @@ class ContractData(TypedDict):
     suffix: str
     # Contract info
     name: str
-    interface: str
-    interface_name: str
+    interface: Optional[str]
+    interface_name: Optional[str]
     functions: List[FunctionInfo]
-    slither: Slither
-    contract_object: Contract
+    slither: Optional[Slither]
+    contract_object: Optional[Contract]
     is_erc20: bool
     # Proxy info
     is_proxy: bool
-    implementation_object: Contract
-    implementation_slither: Slither
-    implementation_slot: SlotInfo
+    implementation_object: Optional[Contract]
+    implementation_slither: Optional[Slither]
+    implementation_slot: Optional[SlotInfo]
 
 
 class Diff(TypedDict):

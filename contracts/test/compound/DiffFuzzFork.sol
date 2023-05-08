@@ -98,8 +98,8 @@ interface IComptrollerV1 {
     function _setSeizePaused(bool) external returns (bool);
     function _become(address) external;
     function updateContributorRewards(address) external;
-    function claimComp(address) external;
-    // function claimComp(address,address[] memory) external;
+//    function claimComp(address) external;
+    function claimComp(address,address[] memory) external;
     // function claimComp(address[] memory,address[] memory,bool,bool) external;
     function _grantComp(address,uint256) external;
     function _setCompSpeed(address,uint256) external;
@@ -210,8 +210,8 @@ interface IComptrollerV2 {
     function _become(address) external;
     function _upgradeSplitCompRewards() external;
     function updateContributorRewards(address) external;
-    function claimComp(address) external;
-    // function claimComp(address,address[] memory) external;
+//    function claimComp(address) external;
+    function claimComp(address,address[] memory) external;
     // function claimComp(address[] memory,address[] memory,bool,bool) external;
     function _grantComp(address,uint256) external;
     function _setCompSpeeds(address[] memory,uint256[] memory,uint256[] memory) external;
@@ -485,9 +485,15 @@ interface IHevm {
 }
 
 contract DiffFuzzUpgrades {
+    event SwitchedFork(uint256 forkId, uint256 blockNo, uint256 timestamp);
+    event EnterMarketResults(bytes results);
+    event Asset(address asset);
+    event NumAssets(uint num);
+    event MsgSender(address sender);
+    event BalanceOnFork(uint256 forkId, uint256 balance);
+
     IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
-    // TODO: Deploy the contracts and put their addresses below
     IComptrollerV1 comptrollerV1;
     IComptrollerV2 comptrollerV2;
     IUnitroller unitroller;
@@ -500,7 +506,8 @@ contract DiffFuzzUpgrades {
     bool upgraded = false;
 
     constructor() public {
-        hevm.roll(13322796);
+        hevm.roll(13322798);
+        hevm.warp(1632965898);
         fork1 = hevm.createFork();
         fork2 = hevm.createFork();
         fork1 = 1;
@@ -510,6 +517,7 @@ contract DiffFuzzUpgrades {
         unitroller = IUnitroller(0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B);
         // Store the implementation addresses in the proxy.
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         hevm.store(
             address(unitroller),
             bytes32(uint(2)),
@@ -521,6 +529,7 @@ contract DiffFuzzUpgrades {
             bytes32(uint256(uint160(address(this))))
         );
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         hevm.store(
             address(unitroller),
             bytes32(uint(2)),
@@ -532,9 +541,9 @@ contract DiffFuzzUpgrades {
             bytes32(uint256(uint160(address(this))))
         );
         comp = IComp(0xc00e94Cb662C3520282E6f5717214004A7f26888);
-        cErc20 = ICErc20(0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E);
+//        cErc20 = ICErc20(0x12392F67bdf24faE0AF363c24aC620a2f67DAd86);
         // TODO: Fill in target address below (address not found automatically)
-        cToken = ICToken(0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E);
+//        cToken = ICToken(0x12392F67bdf24faE0AF363c24aC620a2f67DAd86);
         // TODO: Fill in target address below (address not found automatically)
 //        priceOracle = IPriceOracle(IComptrollerV1(address(unitroller)).oracle());
     }
@@ -542,15 +551,38 @@ contract DiffFuzzUpgrades {
     /*** Upgrade Function ***/
 
     // TODO: Consider replacing this with the actual upgrade method
-    function upgradeV2() external virtual {
+    function upgradeV2() public virtual {
         require(!upgraded);
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         unitroller._setPendingImplementation(address(comptrollerV2));
         comptrollerV2._become(address(unitroller));
-//        uint newBlock = block.number;
-//        hevm.selectFork(fork1);
-//        hevm.roll(newBlock);
         upgraded = true;
+        assert(unitroller.comptrollerImplementation() == address(comptrollerV2));
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
+        assert(unitroller.comptrollerImplementation() == address(comptrollerV1));
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.store(
+//            address(unitroller),
+//            bytes32(uint(2)),
+//            bytes32(uint256(uint160(address(comptrollerV2))))
+//        );
+//        bytes32 impl2 = hevm.load(
+//            address(unitroller),
+//            bytes32(uint(2))
+//        );
+//        bytes32 implV2 = bytes32(uint256(uint160(address(comptrollerV2))));
+//        assert(impl2 == implV2);
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        bytes32 impl1 = hevm.load(
+//            address(unitroller),
+//            bytes32(uint(2))
+//        );
+//        bytes32 implV1 = bytes32(uint256(uint160(address(comptrollerV1))));
+//        assert(impl1 == implV1);
     }
 
 
@@ -558,12 +590,14 @@ contract DiffFuzzUpgrades {
 
     function Comptroller__supportMarket(address a) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV2._supportMarket.selector, a
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV1._supportMarket.selector, a
@@ -575,12 +609,14 @@ contract DiffFuzzUpgrades {
 
     function Comptroller__become(address a) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV2._become.selector, a
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV1._become.selector, a
@@ -595,6 +631,7 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_checkMembership(address a, address b) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -602,6 +639,7 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -614,29 +652,37 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_enterMarkets(address[] memory a) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
+        hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV2.enterMarkets.selector, a
             )
         );
+        emit EnterMarketResults(outputV2);
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
+        hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV1.enterMarkets.selector, a
             )
         );
+        emit EnterMarketResults(outputV1);
         assert(successV1 == successV2);
         assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
     }
 
     function Comptroller_exitMarket(address a) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV2.exitMarket.selector, a
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV1.exitMarket.selector, a
@@ -648,6 +694,7 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_mintAllowed(address a, address b, uint256 c) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -655,6 +702,7 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -667,6 +715,7 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_redeemAllowed(address a, address b, uint256 c) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -674,6 +723,7 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -686,12 +736,14 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_borrowAllowed(address a, address b, uint256 c) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV2.borrowAllowed.selector, a, b, c
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV1.borrowAllowed.selector, a, b, c
@@ -703,6 +755,7 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_repayBorrowAllowed(address a, address b, address c, uint256 d) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -710,6 +763,7 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -722,6 +776,7 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_liquidateBorrowAllowed(address a, address b, address c, address d, uint256 e) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -729,6 +784,7 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -741,6 +797,7 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_seizeAllowed(address a, address b, address c, address d, uint256 e) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -748,6 +805,7 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -760,6 +818,7 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_transferAllowed(address a, address b, address c, uint256 d) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -767,6 +826,7 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -779,6 +839,7 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_getAccountLiquidity(address a) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -786,6 +847,7 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -798,6 +860,7 @@ contract DiffFuzzUpgrades {
 
     function Comptroller_getHypotheticalAccountLiquidity(address a, address b, uint256 c, uint256 d) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -805,6 +868,7 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -817,12 +881,14 @@ contract DiffFuzzUpgrades {
 
     function Comptroller__setCollateralFactor(address a, uint256 b) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV2._setCollateralFactor.selector, a, b
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
                 comptrollerV1._setCollateralFactor.selector, a, b
@@ -832,96 +898,111 @@ contract DiffFuzzUpgrades {
         assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
     }
 
-    function Comptroller__setMintPaused(address a, bool b) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setMintPaused.selector, a, b
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setMintPaused.selector, a, b
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
+//    function Comptroller__setMintPaused(address a, bool b) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        (bool successV2, bytes memory outputV2) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setMintPaused.selector, a, b
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        (bool successV1, bytes memory outputV1) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setMintPaused.selector, a, b
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function Comptroller__setBorrowPaused(address a, bool b) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        (bool successV2, bytes memory outputV2) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setBorrowPaused.selector, a, b
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        (bool successV1, bytes memory outputV1) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setBorrowPaused.selector, a, b
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function Comptroller_updateContributorRewards(address a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.updateContributorRewards.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.updateContributorRewards.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
 
-    function Comptroller__setBorrowPaused(address a, bool b) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setBorrowPaused.selector, a, b
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setBorrowPaused.selector, a, b
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
+//    function Comptroller_claimComp() public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.claimComp.selector, msg.sender
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.claimComp.selector, msg.sender
+//            )
+//        );
+////        if(upgraded) {
+////            assert(false);
+////        }
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
 
-    function Comptroller_updateContributorRewards(address a) public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV2.updateContributorRewards.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV1.updateContributorRewards.selector, a
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function Comptroller_claimComp(address a) public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV2.claimComp.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV1.claimComp.selector, a
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    // function Comptroller_claimComp(address a, address[] memory b) public virtual {
-    //     hevm.selectFork(fork2);
-    //     hevm.prank(msg.sender);
-    //     (bool successV2, bytes memory outputV2) = address(unitroller).call(
-    //         abi.encodeWithSelector(
-    //             comptrollerV2.claimComp.selector, a, b
-    //         )
-    //     );
-    //     hevm.selectFork(fork1);
-    //     hevm.prank(msg.sender);
-    //     (bool successV1, bytes memory outputV1) = address(unitroller).call(
-    //         abi.encodeWithSelector(
-    //             comptrollerV1.claimComp.selector, a, b
-    //         )
-    //     );
-    //     assert(successV1 == successV2);
-    //     assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    // }
+     function Comptroller_claimComp(address[] memory b) public virtual {
+         hevm.selectFork(fork2);
+         emit SwitchedFork(fork2, block.number, block.timestamp);
+         hevm.prank(msg.sender);
+         (bool successV2, bytes memory outputV2) = address(unitroller).call(
+             abi.encodeWithSelector(
+                 comptrollerV2.claimComp.selector, msg.sender, b
+             )
+         );
+         hevm.selectFork(fork1);
+         emit SwitchedFork(fork1, block.number, block.timestamp);
+         hevm.prank(msg.sender);
+         (bool successV1, bytes memory outputV1) = address(unitroller).call(
+             abi.encodeWithSelector(
+                 comptrollerV1.claimComp.selector, msg.sender, b
+             )
+         );
+         assert(successV1 == successV2);
+         if(successV1 && successV2) {
+             assert(keccak256(outputV1) == keccak256(outputV2));
+         }
+     }
 
     // function Comptroller_claimComp(address[] memory a, address[] memory b, bool c, bool d) public virtual {
     //     hevm.selectFork(fork2);
@@ -942,25 +1023,28 @@ contract DiffFuzzUpgrades {
     //     assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
     // }
 
-    function Comptroller__setContributorCompSpeed(address a, uint256 b) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV2._setContributorCompSpeed.selector, a, b
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setContributorCompSpeed.selector, a, b
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
+//    function Comptroller__setContributorCompSpeed(address a, uint256 b) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        (bool successV2, bytes memory outputV2) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2._setContributorCompSpeed.selector, a, b
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        (bool successV1, bytes memory outputV1) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setContributorCompSpeed.selector, a, b
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
     function Comptroller_getAllMarkets() public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -968,6 +1052,7 @@ contract DiffFuzzUpgrades {
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(unitroller).call(
             abi.encodeWithSelector(
@@ -977,25 +1062,27 @@ contract DiffFuzzUpgrades {
         assert(successV1 == successV2);
         assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
     }
-
-    function Comptroller_isDeprecated(address a) public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV2.isDeprecated.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV1.isDeprecated.selector, a
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
+//
+//    function Comptroller_isDeprecated(address a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV2.isDeprecated.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1.isDeprecated.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
 
 
     /*** New Functions ***/
@@ -1005,328 +1092,373 @@ contract DiffFuzzUpgrades {
     // is a new function, which appears to replace a function with a similar name,
     // Comptroller._setCompSpeed(CToken,uint256).
     // If these functions have different arguments, this function may be incorrect.
-    function Comptroller__setCompSpeeds(address a, uint256 b) public virtual {
-        require(b > 0);
-        address[] memory a2 = new address[](1);
-        a2[0] = a;
-        uint256[] memory b2 = new uint256[](1);
-        uint256[] memory c2 = new uint256[](1);
-        b2[0] = c2[0] = b;
-
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(unitroller).call(
-            abi.encodeWithSelector(
-                comptrollerV1._setCompSpeed.selector, a, b
-            )
-        );
-        hevm.selectFork(fork2);
-        address impl = address(uint160(uint256(
-            hevm.load(address(unitroller),0x0000000000000000000000000000000000000000000000000000000000000002)
-        )));
-        bool successV2;
-        bytes memory outputV2;
-        if(impl == address(comptrollerV2)) {
-            (successV2, outputV2) = address(unitroller).call(
-                abi.encodeWithSelector(
-                        comptrollerV2._setCompSpeeds.selector, a2, b2, c2
-                )
-            );
-        } else {
-            (successV2, outputV2) = address(unitroller).call(
-                abi.encodeWithSelector(
-                        comptrollerV1._setCompSpeed.selector, a, b
-                )
-            );
-        }
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
+//    function Comptroller__setCompSpeeds(address a, uint256 b) public virtual {
+//        require(b > 0);
+//        address[] memory a2 = new address[](1);
+//        a2[0] = a;
+//        uint256[] memory b2 = new uint256[](1);
+//        uint256[] memory c2 = new uint256[](1);
+//        b2[0] = c2[0] = b;
+//
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        (bool successV1, bytes memory outputV1) = address(unitroller).call(
+//            abi.encodeWithSelector(
+//                comptrollerV1._setCompSpeed.selector, a, b
+//            )
+//        );
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        address impl = address(uint160(uint256(
+//            hevm.load(address(unitroller),0x0000000000000000000000000000000000000000000000000000000000000002)
+//        )));
+//        bool successV2;
+//        bytes memory outputV2;
+//        if(impl == address(comptrollerV2)) {
+//            (successV2, outputV2) = address(unitroller).call(
+//                abi.encodeWithSelector(
+//                        comptrollerV2._setCompSpeeds.selector, a2, b2, c2
+//                )
+//            );
+//        } else {
+//            (successV2, outputV2) = address(unitroller).call(
+//                abi.encodeWithSelector(
+//                        comptrollerV1._setCompSpeed.selector, a, b
+//                )
+//            );
+//        }
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
 
 
     /*** Tainted Variables ***/
 
-    // function Comptroller_accountAssets(address a) public {
-    //     hevm.selectFork(fork1);
-    //     CToken[] a1 = IComptrollerV1(address(unitroller)).accountAssets(a);
-    //     hevm.selectFork(fork2);
-    //     CToken[] a2 = IComptrollerV2(address(unitroller)).accountAssets(a);
-    //     assert(a1 == a2);
-    // }
+     function Comptroller_accountAssets(address a, uint256 b) public returns (address) {
+         require(b < IComptrollerV1(address(unitroller)).getAssetsIn(a).length);
+         hevm.selectFork(fork1);
+         address a1 = IComptrollerV1(address(unitroller)).accountAssets(a, b);
+         hevm.selectFork(fork2);
+         address a2 = IComptrollerV2(address(unitroller)).accountAssets(a, b);
+         assert(a1 == a2);
+         return a1;
+     }
 
-    // function Comptroller_markets(address a) public {
-    //     hevm.selectFork(fork1);
-    //     ComptrollerV2Storage.Market a1 = IComptrollerV1(address(unitroller)).markets(a);
-    //     hevm.selectFork(fork2);
-    //     ComptrollerV2Storage.Market a2 = IComptrollerV2(address(unitroller)).markets(a);
-    //     assert(a1 == a2);
-    // }
+//     function Comptroller_markets(address a) public {
+//         hevm.selectFork(fork1);
+//         IComptrollerV1.Market a1 = IComptrollerV1(address(unitroller)).markets(a);
+//         hevm.selectFork(fork2);
+//         IComptrollerV1.Market a2 = IComptrollerV2(address(unitroller)).markets(a);
+//         assert(a1 == a2);
+//     }
 
-    function Comptroller_mintGuardianPaused(address a) public {
-        hevm.selectFork(fork1);
-        bool a1 = IComptrollerV1(address(unitroller)).mintGuardianPaused(a);
-        hevm.selectFork(fork2);
-        bool a2 = IComptrollerV2(address(unitroller)).mintGuardianPaused(a);
-        assert(a1 == a2);
-    }
-
-    function Comptroller_borrowGuardianPaused(address a) public {
-        hevm.selectFork(fork1);
-        bool a1 = IComptrollerV1(address(unitroller)).borrowGuardianPaused(a);
-        hevm.selectFork(fork2);
-        bool a2 = IComptrollerV2(address(unitroller)).borrowGuardianPaused(a);
-        assert(a1 == a2);
-    }
-
-    // function Comptroller_allMarkets(uint i) public {
-    //     hevm.selectFork(fork1);
-    //     CToken a1 = IComptrollerV1(address(unitroller)).allMarkets(i);
-    //     hevm.selectFork(fork2);
-    //     CToken a2 = IComptrollerV2(address(unitroller)).allMarkets(i);
-    //     assert(a1 == a2);
-    // }
-//
-//    function Comptroller_compSpeeds(address a) public {
+//    function Comptroller_mintGuardianPaused(address a) public {
 //        hevm.selectFork(fork1);
-//        uint256 a1 = IComptrollerV1(address(unitroller)).compSpeeds(a);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        bool a1 = IComptrollerV1(address(unitroller)).mintGuardianPaused(a);
 //        hevm.selectFork(fork2);
-//        uint256 a2 = IComptrollerV2(address(unitroller)).compSpeeds(a);
-//        assert(a1 == a2);
-//    }
-
-//    function Comptroller_compSupplyState(address a) public {
-//        hevm.selectFork(fork1);
-//        uint224 a1 = IComptrollerV1(address(unitroller)).compSupplyState(a).index;
-//        hevm.selectFork(fork2);
-//        uint224 a2 = IComptrollerV2(address(unitroller)).compSupplyState(a).index;
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        bool a2 = IComptrollerV2(address(unitroller)).mintGuardianPaused(a);
 //        assert(a1 == a2);
 //    }
 //
-//    function Comptroller_compBorrowState(address a) public {
+//    function Comptroller_borrowGuardianPaused(address a) public {
 //        hevm.selectFork(fork1);
-//        uint224 a1 = IComptrollerV1(address(unitroller)).compBorrowState(a).index;
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        bool a1 = IComptrollerV1(address(unitroller)).borrowGuardianPaused(a);
 //        hevm.selectFork(fork2);
-//        uint224 a2 = IComptrollerV2(address(unitroller)).compBorrowState(a).index;
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        bool a2 = IComptrollerV2(address(unitroller)).borrowGuardianPaused(a);
 //        assert(a1 == a2);
 //    }
+
+     function Comptroller_allMarkets(uint i) public returns (address) {
+         hevm.selectFork(fork1);
+         address a1 = IComptrollerV1(address(unitroller)).allMarkets(i);
+         hevm.selectFork(fork2);
+         address a2 = IComptrollerV2(address(unitroller)).allMarkets(i);
+         assert(a1 == a2);
+         return a1;
+     }
+
+    function Comptroller_compSpeeds(address a) public {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
+        uint256 a1 = IComptrollerV1(address(unitroller)).compSpeeds(a);
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
+        uint256 a2 = IComptrollerV2(address(unitroller)).compSpeeds(a);
+        assert(a1 == a2);
+    }
+
+    function Comptroller_compSupplyState(address a) public {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
+        uint224 a1 = IComptrollerV1(address(unitroller)).compSupplyState(a).index;
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
+        uint224 a2 = IComptrollerV2(address(unitroller)).compSupplyState(a).index;
+        assert(a1 == a2);
+    }
+
+    function Comptroller_compBorrowState(address a) public {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
+        uint224 a1 = IComptrollerV1(address(unitroller)).compBorrowState(a).index;
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
+        uint224 a2 = IComptrollerV2(address(unitroller)).compBorrowState(a).index;
+        assert(a1 == a2);
+    }
 
     function Comptroller_compSupplierIndex(address a) public {
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         uint256 a1 = IComptrollerV1(address(unitroller)).compSupplierIndex(a, msg.sender);
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         uint256 a2 = IComptrollerV2(address(unitroller)).compSupplierIndex(a, msg.sender);
         assert(a1 == a2);
     }
 
     function Comptroller_compBorrowerIndex(address a) public {
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         uint256 a1 = IComptrollerV1(address(unitroller)).compBorrowerIndex(a, msg.sender);
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         uint256 a2 = IComptrollerV2(address(unitroller)).compBorrowerIndex(a, msg.sender);
         assert(a1 == a2);
     }
 
     function Comptroller_compAccrued(address a) public {
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         uint256 a1 = IComptrollerV1(address(unitroller)).compAccrued(a);
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         uint256 a2 = IComptrollerV2(address(unitroller)).compAccrued(a);
         assert(a1 == a2);
     }
-
-    function Comptroller_compContributorSpeeds(address a) public {
-        hevm.selectFork(fork1);
-        uint256 a1 = IComptrollerV1(address(unitroller)).compContributorSpeeds(a);
-        hevm.selectFork(fork2);
-        uint256 a2 = IComptrollerV2(address(unitroller)).compContributorSpeeds(a);
-        assert(a1 == a2);
-    }
-
-    function Comptroller_lastContributorBlock(address a) public {
-        hevm.selectFork(fork1);
-        uint256 a1 = IComptrollerV1(address(unitroller)).lastContributorBlock(a);
-        hevm.selectFork(fork2);
-        uint256 a2 = IComptrollerV2(address(unitroller)).lastContributorBlock(a);
-        assert(a1 == a2);
-    }
+//
+//    function Comptroller_compContributorSpeeds(address a) public {
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        uint256 a1 = IComptrollerV1(address(unitroller)).compContributorSpeeds(a);
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        uint256 a2 = IComptrollerV2(address(unitroller)).compContributorSpeeds(a);
+//        assert(a1 == a2);
+//    }
+//
+//    function Comptroller_lastContributorBlock(address a) public {
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        uint256 a1 = IComptrollerV1(address(unitroller)).lastContributorBlock(a);
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        uint256 a2 = IComptrollerV2(address(unitroller)).lastContributorBlock(a);
+//        assert(a1 == a2);
+//    }
 
 
     /*** Tainted External Contracts ***/
 
-    function CToken_balanceOf(address a) public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.balanceOf.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.balanceOf.selector, a
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
+//    function CToken_balanceOf(address a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.balanceOf.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.balanceOf.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CToken_borrowBalanceStored(address a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.borrowBalanceStored.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.borrowBalanceStored.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CToken_getAccountSnapshot(address a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.getAccountSnapshot.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.getAccountSnapshot.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
 
-    function CToken_borrowBalanceStored(address a) public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.borrowBalanceStored.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.borrowBalanceStored.selector, a
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CToken_getAccountSnapshot(address a) public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.getAccountSnapshot.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.getAccountSnapshot.selector, a
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CToken_supplyRatePerBlock() public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.supplyRatePerBlock.selector
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.supplyRatePerBlock.selector
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CToken_accrueInterest() public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.accrueInterest.selector
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.accrueInterest.selector
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CToken_borrowRatePerBlock() public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.borrowRatePerBlock.selector
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.borrowRatePerBlock.selector
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CToken_totalBorrowsCurrent() public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.totalBorrowsCurrent.selector
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.totalBorrowsCurrent.selector
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CToken_initialize(address a, address b, uint256 c, string memory d, string memory e, uint8 f) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.initialize.selector, a, b, c, d, e, f
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken.initialize.selector, a, b, c, d, e, f
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CToken__setComptroller(address a) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken._setComptroller.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(cToken).call(
-            abi.encodeWithSelector(
-                cToken._setComptroller.selector, a
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
+//    function CToken_supplyRatePerBlock() public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.supplyRatePerBlock.selector
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.supplyRatePerBlock.selector
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CToken_accrueInterest() public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.accrueInterest.selector
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.accrueInterest.selector
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CToken_borrowRatePerBlock() public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.borrowRatePerBlock.selector
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.borrowRatePerBlock.selector
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CToken_totalBorrowsCurrent() public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.totalBorrowsCurrent.selector
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.totalBorrowsCurrent.selector
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CToken_initialize(address a, address b, uint256 c, string memory d, string memory e, uint8 f) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        (bool successV2, bytes memory outputV2) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.initialize.selector, a, b, c, d, e, f
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        (bool successV1, bytes memory outputV1) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken.initialize.selector, a, b, c, d, e, f
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CToken__setComptroller(address a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        (bool successV2, bytes memory outputV2) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken._setComptroller.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        (bool successV1, bytes memory outputV1) = address(cToken).call(
+//            abi.encodeWithSelector(
+//                cToken._setComptroller.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
 
 //    function Unitroller__acceptImplementation() public virtual {
 //        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
 //        (bool successV2, bytes memory outputV2) = address(unitroller).call(
 //            abi.encodeWithSelector(
 //                unitroller._acceptImplementation.selector
 //            )
 //        );
 //        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
 //        (bool successV1, bytes memory outputV1) = address(unitroller).call(
 //            abi.encodeWithSelector(
 //                unitroller._acceptImplementation.selector
@@ -1338,12 +1470,14 @@ contract DiffFuzzUpgrades {
 //
 //    function Unitroller__setPendingImplementation(address a) public virtual {
 //        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
 //        (bool successV2, bytes memory outputV2) = address(unitroller).call(
 //            abi.encodeWithSelector(
 //                unitroller._setPendingImplementation.selector, a
 //            )
 //        );
 //        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
 //        (bool successV1, bytes memory outputV1) = address(unitroller).call(
 //            abi.encodeWithSelector(
 //                unitroller._setPendingImplementation.selector, a
@@ -1355,12 +1489,14 @@ contract DiffFuzzUpgrades {
 //
 //    function Unitroller__setPendingAdmin(address a) public virtual {
 //        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
 //        (bool successV2, bytes memory outputV2) = address(unitroller).call(
 //            abi.encodeWithSelector(
 //                unitroller._setPendingAdmin.selector, a
 //            )
 //        );
 //        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
 //        (bool successV1, bytes memory outputV1) = address(unitroller).call(
 //            abi.encodeWithSelector(
 //                unitroller._setPendingAdmin.selector, a
@@ -1372,12 +1508,14 @@ contract DiffFuzzUpgrades {
 //
 //    function Unitroller__acceptAdmin() public virtual {
 //        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
 //        (bool successV2, bytes memory outputV2) = address(unitroller).call(
 //            abi.encodeWithSelector(
 //                unitroller._acceptAdmin.selector
 //            )
 //        );
 //        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
 //        (bool successV1, bytes memory outputV1) = address(unitroller).call(
 //            abi.encodeWithSelector(
 //                unitroller._acceptAdmin.selector
@@ -1389,6 +1527,7 @@ contract DiffFuzzUpgrades {
 
 //    function PriceOracle_getUnderlyingPrice(address a) public virtual {
 //        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
 //        hevm.prank(msg.sender);
 //        (bool successV2, bytes memory outputV2) = address(priceOracle).call(
 //            abi.encodeWithSelector(
@@ -1396,6 +1535,7 @@ contract DiffFuzzUpgrades {
 //            )
 //        );
 //        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
 //        hevm.prank(msg.sender);
 //        (bool successV1, bytes memory outputV1) = address(priceOracle).call(
 //            abi.encodeWithSelector(
@@ -1405,15 +1545,17 @@ contract DiffFuzzUpgrades {
 //        assert(successV1 == successV2);
 //        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
 //    }
-
+//
     function Comp_transfer(address a, uint256 b) public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
         (bool successV2, bytes memory outputV2) = address(comp).call(
             abi.encodeWithSelector(
                 comp.transfer.selector, a, b
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
         (bool successV1, bytes memory outputV1) = address(comp).call(
             abi.encodeWithSelector(
                 comp.transfer.selector, a, b
@@ -1423,181 +1565,219 @@ contract DiffFuzzUpgrades {
         assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
     }
 
-    function Comp_balanceOf(address a) public virtual {
+    function Comp_balanceOf() public virtual {
         hevm.selectFork(fork2);
+        emit SwitchedFork(fork2, block.number, block.timestamp);
+        uint balance = comp.balanceOf(msg.sender);
+        emit BalanceOnFork(2, balance);
         hevm.prank(msg.sender);
         (bool successV2, bytes memory outputV2) = address(comp).call(
             abi.encodeWithSelector(
-                comp.balanceOf.selector, a
+                comp.balanceOf.selector, msg.sender
             )
         );
         hevm.selectFork(fork1);
+        emit SwitchedFork(fork1, block.number, block.timestamp);
+        balance = comp.balanceOf(msg.sender);
+        emit BalanceOnFork(1, balance);
         hevm.prank(msg.sender);
         (bool successV1, bytes memory outputV1) = address(comp).call(
             abi.encodeWithSelector(
-                comp.balanceOf.selector, a
+                comp.balanceOf.selector, msg.sender
             )
         );
         assert(successV1 == successV2);
         assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
     }
 
-    function Comp_getPriorVotes(address a, uint256 b) public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(comp).call(
-            abi.encodeWithSelector(
-                comp.getPriorVotes.selector, a, b
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(comp).call(
-            abi.encodeWithSelector(
-                comp.getPriorVotes.selector, a, b
-            )
-        );
-        assert(successV1 == successV2);
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function Comp_getCurrentVotes(address a) public virtual {
-        hevm.selectFork(fork2);
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(comp).call(
-            abi.encodeWithSelector(
-                comp.getCurrentVotes.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(comp).call(
-            abi.encodeWithSelector(
-                comp.getCurrentVotes.selector, a
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CErc20_mint(uint256 a) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.mint.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.mint.selector, a
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CErc20_redeem(uint256 a) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.redeem.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.redeem.selector, a
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CErc20_redeemUnderlying(uint256 a) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.redeemUnderlying.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.redeemUnderlying.selector, a
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CErc20_borrow(uint256 a) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.borrow.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.borrow.selector, a
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CErc20_repayBorrow(uint256 a) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.repayBorrow.selector, a
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.repayBorrow.selector, a
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CErc20_repayBorrowBehalf(address a, uint256 b) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.repayBorrowBehalf.selector, a, b
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.repayBorrowBehalf.selector, a, b
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
-
-    function CErc20_liquidateBorrow(address a, uint256 b, address c) public virtual {
-        hevm.selectFork(fork2);
-        (bool successV2, bytes memory outputV2) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.liquidateBorrow.selector, a, b, c
-            )
-        );
-        hevm.selectFork(fork1);
-        (bool successV1, bytes memory outputV1) = address(cErc20).call(
-            abi.encodeWithSelector(
-                cErc20.liquidateBorrow.selector, a, b, c
-            )
-        );
-        assert(successV1 == successV2); 
-        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
-    }
+//    function Comp_getPriorVotes(address a, uint256 b) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(comp).call(
+//            abi.encodeWithSelector(
+//                comp.getPriorVotes.selector, a, b
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(comp).call(
+//            abi.encodeWithSelector(
+//                comp.getPriorVotes.selector, a, b
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function Comp_getCurrentVotes(address a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(comp).call(
+//            abi.encodeWithSelector(
+//                comp.getCurrentVotes.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(comp).call(
+//            abi.encodeWithSelector(
+//                comp.getCurrentVotes.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CErc20_mint(uint256 a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.mint.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.mint.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CErc20_redeem(uint256 a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.redeem.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.redeem.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CErc20_redeemUnderlying(uint256 a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.redeemUnderlying.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.redeemUnderlying.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CErc20_borrow(uint256 a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.borrow.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.borrow.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CErc20_repayBorrow(uint256 a) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.repayBorrow.selector, a
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.repayBorrow.selector, a
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CErc20_repayBorrowBehalf(address a, uint256 b) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.repayBorrowBehalf.selector, a, b
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.repayBorrowBehalf.selector, a, b
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
+//
+//    function CErc20_liquidateBorrow(address a, uint256 b, address c) public virtual {
+//        hevm.selectFork(fork2);
+//        emit SwitchedFork(fork2, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV2, bytes memory outputV2) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.liquidateBorrow.selector, a, b, c
+//            )
+//        );
+//        hevm.selectFork(fork1);
+//        emit SwitchedFork(fork1, block.number, block.timestamp);
+//        hevm.prank(msg.sender);
+//        (bool successV1, bytes memory outputV1) = address(cErc20).call(
+//            abi.encodeWithSelector(
+//                cErc20.liquidateBorrow.selector, a, b, c
+//            )
+//        );
+//        assert(successV1 == successV2);
+//        assert((!successV1 && !successV2) || keccak256(outputV1) == keccak256(outputV2));
+//    }
 
 
     /*** Additional Targets ***/ 

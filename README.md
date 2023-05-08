@@ -104,7 +104,7 @@ echidna DiffFuzzUpgrades.sol --contract DiffFuzzUpgrades --config CryticConfig.y
 #### Command Line Arguments
 Additional options unlock greater functionality:
 * `-p, --proxy`: Specifies the proxy to use (either a file path or an address, same mode as V1/V2).
-* `-T, --targets`: Comma separated list of additional target contracts (either file paths or addresses, same as V1/V2).
+* `-t, --targets`: Comma separated list of additional target contracts (either file paths or addresses, same as V1/V2).
 * `-d, --output-dir`: Directory to store the test contract and config file in.
 * `-A, --contract-addr`: Address to which to deploy the test contract.
 * `-l, --seq-len`: Transaction sequence length for Echidna fuzzing (default 100).
@@ -130,6 +130,7 @@ Additional options unlock greater functionality:
 * `-b, --block`: The block to use (for fork mode). Can also be set using the `ECHIDNA_RPC_BLOCK` environment variable.
 * `-R, --network-rpc`: The RPC node URL to use (for fork mode). Can also be set using the `ECHIDNA_RPC_URL` environment variable.
 * `--etherscan-key`: The block explorer API key to use (for fork mode). Can also be set using the `ETHERSCAN_API_KEY` environment variable.
+* `-T, --token-holders`: Flag to search for token holders (in fork mode) for any targets that implement ERC20 (default false).
 * `-v, --version`: The solc compiler version to use (default 0.8.0).
 * `-u, --fuzz-upgrade`: Flag to include an upgrade function in test contract, to upgrade to V2 mid-transaction sequence (default false).
 * `--protected`: Flag to include test wrappers for protected functions, i.e., with modifier like `onlyOwner` (default false).
