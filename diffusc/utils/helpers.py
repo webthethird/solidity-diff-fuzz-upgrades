@@ -2,7 +2,7 @@
 
 import os
 import difflib
-from typing import List
+from typing import TYPE_CHECKING, List, Optional
 
 # pylint: disable= no-name-in-module
 from solc_select.solc_select import get_installable_versions
@@ -16,8 +16,11 @@ from slither.core.variables.state_variable import StateVariable
 from diffusc.utils.classes import ContractData, Diff
 from diffusc.utils.crytic_print import PrintMode, CryticPrint
 
+if TYPE_CHECKING:
+    from slither import Slither
 
-def get_compilation_unit_name(slither_object) -> str:
+
+def get_compilation_unit_name(slither_object: "Slither") -> str:
     """Get the name of the compilation unit from Slither."""
 
     name = list(slither_object.crytic_compile.compilation_units.keys())[0]
@@ -28,7 +31,7 @@ def get_compilation_unit_name(slither_object) -> str:
     return name
 
 
-def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
+def get_pragma_version_from_file(filepath: str, seen: Optional[List[str]] = None) -> str:
     """Recursive function to determine minimum solc version required by a Solidity file."""
 
     if seen is None:
@@ -50,14 +53,14 @@ def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
         else line.split()[1].replace('"', "").replace("'", "")
         for line in imports
     ]
-    for file in files:
-        if file.startswith("./"):
-            file = file.replace("./", filepath.rsplit("/", maxsplit=1)[0] + "/")
-        elif file.startswith("../"):
-            file = file.replace("../", filepath.rsplit("/", maxsplit=2)[0] + "/")
-        if file not in seen:
-            seen.append(file)
-            versions.append(get_pragma_version_from_file(file, seen))
+    for path in files:
+        if path.startswith("./"):
+            path = path.replace("./", filepath.rsplit("/", maxsplit=1)[0] + "/")
+        elif path.startswith("../"):
+            path = path.replace("../", filepath.rsplit("/", maxsplit=2)[0] + "/")
+        if path not in seen:
+            seen.append(path)
+            versions.append(get_pragma_version_from_file(path, seen))
     high_version = ["0", "0", "0"]
     for ver in versions:
         vers = ver.split(".")
@@ -77,7 +80,7 @@ def get_pragma_version_from_file(filepath: str, seen: List[str] = None) -> str:
 
 
 def do_diff(
-    v_1: ContractData, v_2: ContractData, additional_targets: List[ContractData] = None
+    v_1: ContractData, v_2: ContractData, additional_targets: Optional[List[ContractData]] = None
 ) -> Diff:
     """Use slither.utils.upgradeability to perform a diff between two contract versions."""
 
@@ -112,7 +115,7 @@ def do_diff(
         tainted_contracts=tainted_contracts,
     )
     for key, lst in diff.items():
-        if len(lst) > 0:
+        if isinstance(lst, list) and len(lst) > 0:
             CryticPrint.print_warning(f'  * {str(key).replace("-", " ")}:')
             for obj in lst:
                 if isinstance(obj, StateVariable):
