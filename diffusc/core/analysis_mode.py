@@ -66,6 +66,7 @@ class AnalysisMode:
         """
         if not self._v1 or not self._v2:
             self.analyze_contracts()
+        assert self._v1 and self._v2 and self._diff
 
         code_generator = CodeGenerator(
             self._v1,
@@ -77,7 +78,8 @@ class AnalysisMode:
             self._net_info,
         )
         code_generator.proxy = self._proxy
-        code_generator.targets = self._targets
+        if self._targets is not None:
+            code_generator.targets = self._targets
 
         contract = code_generator.generate_test_contract(self._diff)
         return contract

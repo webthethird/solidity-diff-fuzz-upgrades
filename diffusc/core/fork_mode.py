@@ -116,7 +116,7 @@ class ForkMode(AnalysisMode):
         if args.holders:
             self._token_holders = []
 
-    def parse_network_args(self, args: argparse.Namespace):
+    def parse_network_args(self, args: argparse.Namespace) -> None:
         """Parse arguments related to network info."""
         # Get prefix for current network and Etherscan API key
         if args.network in net_vars.SUPPORTED_NETWORKS or args.network == "mainnet":
@@ -165,6 +165,7 @@ class ForkMode(AnalysisMode):
         """Get ContractData objects from the addresses provided."""
         assert self._v1_address != "" and self._v2_address != ""
         assert isinstance(self._provider, NetworkSlitherProvider)
+        assert isinstance(self._net_info, NetworkInfoProvider)
 
         self._v1 = get_contract_data_from_address(
             self._v1_address, "", self._provider, self._net_info, suffix="V1"
@@ -215,11 +216,14 @@ class ForkMode(AnalysisMode):
         self.analyze_tokens()
 
     def analyze_tokens(self) -> None:
+        assert self._v1 and self._v2 and self._net_info
+
         if self._v1["is_erc20"] and self._v2["is_erc20"]:
             if self._proxy is not None:
                 self._tokens.append(self._proxy)
                 contract = self._proxy["contract_object"]
                 slither = self._proxy["slither"]
+                assert contract and slither
                 abi = contract.file_scope.abi(
                     slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
                 )
@@ -231,6 +235,7 @@ class ForkMode(AnalysisMode):
                 self._tokens.extend([self._v1, self._v2])
                 contract = self._v1["contract_object"]
                 slither = self._v1["slither"]
+                assert contract and slither
                 abi = contract.file_scope.abi(
                     slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
                 )
@@ -244,6 +249,7 @@ class ForkMode(AnalysisMode):
                     self._tokens.append(target)
                     contract = target["contract_object"]
                     slither = target["slither"]
+                    assert contract and slither
                     abi = contract.file_scope.abi(
                         slither.compilation_units[0].crytic_compile_compilation_unit, contract.name
                     )
