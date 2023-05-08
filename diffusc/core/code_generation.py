@@ -15,6 +15,7 @@ from slither.utils.code_generation import generate_interface
 from slither.utils.upgradeability import (
     get_proxy_implementation_slot,
     TaintedExternalContract,
+    SlotInfo
 )
 from slither.core.declarations.contract import Contract
 from slither.core.variables.variable import Variable
@@ -157,7 +158,7 @@ class CodeGenerator:
     @staticmethod
     def get_solidity_function_returns(return_type: List[Type]) -> List[str]:
         """Get function return types as solidity types."""
-        outputs = []
+        outputs: List[str] = []
 
         if not return_type:
             return outputs
@@ -239,6 +240,18 @@ class CodeGenerator:
             suffix=suffix,
             path=contract.file_scope.filename.absolute,
             solc_version=version,
+            address="",
+            valid_data=False,
+            name="",
+            interface=None,
+            interface_name=None,
+            functions=[],
+            slither=None,
+            is_proxy=False,
+            is_erc20=False,
+            implementation_slither=None,
+            implementation_slot=None,
+            implementation_object=None
         )
         if version in installed_versions() or version in get_installable_versions():
             switch_global_version(version, True)
@@ -260,6 +273,7 @@ class CodeGenerator:
         """Complete the ContractData object after getting valid data from Slither."""
 
         assert contract_data["valid_data"]
+        assert isinstance(contract_data["contract_object"], Contract)
 
         if contract_data["contract_object"].is_upgradeable_proxy:
             contract_data["is_proxy"] = True
@@ -280,8 +294,8 @@ class CodeGenerator:
 
         args = "("
         call_args = "("
-        return_vals = []
-        returns_to_compare = []
+        return_vals: List[str] = []
+        returns_to_compare: List[str] = []
         counter = 0
         if len(func["inputs"]) == 0:
             args += ")"
@@ -294,7 +308,7 @@ class CodeGenerator:
             args = f"{args[0:-2]})"
             call_args = f"{call_args[0:-2]})"
         if len(func["outputs"]) == 0:
-            return_vals = ""
+            return_vals = [""]
         elif len(func["outputs"]) == 1:
             for j in range(0, 2):
                 return_vals.append(f"{func['outputs'][0]} {chr(ord('a') + counter)}")
@@ -335,7 +349,7 @@ class CodeGenerator:
         if tainted is None:
             tainted = []
         if proxy is None:
-            proxy = ContractData(name="")
+            proxy = ContractData(name="")   # type: ignore[typeddict-item]
         tainted_contracts = [taint.contract for taint in tainted]
         CryticPrint.print_information("  * Adding wrapper functions for additional targets.")
 
@@ -366,7 +380,7 @@ class CodeGenerator:
         c_data: ContractData,
         func: FunctionInfo,
         suffix: str,
-        proxy=None,
+        proxy: ContractData = None,
     ) -> str:
         """Generate code for a low-level call to use in wrapper functions."""
 
@@ -439,6 +453,7 @@ class CodeGenerator:
         """Create wrapper function for new function in V2 replacing one in V1."""
 
         wrapped = ""
+        assert isinstance(proxy["implementation_slot"], SlotInfo)
 
         new_args, _, _, _ = self.get_args_and_returns_for_wrapping(new_func)
         old_args, _, _, _ = self.get_args_and_returns_for_wrapping(old_func)
@@ -576,6 +591,8 @@ class CodeGenerator:
         fork = self._fork
         protected = self._protected
 
+        assert isinstance(v_1["contract_object"], Contract) and isinstance(v_2["contract_object"], Contract)
+
         protected_mods = [
             "onlyOwner",
             "onlyAdmin",
@@ -687,8 +704,6 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
-        if targets is None:
-            targets = []
         version = self._version
         fork = self._fork
         upgrade = self._upgrade
@@ -705,10 +720,14 @@ class CodeGenerator:
             self.get_contract_data(t.contract)
             if t.contract.name
             not in [
-                target["contract_object"].name if target["valid_data"] else "" for target in targets
+                target["contract_object"].name if target["contract_object"] is not None
+                else "" for target in targets
             ]
-            + [proxy["contract_object"].name if proxy is not None and proxy["valid_data"] else ""]
-            else next(target for target in targets + [proxy] if t.contract.name == target["name"])
+            + [proxy["contract_object"].name if proxy is not None and proxy["contract_object"] is not None else ""]
+            else next(
+                target for target in targets + [proxy]
+                if target is not None and t.contract.name == target["name"]
+            )
             for t in tainted_contracts
         ]
         tainted_targets = [t for t in tainted_targets if t["valid_data"]]
@@ -743,16 +762,16 @@ class CodeGenerator:
 
         # Add all interfaces first
         CryticPrint.print_information("  * Adding interfaces.")
-        final_contract += v_1["interface"]
-        final_contract += v_2["interface"]
+        final_contract += str(v_1["interface"])
+        final_contract += str(v_2["interface"])
 
         for target in targets:
-            final_contract += target["interface"]
+            final_contract += str(target["interface"])
         for target in tainted_targets:
-            if target["name"] not in (t["contract_object"].name for t in other_targets):
-                final_contract += target["interface"]
+            if target["name"] not in (t["contract_object"].name for t in other_targets if t["contract_object"]):
+                final_contract += str(target["interface"])
         if proxy is not None:
-            final_contract += proxy["interface"]
+            final_contract += str(proxy["interface"])
 
         # Add the hevm interface
         final_contract += "interface IHevm {\n"
@@ -897,8 +916,6 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
-        if targets is None:
-            targets = []
         upgrade = self._upgrade
 
         constructor = "\n    constructor() public {\n"
@@ -959,7 +976,7 @@ class CodeGenerator:
         if tainted_targets is not None:
             for target in tainted_targets:
                 if target["name"] not in (
-                    target["contract_object"].name for target in other_targets
+                    other["contract_object"].name for other in other_targets if other["contract_object"]
                 ):
                     constructor += (
                         f"        {camel_case(target['name'])}{v_1['suffix']} = "
@@ -981,8 +998,6 @@ class CodeGenerator:
         v_2 = self.v_2
         proxy = self.proxy
         targets = self.targets
-        if targets is None:
-            targets = []
         upgrade = self._upgrade
         network_info = self._network_info
 
@@ -1032,7 +1047,7 @@ class CodeGenerator:
                     "(proxy implementation slot not found).\n"
                 )
         for target in targets:
-            if "address" in target:
+            if target["address"] != "":
                 constructor += (
                     f"        {camel_case(target['name'])} = "
                     f"{target['interface_name']}({target['address']});\n"
@@ -1052,9 +1067,9 @@ class CodeGenerator:
         if tainted_targets is not None:
             for target in tainted_targets:
                 if target["name"] not in (
-                    target["contract_object"].name for target in other_targets
+                    other["contract_object"].name for other in other_targets if other["contract_object"]
                 ):
-                    if "address" in target:
+                    if target["address"] != "":
                         constructor += (
                             f"        {camel_case(target['name'])} = "
                             f"{target['interface_name']}({target['address']});\n"
