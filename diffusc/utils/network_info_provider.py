@@ -204,7 +204,7 @@ class NetworkInfoProvider:
         contract = self._w3.eth.contract(address=to_checksum_address(address), abi=abi)
 
         while max_retries > 0:
-            block_filter = contract.events.Transfer.create_filter(
+            block_filter = contract.events.Transfer.create_filter(  # type: ignore[attr-defined]
                 fromBlock=block_from, toBlock=block_to
             )
             events = block_filter.get_all_entries()
@@ -257,7 +257,7 @@ class NetworkInfoProvider:
 
         while max_retries > 0 and len(holders) < max_holders:
             try:
-                block_filter = contract.events.Transfer.create_filter(
+                block_filter = contract.events.Transfer.create_filter(  # type: ignore[attr-defined]
                     fromBlock=block_from, toBlock=block_to
                 )
                 events = block_filter.get_all_entries()
