@@ -36,7 +36,7 @@ def get_contract_data_from_path(
     filepath: str, provider: FileSlitherProvider, suffix: str = ""
 ) -> ContractData:
     """Get a ContractData object from file path, including Slither object."""
-    contract_data = ContractData()
+    contract_data = ContractData()  # type: ignore[typeddict-item]
 
     CryticPrint.print_message(f"* Getting contract data from {filepath}")
 

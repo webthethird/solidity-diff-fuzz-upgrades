@@ -1,7 +1,9 @@
 """Module containing helper functions used by fork mode."""
 
 # pylint: disable= no-name-in-module
+from typing import List, Set, Optional, Tuple, Union, Dict
 from eth_utils import to_checksum_address, is_address
+from eth_utils.typing import ChecksumAddress
 from slither import Slither
 from slither.exceptions import SlitherError
 from slither.core.declarations import Contract
@@ -28,6 +30,7 @@ def get_deployed_contract(
 
     CryticPrint.print_information("    * Getting information from contract...")
     slither_object = contract_data["slither"]
+    assert slither_object
     contract_name = get_compilation_unit_name(slither_object)
     contract = slither_object.get_contract_from_name(contract_name)[0]
     impl_slither = None
@@ -65,7 +68,7 @@ def get_contract_data_from_address(
 ) -> ContractData:
     """Get a ContractData object from a network address, including Slither object."""
 
-    contract_data = ContractData()
+    contract_data = ContractData()  # type: ignore[typeddict-item]
 
     CryticPrint.print_information(
         f"  * Getting information from address {to_checksum_address(address)}",
@@ -108,7 +111,7 @@ def get_contract_data_from_address(
     return contract_data
 
 
-def addresses_from_comma_separated_string(data: str) -> tuple[list, dict]:
+def addresses_from_comma_separated_string(data: str) -> Tuple[List[ChecksumAddress], dict]:
     """
     Get a list of addresses and a dict mapping proxies to implementation address
     from a comma-separated list of addresses, such as the example below:
@@ -116,8 +119,8 @@ def addresses_from_comma_separated_string(data: str) -> tuple[list, dict]:
     """
     addresses = data.split(",")
 
-    unique_addresses = set()
-    implementations = {}
+    unique_addresses: Set[ChecksumAddress] = set()
+    implementations: Dict[ChecksumAddress, ChecksumAddress] = {}
 
     for address in addresses:
         if ":" in address:
@@ -136,16 +139,16 @@ def addresses_from_comma_separated_string(data: str) -> tuple[list, dict]:
             else:
                 unique_addresses.add(to_checksum_address(address))
 
-    unique_addresses = list(unique_addresses)
+    unique_address_list: List[ChecksumAddress] = list(unique_addresses)
 
-    return unique_addresses, implementations
+    return unique_address_list, implementations
 
 
 def get_contracts_from_comma_separated_string(
     addresses_string: str,
     slither_provider: NetworkSlitherProvider,
     network_info: NetworkInfoProvider,
-) -> tuple[list[ContractData], list[str], dict]:
+) -> tuple[list[ContractData], list[ChecksumAddress], dict]:
     """
     Get a list of ContractData objects, as well as a list of addresses and a
     dict mapping proxies to implementation addresses, from a comma-separated
