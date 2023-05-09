@@ -22,12 +22,17 @@ def main() -> None:
     # Read command line arguments
 
     parser = argparse.ArgumentParser(
-        prog="diff-fuzz-upgrades",
+        prog="diffusc",
         description="Generate differential fuzz testing contract for comparing two upgradeable contract versions.",
     )
 
     parser.add_argument("v1", help="The original version of the contract.")
-    parser.add_argument("v2", help="The upgraded version of the contract.")
+    parser.add_argument(
+        "v2",
+        nargs="?",
+        default="",
+        help="The upgraded version of the contract."
+    )
     parser.add_argument("-p", "--proxy", dest="proxy", help="Specifies the proxy contract to use.")
     parser.add_argument(
         "-t",
@@ -119,6 +124,13 @@ def main() -> None:
         action="store_true",
         help="Specifies whether to run Echidna on the generated test contract (default false)."
     )
+    parser.add_argument(
+        "-M",
+        "--mutation",
+        dest="mutation",
+        action="store_true",
+        help="Specifies whether to create a V2 contract by mutating V1 (default false). If not set, V2 must be given."
+    )
 
     args = parser.parse_args()
 
@@ -128,6 +140,12 @@ def main() -> None:
 
     # Silence Slither Read Storage
     logging.getLogger("Slither-read-storage").setLevel(logging.CRITICAL)
+
+    if args.v2 == "" and not args.mutation:
+        CryticPrint.print_error(
+            "Error: V2 must be specified unless using mutation mode (`-M` flag).",
+        )
+        exit(1)
 
     output_dir = "./"
     if args.output_dir is not None:
