@@ -16,6 +16,7 @@ from diffusc.utils.from_address import (
     get_contracts_from_comma_separated_string,
     get_contract_data_from_address,
 )
+from diffusc.utils.mutation import mutate_contract
 from diffusc.core.analysis_mode import AnalysisMode
 
 
@@ -163,16 +164,19 @@ class ForkMode(AnalysisMode):
 
     def analyze_contracts(self) -> None:
         """Get ContractData objects from the addresses provided."""
-        assert self._v1_address != "" and self._v2_address != ""
+        assert self._v1_address != "" and (self._v2_address != "" or self.mutate)
         assert isinstance(self._provider, NetworkSlitherProvider)
         assert isinstance(self._net_info, NetworkInfoProvider)
 
         self._v1 = get_contract_data_from_address(
             self._v1_address, "", self._provider, self._net_info, suffix="V1"
         )
-        self._v2 = get_contract_data_from_address(
-            self._v2_address, "", self._provider, self._net_info, suffix="V2"
-        )
+        if self.mutate and self._v1 and self._v1["path"] != "":
+            mutate_contract(self._v1["path"])
+        else:
+            self._v2 = get_contract_data_from_address(
+                self._v2_address, "", self._provider, self._net_info, suffix="V2"
+            )
 
         if self._proxy_address is not None:
             CryticPrint.print_information(
