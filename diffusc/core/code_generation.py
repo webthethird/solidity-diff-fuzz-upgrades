@@ -222,7 +222,7 @@ class CodeGenerator:
 
         contract_data["name"] = contract.name
         contract_data["interface"] = generate_interface(
-            contract, unroll_structs=False, skip_errors=True, skip_events=True
+            contract, unroll_structs=False, include_errors=False, include_events=False
         ).replace(f"interface I{contract.name}", f"interface I{contract.name}{suffix}")
         contract_data["interface_name"] = f"I{contract.name}{suffix}"
 
