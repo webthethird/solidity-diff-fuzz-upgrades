@@ -99,7 +99,7 @@ class CodeGenerator:
     @staticmethod
     def generate_config_file(
         corpus_dir: str,
-        campaign_length: str,
+        campaign_length: int,
         contract_addr: str,
         seq_len: int,
         block: int = 0,
