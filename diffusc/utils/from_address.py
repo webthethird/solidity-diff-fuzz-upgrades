@@ -1,13 +1,15 @@
 """Module containing helper functions used by fork mode."""
 
 # pylint: disable= no-name-in-module
+from typing import List, Set, Tuple, Dict
 from eth_utils import to_checksum_address, is_address
+from eth_utils.typing import ChecksumAddress
 from slither import Slither
 from slither.exceptions import SlitherError
 from slither.core.declarations import Contract
 from slither.utils.upgradeability import get_proxy_implementation_slot
 from diffusc.utils.classes import ContractData
-from diffusc.utils.crytic_print import PrintMode, CryticPrint
+from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.slither_provider import NetworkSlitherProvider
 from diffusc.utils.network_info_provider import NetworkInfoProvider
 from diffusc.utils.helpers import (
@@ -26,8 +28,9 @@ def get_deployed_contract(
     Will get the correct implementation if the contract is a proxy
     """
 
-    CryticPrint.print(PrintMode.INFORMATION, "    * Getting information from contract...")
+    CryticPrint.print_information("    * Getting information from contract...")
     slither_object = contract_data["slither"]
+    assert slither_object
     contract_name = get_compilation_unit_name(slither_object)
     contract = slither_object.get_contract_from_name(contract_name)[0]
     impl_slither = None
@@ -39,14 +42,12 @@ def get_deployed_contract(
                 contract, contract_data
             )
             if implementation == "0x0000000000000000000000000000000000000000":
-                CryticPrint.print(
-                    PrintMode.WARNING,
+                CryticPrint.print_warning(
                     f"      * Contract at {contract_data['address']} was mistakenly "
                     "identified as a proxy. Please check that results are consistent.",
                 )
                 return contract, impl_slither, impl_contract
-            CryticPrint.print(
-                PrintMode.WARNING,
+            CryticPrint.print_warning(
                 f"      * {contract_data['address']} is a proxy. Found implementation "
                 f"at {implementation}",
             )
@@ -67,16 +68,13 @@ def get_contract_data_from_address(
 ) -> ContractData:
     """Get a ContractData object from a network address, including Slither object."""
 
-    contract_data = ContractData()
+    contract_data = ContractData()  # type: ignore[typeddict-item]
 
-    CryticPrint.print(
-        PrintMode.INFORMATION,
+    CryticPrint.print_information(
         f"  * Getting information from address {to_checksum_address(address)}",
     )
 
     contract_data["address"] = to_checksum_address(address)
-    contract_data["block"] = network_info.get_block_number()
-    contract_data["prefix"] = slither_provider.get_network_prefix()
     contract_data["suffix"] = suffix
     try:
         contract_data["slither"] = slither_provider.get_slither_from_address(
@@ -86,7 +84,7 @@ def get_contract_data_from_address(
     except SlitherError:
         contract_data["slither"] = None
         contract_data["valid_data"] = False
-        CryticPrint.print(PrintMode.WARNING, "    * Could not fetch information.")
+        CryticPrint.print_warning("    * Could not fetch information.")
 
     if contract_data["valid_data"]:
         contract, impl_slither, impl_contract = get_deployed_contract(
@@ -99,20 +97,21 @@ def get_contract_data_from_address(
             contract_data["implementation_slither"] = impl_slither
             contract_data["implementation_object"] = impl_contract
             contract_data["implementation_slot"] = get_proxy_implementation_slot(contract)
+            contract_data["is_erc20"] = impl_contract.is_erc20()
         else:
             contract_data["is_proxy"] = False
+            contract_data["is_erc20"] = contract.is_erc20()
 
         contract_data = CodeGenerator.get_contract_interface(contract_data)
 
-        CryticPrint.print(
-            PrintMode.SUCCESS,
+        CryticPrint.print_success(
             f"    * Information fetched correctly for contract {contract_data['name']}",
         )
 
     return contract_data
 
 
-def addresses_from_comma_separated_string(data: str) -> tuple[list, dict]:
+def addresses_from_comma_separated_string(data: str) -> Tuple[List[ChecksumAddress], dict]:
     """
     Get a list of addresses and a dict mapping proxies to implementation address
     from a comma-separated list of addresses, such as the example below:
@@ -120,8 +119,8 @@ def addresses_from_comma_separated_string(data: str) -> tuple[list, dict]:
     """
     addresses = data.split(",")
 
-    unique_addresses = set()
-    implementations = {}
+    unique_addresses: Set[ChecksumAddress] = set()
+    implementations: Dict[ChecksumAddress, ChecksumAddress] = {}
 
     for address in addresses:
         if ":" in address:
@@ -134,23 +133,22 @@ def addresses_from_comma_separated_string(data: str) -> tuple[list, dict]:
             implementations[proxy] = impl
         else:
             if not is_address(address):
-                CryticPrint.print(
-                    PrintMode.ERROR,
+                CryticPrint.print_error(
                     f"\n  * {address} is not an address. Ignoring...",
                 )
             else:
                 unique_addresses.add(to_checksum_address(address))
 
-    unique_addresses = list(unique_addresses)
+    unique_address_list: List[ChecksumAddress] = list(unique_addresses)
 
-    return unique_addresses, implementations
+    return unique_address_list, implementations
 
 
 def get_contracts_from_comma_separated_string(
     addresses_string: str,
     slither_provider: NetworkSlitherProvider,
     network_info: NetworkInfoProvider,
-) -> tuple[list[ContractData], list[str], dict]:
+) -> tuple[list[ContractData], list[ChecksumAddress], dict]:
     """
     Get a list of ContractData objects, as well as a list of addresses and a
     dict mapping proxies to implementation addresses, from a comma-separated
@@ -166,8 +164,7 @@ def get_contracts_from_comma_separated_string(
             address, implementations.get(address, ""), slither_provider, network_info
         )
         if not data["valid_data"]:
-            CryticPrint.print(
-                PrintMode.ERROR,
+            CryticPrint.print_error(
                 f"  * Target contract {address} source code is not available.",
             )
             raise ValueError(f"Target contract {address} source code is not available.")

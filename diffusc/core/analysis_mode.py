@@ -2,7 +2,7 @@
 
 import argparse
 from typing import List, Optional
-from diffusc.utils.classes import ContractData
+from diffusc.utils.classes import ContractData, Diff
 from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.slither_provider import SlitherProvider
 from diffusc.utils.network_info_provider import NetworkInfoProvider
@@ -20,6 +20,7 @@ class AnalysisMode:
     _v2: Optional[ContractData]
     _proxy: Optional[ContractData]
     _targets: Optional[List[ContractData]]
+    _diff: Optional[Diff]
     _version: str
     _upgrade: bool
     _protected: bool
@@ -29,6 +30,7 @@ class AnalysisMode:
         self._v2 = None
         self._proxy = None
         self._targets = None
+        self._diff = None
         self.parse_args(args)
 
     def parse_args(self, args: argparse.Namespace) -> None:
@@ -64,6 +66,7 @@ class AnalysisMode:
         """
         if not self._v1 or not self._v2:
             self.analyze_contracts()
+        assert self._v1 and self._v2 and self._diff
 
         code_generator = CodeGenerator(
             self._v1,
@@ -75,7 +78,8 @@ class AnalysisMode:
             self._net_info,
         )
         code_generator.proxy = self._proxy
-        code_generator.targets = self._targets
+        if self._targets is not None:
+            code_generator.targets = self._targets
 
-        contract = code_generator.generate_test_contract()
+        contract = code_generator.generate_test_contract(self._diff)
         return contract
