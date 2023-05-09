@@ -91,6 +91,7 @@ def get_contract_data_from_address(
             contract_data, implementation, slither_provider, network_info
         )
         contract_data["contract_object"] = contract
+        contract_data["path"] = contract.file_scope.filename.absolute
 
         if impl_slither and impl_contract:
             contract_data["is_proxy"] = True
