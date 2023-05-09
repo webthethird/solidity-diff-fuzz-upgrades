@@ -70,7 +70,7 @@ class PathMode(AnalysisMode):
 
     def analyze_contracts(self) -> None:
         """Get ContractData objects from the file paths provided."""
-        assert self._v1_path != "" and self._v2_path != ""
+        assert self._v1_path != "" and (self._v2_path != "" or self.mutate)
         assert isinstance(self._provider, FileSlitherProvider)
 
         self._v1 = get_contract_data_from_path(self._v1_path, self._provider, suffix="V1")
