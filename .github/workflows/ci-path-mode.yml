@@ -1,0 +1,52 @@
+name: Crytic-exploit
+
+on:
+  push:
+    paths-ignore:
+      - "**.md"
+      - "**.rs"
+    branches:
+      - main
+  pull_request:
+  schedule:
+    # run CI every day even if no PRs/merges occur
+    - cron:  '0 12 * * *'
+
+jobs:
+  tests:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - name: Safemoon
+            args: 0x0296201bfdfb410c29ef30bcae1b395537aeeb31 0xEb11a0a0beF1AC028B8C2d4CD64138DD5938cA7A -p 0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5 -n bsc -u -v 0.8.11
+            block: 26855370
+            rpckey: BSC_RPC_URL
+            apikey: BSC_API_KEY
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install diffusc
+      run: |
+        pip3 install -r requirements.txt
+        python3 setup.py install
+
+    - name: Run diffusc
+      id: prepare
+      run: |
+        #rm -rf crytic-export contracts
+        python3 src/crytic-exploit.py -L 200000 -r ${{ matrix.args }} -d ${{ matrix.name }}
+      env:
+        ECHIDNA_RPC_BLOCK: ${{ matrix.block }}
+        ECHIDNA_RPC_URL: ${{ secrets[matrix.rpckey] }}
+        ETHERSCAN_API_KEY: ${{ secrets[matrix.apikey] }}
