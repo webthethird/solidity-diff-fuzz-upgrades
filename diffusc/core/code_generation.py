@@ -142,7 +142,7 @@ class CodeGenerator:
 
                 elif isinstance(inp.type, UserDefinedType):
                     if isinstance(inp.type.type, Structure):
-                        base_type = f"{inp.type.type.name} {inp.location}"
+                        base_type = f"{inp.type.type.canonical_name} {inp.location}"
                     elif isinstance(inp.type.type, Contract):
                         base_type = convert_type_for_solidity_signature_to_string(inp.type)
 
@@ -222,7 +222,7 @@ class CodeGenerator:
 
         contract_data["name"] = contract.name
         contract_data["interface"] = generate_interface(
-            contract, unroll_structs=False, skip_errors=True, skip_events=True
+            contract, unroll_structs=False, include_errors=False, include_events=False
         ).replace(f"interface I{contract.name}", f"interface I{contract.name}{suffix}")
         contract_data["interface_name"] = f"I{contract.name}{suffix}"
 
@@ -472,7 +472,8 @@ class CodeGenerator:
         impl_slot = int.to_bytes(proxy["implementation_slot"].slot, 32, "big").hex()
         wrapped += (
             "        address impl = address(uint160(uint256(\n"
-            f"            hevm.load(address({camel_case(proxy['name'])}),0x{impl_slot})\n"
+            f"            hevm.load(address({camel_case(proxy['name'])}{v_2['suffix'] if not self._fork else ''}),"
+            f"0x{impl_slot})\n"
             "        )));\n"
         )
         if not new_func["protected"]:
@@ -515,6 +516,8 @@ class CodeGenerator:
 
         wrapped = "\n    /*** Tainted Variables ***/ \n\n"
         for var in variables:
+            if isinstance(var.type, UserDefinedType) and isinstance(var.type.type, Structure):
+                continue
             if proxy is None:
                 target_v1 = camel_case(v_1["name"]) + v_1["suffix"]
                 target_v2 = camel_case(v_2["name"]) + v_2["suffix"]
@@ -532,6 +535,9 @@ class CodeGenerator:
                 continue
             if var.type.is_dynamic:
                 if isinstance(var.type, MappingType):
+                    base_type = var.type.type_to
+                    if isinstance(base_type, UserDefinedType) and isinstance(base_type.type, Structure):
+                        continue
                     type_from = var.type.type_from.name
                     type_to = var.type.type_to.name
                     wrapped += f"    function {v_1['name']}_{var.name}({type_from} a) public returns ({type_to}) {{\n"
@@ -546,7 +552,9 @@ class CodeGenerator:
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(a) == {target_v2}.{var.name}(a));\n"
                 elif isinstance(var.type, ArrayType):
-                    base_type = var.type.type.name
+                    base_type = var.type.type
+                    if isinstance(base_type, UserDefinedType) and isinstance(base_type.type, Structure):
+                        continue
                     wrapped += f"    function {v_1['name']}_{var.name}(uint i) public returns ({base_type}) {{\n"
                     if fork:
                         wrapped += "        hevm.selectFork(fork1);\n"
