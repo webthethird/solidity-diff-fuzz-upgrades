@@ -141,11 +141,14 @@ def main() -> None:
     # Silence Slither Read Storage
     logging.getLogger("Slither-read-storage").setLevel(logging.CRITICAL)
 
-    if args.v2 == "" and not args.mutation:
-        CryticPrint.print_error(
-            "Error: V2 must be specified unless using mutation mode (`-M` flag).",
-        )
-        exit(1)
+    if args.v2 == "":
+        if not args.mutation:
+            CryticPrint.print_error(
+                "Error: V2 must be specified unless using mutation mode (`-M` flag).",
+            )
+            exit(1)
+        else:
+            CryticPrint.print_information("\n* Using mutation mode to generate V2.")
 
     output_dir = "./"
     if args.output_dir is not None:
@@ -182,11 +185,11 @@ def main() -> None:
     # Start the analysis
     analysis: AnalysisMode
     CryticPrint.print_information("* Inspecting V1 and V2 contracts:")
-    if is_address(args.v1) and is_address(args.v2):
+    if is_address(args.v1) and (is_address(args.v2) or args.mutation):
         CryticPrint.print_information("* Using 'fork mode':")
         analysis = ForkMode(args)
         contract = analysis.write_test_contract()
-    elif os.path.exists(args.v1) and os.path.exists(args.v2):
+    elif os.path.exists(args.v1) and (os.path.exists(args.v2) or args.mutation):
         CryticPrint.print_information("* Using 'path mode' (no fork):")
         analysis = PathMode(args)
         contract = analysis.write_test_contract()
