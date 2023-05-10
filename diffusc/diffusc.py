@@ -14,10 +14,7 @@ from diffusc.core.analysis_mode import AnalysisMode
 from diffusc.core.code_generation import CodeGenerator
 from diffusc.utils.helpers import write_to_file
 from diffusc.utils.crytic_print import CryticPrint
-from diffusc.utils.echidna import (
-    create_echidna_process,
-    run_echidna_campaign
-)
+from diffusc.utils.echidna import create_echidna_process, run_echidna_campaign
 import diffusc.utils.network_vars as net_vars
 
 
@@ -122,14 +119,14 @@ def main() -> int:
         "--run",
         dest="run_mode",
         action="store_true",
-        help="Specifies whether to run Echidna on the generated test contract (default false)."
+        help="Specifies whether to run Echidna on the generated test contract (default false).",
     )
     parser.add_argument(
         "-x",
         "--external-taint",
         dest="external_taint",
         action="store_true",
-        help="Specifies whether to analyze external calls to find tainted external contracts (default false)."
+        help="Specifies whether to analyze external calls to find tainted external contracts (default false).",
     )
 
     args = parser.parse_args()
@@ -218,8 +215,13 @@ def main() -> int:
 
     if args.run_mode:
         CryticPrint.print_information("* Run mode enabled. Starting Echidna...")
-        proc = create_echidna_process(output_dir, "DiffFuzzUpgrades.sol", "DiffFuzzUpgrades",
-                                      "CryticConfig.yaml", ["--format", "text"])
+        proc = create_echidna_process(
+            output_dir,
+            "DiffFuzzUpgrades.sol",
+            "DiffFuzzUpgrades",
+            "CryticConfig.yaml",
+            ["--format", "text"],
+        )
         max_value = run_echidna_campaign(proc)
         if max_value <= 0:
             CryticPrint.print_error("* Echidna failed to find an exploit")

@@ -536,7 +536,9 @@ class CodeGenerator:
             if var.type.is_dynamic:
                 if isinstance(var.type, MappingType):
                     base_type = var.type.type_to
-                    if isinstance(base_type, UserDefinedType) and isinstance(base_type.type, Structure):
+                    if isinstance(base_type, UserDefinedType) and isinstance(
+                        base_type.type, Structure
+                    ):
                         continue
                     type_from = var.type.type_from.name
                     type_to = var.type.type_to.name
@@ -553,7 +555,9 @@ class CodeGenerator:
                         wrapped += f"        assert({target_v1}.{var.name}(a) == {target_v2}.{var.name}(a));\n"
                 elif isinstance(var.type, ArrayType):
                     base_type = var.type.type
-                    if isinstance(base_type, UserDefinedType) and isinstance(base_type.type, Structure):
+                    if isinstance(base_type, UserDefinedType) and isinstance(
+                        base_type.type, Structure
+                    ):
                         continue
                     wrapped += f"    function {v_1['name']}_{var.name}(uint i) public returns ({base_type}) {{\n"
                     if fork:
