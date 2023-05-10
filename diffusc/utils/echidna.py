@@ -27,7 +27,8 @@ def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
     max_value = float("-inf")
     while keep_running:
         line = ""
-        try: 
+        try:
+            assert proc.stdout is not None
             line = proc.stdout.readline()
             print(line.strip())
         except UnsupportedOperation:
@@ -35,10 +36,10 @@ def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
         if line == "":
             keep_running = proc.poll() is None
         elif "tests:" in line:
-            tests = line.split("tests: ")[1].split("/")[0]
-            tests = int(tests)
-            fuzzes = line.split("fuzzing: ")[1].split("/")[0]
-            fuzzes = int(fuzzes)
+            _tests = line.split("tests: ")[1].split("/")[0]
+            tests = int(_tests)
+            _fuzzes = line.split("fuzzing: ")[1].split("/")[0]
+            fuzzes = int(_fuzzes)
             if tests > max_value:
                 max_value = tests
                 if fuzzes == 0:
@@ -52,4 +53,4 @@ def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
     CryticPrint.print_information(f"* Terminating Echidna campaign!") 
     proc.terminate()
     proc.wait()
-    return max_value
+    return int(max_value)
