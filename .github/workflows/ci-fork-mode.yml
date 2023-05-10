@@ -22,7 +22,7 @@ jobs:
       matrix:
         include:
           - name: Safemoon
-            args: 0x0296201bfdfb410c29ef30bcae1b395537aeeb31 0xEb11a0a0beF1AC028B8C2d4CD64138DD5938cA7A -p 0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5 -n bsc -u -v 0.8.11
+            args: 0x0296201bfdfb410c29ef30bcae1b395537aeeb31 0xEb11a0a0beF1AC028B8C2d4CD64138DD5938cA7A -p 0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5 -n bsc -v 0.8.11
             block: 26857408
             rpckey: BSC_RPC_URL
             apikey: BSC_API_KEY
