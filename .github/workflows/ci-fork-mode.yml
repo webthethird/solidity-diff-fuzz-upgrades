@@ -23,7 +23,7 @@ jobs:
         include:
           - name: Safemoon
             args: 0x0296201bfdfb410c29ef30bcae1b395537aeeb31 0xEb11a0a0beF1AC028B8C2d4CD64138DD5938cA7A -p 0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5 -n bsc -u -v 0.8.11
-            block: 26855370
+            block: 26857408
             rpckey: BSC_RPC_URL
             apikey: BSC_API_KEY
 
@@ -36,10 +36,17 @@ jobs:
       with:
         python-version: '3.10'
 
+    - name: Install dependencies
+      run: pip3 install -r requirements.txt
+
+    - name: Uninstall Slither
+      run: pip3 uninstall slither
+
+    - name: Clone webthethird/slither diffusc testing branch
+    - run: git clone -b dev-diffusc-testing https://github.com/webthethird/slither.git && cd slither && python3 setup.py install && cd ..
+
     - name: Install diffusc
-      run: |
-        pip3 install -r requirements.txt
-        python3 setup.py install
+      run: python3 setup.py install
 
     - name: Run diffusc
       id: prepare
