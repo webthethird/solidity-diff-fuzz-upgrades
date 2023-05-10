@@ -211,7 +211,7 @@ class ForkMode(AnalysisMode):
             self._targets = None
 
         if not self._diff:
-            self._diff = do_diff(self._v1, self._v2, self._targets)
+            self._diff = do_diff(self._v1, self._v2, self._targets, self.external_taint)
 
         self.analyze_tokens()
 
