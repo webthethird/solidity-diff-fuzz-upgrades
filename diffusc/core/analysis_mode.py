@@ -24,6 +24,7 @@ class AnalysisMode:
     version: str
     upgrade: bool
     protected: bool
+    external_taint: bool
 
     def __init__(self, args: argparse.Namespace) -> None:
         self._v1 = None
@@ -51,6 +52,7 @@ class AnalysisMode:
             self.upgrade = bool(args.fuzz_upgrade)
 
         self.protected = bool(args.include_protected)
+        self.external_taint = bool(args.external_taint)
 
     def analyze_contracts(self) -> None:
         """

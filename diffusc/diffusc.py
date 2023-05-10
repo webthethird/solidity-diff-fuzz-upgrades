@@ -119,6 +119,13 @@ def main() -> None:
         action="store_true",
         help="Specifies whether to run Echidna on the generated test contract (default false)."
     )
+    parser.add_argument(
+        "-x",
+        "--external-taint",
+        dest="external_taint",
+        action="store_true",
+        help="Specifies whether to analyze external calls to find tainted external contracts (default false)."
+    )
 
     args = parser.parse_args()
 
