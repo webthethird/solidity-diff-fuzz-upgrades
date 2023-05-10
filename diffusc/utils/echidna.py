@@ -1,25 +1,28 @@
 from io import UnsupportedOperation
-from os import mkdir, environ
-from subprocess import Popen, PIPE, TimeoutExpired
+from os import mkdir
+from subprocess import Popen, PIPE
 from typing import List
 
 from diffusc.utils.crytic_print import CryticPrint
 
 
-def create_echidna_process(prefix: str, filename: str, contract: str, config: str, extra_args: List[str]) -> Popen:
+def create_echidna_process(
+    prefix: str, filename: str, contract: str, config: str, extra_args: List[str]
+) -> Popen:
     try:
         mkdir(prefix)
     except OSError:
         pass
-    
+
     call = ["echidna"]
     call.extend([filename])
     call.extend(["--config", config])
     call.extend(["--contract", contract])
     call.extend(extra_args)
     CryticPrint.print_information(f"* Calling echidna from {prefix} using {' '.join(call)}")
-    env = environ.copy()
-    return Popen(call, stderr=PIPE, stdout=PIPE, bufsize=0, cwd=prefix, universal_newlines=True) #cwd=os.path.abspath(prefix)),
+    return Popen(
+        call, stderr=PIPE, stdout=PIPE, bufsize=0, cwd=prefix, universal_newlines=True
+    )  # cwd=os.path.abspath(prefix)),
 
 
 def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
@@ -43,14 +46,18 @@ def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
             if tests > max_value:
                 max_value = tests
                 if fuzzes == 0:
-                    CryticPrint.print_information(f"* Reading initial bytecodes and slots..") 
+                    CryticPrint.print_information("* Reading initial bytecodes and slots..")
                 elif fuzzes > 0:
-                    CryticPrint.print_information(f"* Fuzzing campaign started!") 
+                    CryticPrint.print_information("* Fuzzing campaign started!")
                 if max_value >= min_tests:
-                    CryticPrint.print_success(f"* Failed {max_value} tests after {fuzzes} rounds of fuzzing!")
-                    keep_running = False    # Useful for quick CI tests, but it will be removed in production
- 
-    CryticPrint.print_information(f"* Terminating Echidna campaign!") 
+                    CryticPrint.print_success(
+                        f"* Failed {max_value} tests after {fuzzes} rounds of fuzzing!"
+                    )
+                    keep_running = (
+                        False  # Useful for quick CI tests, but it will be removed in production
+                    )
+
+    CryticPrint.print_information("* Terminating Echidna campaign!")
     proc.terminate()
     proc.wait()
     return int(max_value)

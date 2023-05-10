@@ -5,6 +5,7 @@
 import argparse
 import logging
 import os
+import sys
 
 from eth_utils import is_address
 from diffusc.core.path_mode import PathMode
@@ -20,7 +21,7 @@ from diffusc.utils.echidna import (
 import diffusc.utils.network_vars as net_vars
 
 
-# pylint: disable=too-many-statements
+# pylint: disable=too-many-statements,too-many-branches
 def main() -> int:
     """Main method, parses arguments and calls path_mode or fork_mode."""
     # Read command line arguments
@@ -216,12 +217,12 @@ def main() -> int:
     )
 
     if args.run_mode:
-        CryticPrint.print_information(f"* Run mode enabled. Starting Echidna...")
+        CryticPrint.print_information("* Run mode enabled. Starting Echidna...")
         proc = create_echidna_process(output_dir, "DiffFuzzUpgrades.sol", "DiffFuzzUpgrades",
                                       "CryticConfig.yaml", ["--format", "text"])
         max_value = run_echidna_campaign(proc)
         if max_value <= 0:
-            CryticPrint.print_error(f"* Echidna failed to find an exploit")
+            CryticPrint.print_error("* Echidna failed to find an exploit")
             return 1
 
     CryticPrint.print_message(

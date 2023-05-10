@@ -79,6 +79,7 @@ def get_pragma_version_from_file(filepath: str, seen: Optional[List[str]] = None
     return ".".join(high_version)
 
 
+# pylint: disable=too-many-locals
 def do_diff(
     v_1: ContractData,
     v_2: ContractData,
