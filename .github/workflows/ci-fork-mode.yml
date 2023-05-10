@@ -43,7 +43,7 @@ jobs:
       run: pip3 uninstall slither
 
     - name: Clone webthethird/slither diffusc testing branch
-    - run: git clone -b dev-diffusc-testing https://github.com/webthethird/slither.git && cd slither && python3 setup.py install && cd ..
+      run: git clone -b dev-diffusc-testing https://github.com/webthethird/slither.git && cd slither && python3 setup.py install && cd ..
 
     - name: Install diffusc
       run: python3 setup.py install
