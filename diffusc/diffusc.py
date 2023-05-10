@@ -13,11 +13,15 @@ from diffusc.core.analysis_mode import AnalysisMode
 from diffusc.core.code_generation import CodeGenerator
 from diffusc.utils.helpers import write_to_file
 from diffusc.utils.crytic_print import CryticPrint
+from diffusc.utils.echidna import (
+    create_echidna_process,
+    run_echidna_campaign
+)
 import diffusc.utils.network_vars as net_vars
 
 
 # pylint: disable=too-many-statements
-def main() -> None:
+def main() -> int:
     """Main method, parses arguments and calls path_mode or fork_mode."""
     # Read command line arguments
 
@@ -211,6 +215,15 @@ def main() -> None:
         f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.",
     )
 
+    if args.run_mode:
+        CryticPrint.print_information(f"* Run mode enabled. Starting Echidna...")
+        proc = create_echidna_process(output_dir, "DiffFuzzUpgrades.sol", "DiffFuzzUpgrades",
+                                      "CryticConfig.yaml", ["--format", "text"])
+        max_value = run_echidna_campaign(proc)
+        if max_value <= 0:
+            CryticPrint.print_error(f"* Echidna failed to find an exploit")
+            return 1
+
     CryticPrint.print_message(
         "\n-----------------------------------------------------------",
     )
@@ -220,7 +233,8 @@ def main() -> None:
     CryticPrint.print_message(
         "-----------------------------------------------------------",
     )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
