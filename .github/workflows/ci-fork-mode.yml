@@ -52,7 +52,7 @@ jobs:
       id: prepare
       run: |
         #rm -rf crytic-export contracts
-        python3 diffusc/diffusc.py -L 200000 -r ${{ matrix.args }} -d ${{ matrix.name }}
+        diffusc -L 200000 -r ${{ matrix.args }} -d ${{ matrix.name }}
       env:
         ECHIDNA_RPC_BLOCK: ${{ matrix.block }}
         ECHIDNA_RPC_URL: ${{ secrets[matrix.rpckey] }}
