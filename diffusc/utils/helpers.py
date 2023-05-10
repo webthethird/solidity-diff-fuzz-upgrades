@@ -166,7 +166,11 @@ def camel_case(name: str) -> str:
 
 
 def write_to_file(filename: str, content: str) -> None:
-    """Write content to a file."""
+    """Write content to a file. If the parent directory doesn't exist, create it."""
+
+    base_dir = os.path.dirname(filename)
+    if not os.path.exists(base_dir):
+        os.makedirs(base_dir, exist_ok=True)
 
     with open(filename, "wt", encoding="utf-8") as out_file:
         out_file.write(content)
