@@ -671,7 +671,7 @@ class CodeGenerator:
                     func2 = next(
                         func for func in v_2["functions"] if func["name"] == diff_func.name
                     )
-                    if proxy is not None:
+                    if proxy is not None and isinstance(proxy["implementation_slot"], SlotInfo):
                         wrapped += self.wrap_replacement_function(v_1, v_2, func, func2, proxy)
                     else:
                         wrapped += self.wrap_diff_function(v_1, v_2, func, func2)
