@@ -1,5 +1,6 @@
 """Module containing helper functions used by path mode."""
 
+import os
 from typing import List
 
 # pylint: disable= no-name-in-module
@@ -20,27 +21,27 @@ from diffusc.core.code_generation import CodeGenerator
 
 
 def get_contracts_from_comma_separated_paths(
-    paths_string: str, provider: FileSlitherProvider, suffix: str = ""
+    paths_string: str, output_dir: str, provider: FileSlitherProvider, suffix: str = ""
 ) -> List[ContractData]:
     """Get multiple ContractData objects from a comma-separated list of paths."""
     contracts = []
     filepaths = paths_string.split(",")
 
     for path in filepaths:
-        contract_data = get_contract_data_from_path(path, provider, suffix)
+        contract_data = get_contract_data_from_path(path, output_dir, provider, suffix)
         contracts.append(contract_data)
     return contracts
 
 
 def get_contract_data_from_path(
-    filepath: str, provider: FileSlitherProvider, suffix: str = ""
+    filepath: str, output_dir: str, provider: FileSlitherProvider, suffix: str = ""
 ) -> ContractData:
     """Get a ContractData object from file path, including Slither object."""
     contract_data = ContractData()  # type: ignore[typeddict-item]
 
     CryticPrint.print_message(f"* Getting contract data from {filepath}")
 
-    contract_data["path"] = filepath
+    # contract_data["path"] = filepath
     contract_data["suffix"] = suffix
     version = get_pragma_version_from_file(filepath)
     contract_data["solc_version"] = version
@@ -65,6 +66,9 @@ def get_contract_data_from_path(
                 contract_name.replace("V1", "").replace("V2", "").replace("V3", "")
             )[0]
         contract_data["contract_object"] = contract
+        abs_path = contract.file_scope.filename.absolute
+        rel_path = os.path.relpath(abs_path, output_dir)
+        contract_data["path"] = rel_path
         contract_data = CodeGenerator.get_valid_contract_data(contract_data)
         CryticPrint.print_message(f"  * Done compiling contract {contract_data['name']}")
 

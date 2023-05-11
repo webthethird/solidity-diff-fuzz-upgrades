@@ -2,6 +2,7 @@
 
 """Main module for path mode."""
 
+import os
 import argparse
 from typing import Optional
 from diffusc.utils.helpers import do_diff
@@ -22,6 +23,7 @@ class PathMode(AnalysisMode):
     _v2_path: str
     _proxy_path: Optional[str]
     _target_paths: Optional[str]
+    _output_dir: str
 
     def __init__(self, args: argparse.Namespace) -> None:
         self._mode = "deploy"
@@ -68,16 +70,22 @@ class PathMode(AnalysisMode):
         else:
             self._target_paths = None
 
+        self._output_dir = "./"
+        if args.output_dir is not None:
+            self._output_dir = args.output_dir
+            if not str(self._output_dir).endswith(os.path.sep):
+                self._output_dir += os.path.sep
+
     def analyze_contracts(self) -> None:
         """Get ContractData objects from the file paths provided."""
         assert self._v1_path != "" and self._v2_path != ""
         assert isinstance(self._provider, FileSlitherProvider)
 
-        self._v1 = get_contract_data_from_path(self._v1_path, self._provider, suffix="V1")
-        self._v2 = get_contract_data_from_path(self._v2_path, self._provider, suffix="V2")
+        self._v1 = get_contract_data_from_path(self._v1_path, self._output_dir, self._provider, suffix="V1")
+        self._v2 = get_contract_data_from_path(self._v2_path, self._output_dir, self._provider, suffix="V2")
 
         if self._proxy_path:
-            self._proxy = get_contract_data_from_path(self._proxy_path, self._provider)
+            self._proxy = get_contract_data_from_path(self._proxy_path, self._output_dir, self._provider)
             if not self._proxy["is_proxy"]:
                 CryticPrint.print_error(
                     f"\n  * {self._proxy['name']} does not appear to be a proxy. Ignoring...",
@@ -88,7 +96,7 @@ class PathMode(AnalysisMode):
 
         if self._target_paths:
             self._targets = get_contracts_from_comma_separated_paths(
-                self._target_paths, self._provider
+                self._target_paths, self._output_dir, self._provider
             )
         else:
             self._targets = None
