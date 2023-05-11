@@ -22,9 +22,8 @@ jobs:
       matrix:
         include:
           - name: Safemoon
-            dir: ./contracts/implementation/safemoon/
             out: ./contracts/test/safemoon/
-            args: ./SafemoonV2.sol ./SafemoonV3.sol -p ./TransparentProxyTestHarness.sol -v 0.8.11 --run-custom ../../test/safemoon/DiffFuzzCustomInit.sol DiffFuzzInit
+            args: ./contracts/implementation/SafemoonV2.sol ./contracts/implementation/SafemoonV3.sol -p ./contracts/implementation/TransparentProxyTestHarness.sol -v 0.8.11 --run-custom ./contracts/test/safemoon/DiffFuzzCustomInit.sol DiffFuzzInit
 
     steps:
     - name: Checkout repository
@@ -46,7 +45,6 @@ jobs:
       id: prepare
       run: |
         #rm -rf crytic-export contracts
-        cd ${{ matrix.dir }}
         diffusc -L 200000 -r ${{ matrix.args }} -d ${{ matrix.out }}
       env:
         ECHIDNA_RPC_BLOCK: ${{ matrix.block }}
