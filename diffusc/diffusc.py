@@ -122,6 +122,13 @@ def main() -> int:
         help="Specifies whether to run Echidna on the generated test contract (default false).",
     )
     parser.add_argument(
+        "--run-custom",
+        dest="run_custom",
+        nargs=2,
+        help="Runs Echidna on the given contract (i.e., one which inherits the generated test contract). Takes two "
+             "arguments: the file path followed by the contract name, e.g., `-R ./DiffFuzzCustom.sol DiffFuzzCustom`."
+    )
+    parser.add_argument(
         "-x",
         "--external-taint",
         dest="external_taint",
@@ -213,13 +220,26 @@ def main() -> int:
         f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.",
     )
 
-    if args.run_mode:
+    if args.run_mode or args.run_custom:
+        contract_file = args.run_custom[0] if args.run_custom else "DiffFuzzUpgrades.sol"
+        contract_dir = os.path.dirname(contract_file)
+        # contract_file = os.sep.join([os.path.relpath(output_dir, contract_dir), os.path.basename(contract_file)])
+        contract_name = args.run_custom[1] if args.run_custom else "DiffFuzzUpgrades"
+        if isinstance(analysis, ForkMode):
+            prefix = output_dir
+            config = "CryticConfig.yaml"
+        else:
+            output_dir = os.path.relpath(output_dir, os.path.curdir)
+            prefix = os.path.commonpath([output_dir, analysis.dependencies_common_path()])
+            prefix = os.path.abspath(prefix)
+            config = os.path.relpath(os.path.join(output_dir, "CryticConfig.yaml"), prefix)
+            contract_file = os.path.relpath(contract_file, prefix)
         CryticPrint.print_information("* Run mode enabled. Starting Echidna...")
         proc = create_echidna_process(
-            output_dir,
-            "DiffFuzzUpgrades.sol",
-            "DiffFuzzUpgrades",
-            "CryticConfig.yaml",
+            prefix,
+            contract_file,
+            contract_name,
+            config,
             ["--format", "text"],
         )
         max_value = run_echidna_campaign(proc)
