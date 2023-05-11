@@ -224,7 +224,7 @@ def main() -> int:
         contract_file = args.run_custom[0] if args.run_custom else f"{output_dir}DiffFuzzUpgrades.sol"
         if isinstance(analysis, ForkMode):
             prefix = output_dir
-            config = "CryticConfig.yaml"
+            config = f"{output_dir}CryticConfig.yaml"
         else:
             output_dir = os.path.relpath(output_dir, os.path.curdir)
             prefix = os.path.commonpath([output_dir, analysis.dependencies_common_path()])
