@@ -54,18 +54,6 @@ def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
                     keep_running = (
                         False  # Useful for quick CI tests, but it will be removed in production
                     )
-    line = proc.stderr.readline()
-    empty_lines = 0
-    while empty_lines < 10:
-        try:
-            assert proc.stderr is not None
-            line = proc.stderr.readline()
-            if line == "":
-                empty_lines += 1
-            else:
-                print(line.strip())
-        except UnsupportedOperation:
-            pass
     CryticPrint.print_information("* Terminating Echidna campaign!")
     proc.terminate()
     proc.wait()
