@@ -44,7 +44,6 @@ jobs:
     - name: Run diffusc
       id: prepare
       run: |
-        solc contracts/test/safemoon/DiffFuzzCustomInit.sol
         diffusc -L 200000 -r ${{ matrix.args }} -d ${{ matrix.out }}
       env:
         ECHIDNA_RPC_BLOCK: ${{ matrix.block }}
