@@ -221,13 +221,16 @@ def main() -> int:
     )
 
     if args.run_mode or args.run_custom:
-        contract_file = (
-            args.run_custom[0] if args.run_custom else f"{output_dir}DiffFuzzUpgrades.sol"
-        )
         if isinstance(analysis, ForkMode):
+            # In fork mode, there are no dependency files to worry about, so run Echidna from output dir
             prefix = output_dir
-            config = f"{output_dir}CryticConfig.yaml"
+            config = "CryticConfig.yaml"
+            contract_file = "DiffFuzzUpgrades.sol"
         else:
+            # In path mode, we need to run Echidna from a dir with access to dependencies as well as test contract
+            contract_file = (
+                args.run_custom[0] if args.run_custom else f"{output_dir}DiffFuzzUpgrades.sol"
+            )
             output_dir = os.path.relpath(output_dir, os.path.curdir)
             prefix = os.path.commonpath([output_dir, analysis.dependencies_common_path()])
             prefix = os.path.abspath(prefix)
