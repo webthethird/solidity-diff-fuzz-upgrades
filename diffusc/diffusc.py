@@ -222,8 +222,6 @@ def main() -> int:
 
     if args.run_mode or args.run_custom:
         contract_file = args.run_custom[0] if args.run_custom else "DiffFuzzUpgrades.sol"
-        contract_dir = os.path.dirname(contract_file)
-        # contract_file = os.sep.join([os.path.relpath(output_dir, contract_dir), os.path.basename(contract_file)])
         contract_name = args.run_custom[1] if args.run_custom else "DiffFuzzUpgrades"
         if isinstance(analysis, ForkMode):
             prefix = output_dir
