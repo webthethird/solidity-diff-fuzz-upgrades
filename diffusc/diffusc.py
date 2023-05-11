@@ -221,7 +221,9 @@ def main() -> int:
     )
 
     if args.run_mode or args.run_custom:
-        contract_file = args.run_custom[0] if args.run_custom else f"{output_dir}DiffFuzzUpgrades.sol"
+        contract_file = (
+            args.run_custom[0] if args.run_custom else f"{output_dir}DiffFuzzUpgrades.sol"
+        )
         if isinstance(analysis, ForkMode):
             prefix = output_dir
             config = f"{output_dir}CryticConfig.yaml"

@@ -25,7 +25,7 @@ def create_echidna_process(
 
 def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
     keep_running = True
-    max_value = float("-inf")
+    max_value = -1
     while keep_running:
         line = ""
         try:
@@ -57,6 +57,4 @@ def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
     CryticPrint.print_information("* Terminating Echidna campaign!")
     proc.terminate()
     proc.wait()
-    if isinstance(max_value, float) and max_value < 0:
-        max_value = -1
     return max_value
