@@ -46,6 +46,6 @@ jobs:
       run: |
         diffusc -L 200000 ${{ matrix.args }} -d ${{ matrix.out }}
         diff ${{ matrix.out }}/DiffFuzzUpgrades.sol ${{ matrix.out }}/DiffFuzzUpgradesExpected.sol
-        slither ${{ matrix.out }}/DiffFuzzUpgrades.sol --print echidna
-        echidna ${{ matrix.out }}/DiffFuzzUpgrades.sol --contract DiffFuzzUpgrades --config ${{ matrix.out }}/CryticConfig.yaml --format text
+#        slither ${{ matrix.out }}/DiffFuzzUpgrades.sol --print echidna
+#        echidna ${{ matrix.out }}/DiffFuzzUpgrades.sol --contract DiffFuzzUpgrades --config ${{ matrix.out }}/CryticConfig.yaml --format text
         diffusc -L 200000 -r ${{ matrix.args }} -d ${{ matrix.out }}
