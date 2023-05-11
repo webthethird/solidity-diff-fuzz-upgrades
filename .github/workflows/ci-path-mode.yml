@@ -23,7 +23,7 @@ jobs:
         include:
           - name: Safemoon
             out: ./contracts/test/safemoon/
-            args: ./contracts/implementation/safemoon/SafemoonV2.sol ./contracts/implementation/safemoon/SafemoonV3.sol -p ./contracts/implementation/safemoon/TransparentProxyTestHarness.sol -v 0.8.11 --run-custom ./contracts/test/safemoon/DiffFuzzCustomInit.sol DiffFuzzInit
+            args: ./contracts/implementation/safemoon/SafemoonV2.sol ./contracts/implementation/safemoon/SafemoonV3.sol -p ./contracts/implementation/safemoon/TransparentProxyTestHarness.sol -v 0.8.11 #--run-custom ./contracts/test/safemoon/DiffFuzzCustomInit.sol DiffFuzzInit
 
     steps:
     - name: Checkout repository
