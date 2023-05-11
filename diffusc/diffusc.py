@@ -126,7 +126,7 @@ def main() -> int:
         dest="run_custom",
         nargs=2,
         help="Runs Echidna on the given contract (i.e., one which inherits the generated test contract). Takes two "
-             "arguments: the file path followed by the contract name, e.g., `-R ./DiffFuzzCustom.sol DiffFuzzCustom`."
+        "arguments: the file path followed by the contract name, e.g., `-R ./DiffFuzzCustom.sol DiffFuzzCustom`.",
     )
     parser.add_argument(
         "-x",

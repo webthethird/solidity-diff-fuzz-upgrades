@@ -81,11 +81,17 @@ class PathMode(AnalysisMode):
         assert self._v1_path != "" and self._v2_path != ""
         assert isinstance(self._provider, FileSlitherProvider)
 
-        self._v1 = get_contract_data_from_path(self._v1_path, self._output_dir, self._provider, suffix="V1")
-        self._v2 = get_contract_data_from_path(self._v2_path, self._output_dir, self._provider, suffix="V2")
+        self._v1 = get_contract_data_from_path(
+            self._v1_path, self._output_dir, self._provider, suffix="V1"
+        )
+        self._v2 = get_contract_data_from_path(
+            self._v2_path, self._output_dir, self._provider, suffix="V2"
+        )
 
         if self._proxy_path:
-            self._proxy = get_contract_data_from_path(self._proxy_path, self._output_dir, self._provider)
+            self._proxy = get_contract_data_from_path(
+                self._proxy_path, self._output_dir, self._provider
+            )
             if not self._proxy["is_proxy"]:
                 CryticPrint.print_error(
                     f"\n  * {self._proxy['name']} does not appear to be a proxy. Ignoring...",

@@ -20,9 +20,7 @@ def create_echidna_process(
     call.extend(["--contract", contract])
     call.extend(extra_args)
     CryticPrint.print_information(f"* Calling echidna from {prefix} using {' '.join(call)}")
-    return Popen(
-        call, stderr=PIPE, stdout=PIPE, bufsize=0, cwd=prefix, universal_newlines=True
-    )  # cwd=os.path.abspath(prefix)),
+    return Popen(call, stderr=PIPE, stdout=PIPE, bufsize=0, cwd=prefix, universal_newlines=True)
 
 
 def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
