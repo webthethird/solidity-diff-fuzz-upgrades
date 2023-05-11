@@ -45,6 +45,7 @@ jobs:
       id: prepare
       run: |
         diffusc -L 200000 -r ${{ matrix.args }} -d ${{ matrix.out }}
+        cat ${{ matrix.out }}/DiffFuzzUpgrades.sol
       env:
         ECHIDNA_RPC_BLOCK: ${{ matrix.block }}
         ECHIDNA_RPC_URL: ${{ secrets[matrix.rpckey] }}
