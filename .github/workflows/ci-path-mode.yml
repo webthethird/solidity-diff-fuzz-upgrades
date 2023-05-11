@@ -45,9 +45,6 @@ jobs:
       id: prepare
       run: |
         diffusc -L 200000 ${{ matrix.args }} -d ${{ matrix.out }}
+        cat ${{ matrix.out }}/CryticConfig.yaml
         echidna ${{ matrix.out }}/DiffFuzzUpgrades.sol --contract DiffFuzzUpgrades --config ${{ matrix.out }}/CryticConfig.yaml --format text
         diffusc -L 200000 -r ${{ matrix.args }} -d ${{ matrix.out }}
-      env:
-        ECHIDNA_RPC_BLOCK: ${{ matrix.block }}
-        ECHIDNA_RPC_URL: ${{ secrets[matrix.rpckey] }}
-        ETHERSCAN_API_KEY: ${{ secrets[matrix.apikey] }}
