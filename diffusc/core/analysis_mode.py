@@ -1,6 +1,7 @@
 """Module with base class for ForkMode and PathMode."""
 
 import argparse
+from os.path import commonpath
 from typing import List, Optional
 from diffusc.utils.classes import ContractData, Diff
 from diffusc.utils.crytic_print import CryticPrint
@@ -60,6 +61,15 @@ class AnalysisMode:
         set self._v1 and self._v2, plus self._proxy and self._targets if necessary.
         """
         raise NotImplementedError()
+
+    def dependencies_common_path(self) -> str:
+        assert self._v1 and self._v2
+        paths = [self._v1["path"], self._v2["path"]]
+        if self._targets:
+            paths.extend([target["path"] for target in self._targets])
+        if self._proxy:
+            paths.append(self._proxy["path"])
+        return commonpath(paths)
 
     def write_test_contract(self) -> str:
         """

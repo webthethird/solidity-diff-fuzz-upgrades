@@ -1,5 +1,6 @@
 """Module for generating test contract code."""
 
+from os.path import abspath
 from typing import List, Tuple, Optional
 
 # pylint: disable= no-name-in-module,too-many-lines
@@ -115,7 +116,7 @@ class CodeGenerator:
         )
         config_file = "testMode: assertion\n"
         config_file += f"testLimit: {campaign_length}\n"
-        config_file += f"corpusDir: {corpus_dir}\n"
+        config_file += f"corpusDir: {abspath(corpus_dir)}\n"
         config_file += "codeSize: 0xffff\n"
         config_file += f"seqLen: {seq_len}\n"
         if contract_addr != "":
@@ -551,8 +552,10 @@ class CodeGenerator:
                         wrapped += "        emit SwitchedFork(fork2);\n"
                         wrapped += f"        {var.type.type_to} a2 = {target_v2}.{var.name}(a);\n"
                         wrapped += "        assert(a1 == a2);\n"
+                        wrapped += "        return a1;\n"
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(a) == {target_v2}.{var.name}(a));\n"
+                        wrapped += f"        return {target_v1}.{var.name}(a);\n"
                 elif isinstance(var.type, ArrayType):
                     base_type = var.type.type
                     if isinstance(base_type, UserDefinedType) and isinstance(
@@ -568,8 +571,10 @@ class CodeGenerator:
                         wrapped += "        emit SwitchedFork(fork2);\n"
                         wrapped += f"        {var.type.type} a2 = {target_v2}.{var.name}(i);\n"
                         wrapped += "        assert(a1 == a2);\n"
+                        wrapped += "        return a1;\n"
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(i) == {target_v2}.{var.name}(i));\n"
+                        wrapped += f"        return {target_v1}.{var.name}(i);\n"
             else:
                 wrapped += (
                     f"    function {v_1['name']}_{var.full_name} public returns ({var.type}) {{\n"
@@ -582,12 +587,10 @@ class CodeGenerator:
                     wrapped += "        emit SwitchedFork(fork2);\n"
                     wrapped += f"        {'address' if isinstance(var.type, UserDefinedType) and isinstance(var.type.type, Contract) else var.type} a2 = {target_v2}.{var.full_name};\n"
                     wrapped += "        assert(a1 == a2);\n"
+                    wrapped += "        return a1;\n"
                 else:
                     wrapped += f"        assert({target_v1}.{var.full_name} == {target_v2}.{var.full_name});\n"
-            if fork:
-                wrapped += "        return a1;\n"
-            else:
-                wrapped += f"        return {target_v1}.{var.full_name};\n"
+                    wrapped += f"        return {target_v1}.{var.full_name};\n"
             wrapped += "    }\n\n"
         return wrapped
 

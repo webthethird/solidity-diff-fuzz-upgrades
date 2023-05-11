@@ -1,4 +1,4 @@
-name: Diffusc (fork mode)
+name: Diffusc (path mode)
 
 on:
   push:
@@ -22,10 +22,8 @@ jobs:
       matrix:
         include:
           - name: Safemoon
-            args: 0x0296201bfdfb410c29ef30bcae1b395537aeeb31 0xEb11a0a0beF1AC028B8C2d4CD64138DD5938cA7A -p 0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5 -n bsc -v 0.8.11
-            block: 26857408
-            rpckey: BSC_RPC_URL
-            apikey: BSC_API_KEY
+            out: ./contracts/test/safemoon/
+            args: ./contracts/implementation/safemoon/SafemoonV2.sol ./contracts/implementation/safemoon/SafemoonV3.sol -p ./contracts/implementation/safemoon/TransparentProxyTestHarness.sol -v 0.8.11 --run-custom ./contracts/test/safemoon/DiffFuzzCustomInit.sol DiffFuzzInit
 
     steps:
     - name: Checkout repository
@@ -46,9 +44,4 @@ jobs:
     - name: Run diffusc
       id: prepare
       run: |
-        #rm -rf crytic-export contracts
-        diffusc -L 200000 -r ${{ matrix.args }} -d ${{ matrix.name }}
-      env:
-        ECHIDNA_RPC_BLOCK: ${{ matrix.block }}
-        ECHIDNA_RPC_URL: ${{ secrets[matrix.rpckey] }}
-        ETHERSCAN_API_KEY: ${{ secrets[matrix.apikey] }}
+        diffusc -L 200000 -r ${{ matrix.args }} -d ${{ matrix.out }}
