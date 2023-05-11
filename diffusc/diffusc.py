@@ -222,7 +222,6 @@ def main() -> int:
 
     if args.run_mode or args.run_custom:
         contract_file = args.run_custom[0] if args.run_custom else "DiffFuzzUpgrades.sol"
-        contract_name = args.run_custom[1] if args.run_custom else "DiffFuzzUpgrades"
         if isinstance(analysis, ForkMode):
             prefix = output_dir
             config = "CryticConfig.yaml"
@@ -236,7 +235,7 @@ def main() -> int:
         proc = create_echidna_process(
             prefix,
             contract_file,
-            contract_name,
+            args.run_custom[1] if args.run_custom else "DiffFuzzUpgrades",
             config,
             ["--format", "text"],
         )
