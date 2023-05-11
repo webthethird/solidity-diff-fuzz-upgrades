@@ -211,7 +211,7 @@ class ForkMode(AnalysisMode):
             self._targets = None
 
         if not self._diff:
-            self._diff = do_diff(self._v1, self._v2, self._targets)
+            self._diff = do_diff(self._v1, self._v2, self._targets, self.external_taint)
 
         self.analyze_tokens()
 
@@ -221,8 +221,8 @@ class ForkMode(AnalysisMode):
         if self._v1["is_erc20"] and self._v2["is_erc20"]:
             if self._proxy is not None:
                 self._tokens.append(self._proxy)
-                contract = self._proxy["contract_object"]
-                slither = self._proxy["slither"]
+                contract = self._proxy["implementation_object"]
+                slither = self._proxy["implementation_slither"]
                 assert contract and slither
                 abi = contract.file_scope.abi(
                     slither.compilation_units[0].crytic_compile_compilation_unit, contract.name

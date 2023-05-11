@@ -21,9 +21,10 @@ class AnalysisMode:
     _proxy: Optional[ContractData]
     _targets: Optional[List[ContractData]]
     _diff: Optional[Diff]
-    _version: str
-    _upgrade: bool
-    _protected: bool
+    version: str
+    upgrade: bool
+    protected: bool
+    external_taint: bool
 
     def __init__(self, args: argparse.Namespace) -> None:
         self._v1 = None
@@ -37,20 +38,21 @@ class AnalysisMode:
         """Parse arguments that are used in both analysis modes."""
 
         if args.version:
-            self._version = args.version
+            self.version = args.version
         else:
-            self._version = "0.8.0"
+            self.version = "0.8.0"
 
         if args.fuzz_upgrade and not args.proxy:
             CryticPrint.print_warning(
                 "  * Upgrade during fuzz sequence specified via command line parameter,"
                 " but no proxy was specified. Ignoring...",
             )
-            self._upgrade = False
+            self.upgrade = False
         else:
-            self._upgrade = bool(args.fuzz_upgrade)
+            self.upgrade = bool(args.fuzz_upgrade)
 
-        self._protected = bool(args.include_protected)
+        self.protected = bool(args.include_protected)
+        self.external_taint = bool(args.external_taint)
 
     def analyze_contracts(self) -> None:
         """
@@ -72,9 +74,9 @@ class AnalysisMode:
             self._v1,
             self._v2,
             self._mode,
-            self._version,
-            self._upgrade,
-            self._protected,
+            self.version,
+            self.upgrade,
+            self.protected,
             self._net_info,
         )
         code_generator.proxy = self._proxy

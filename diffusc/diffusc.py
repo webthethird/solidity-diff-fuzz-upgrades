@@ -5,6 +5,7 @@
 import argparse
 import logging
 import os
+import sys
 
 from eth_utils import is_address
 from diffusc.core.path_mode import PathMode
@@ -13,11 +14,12 @@ from diffusc.core.analysis_mode import AnalysisMode
 from diffusc.core.code_generation import CodeGenerator
 from diffusc.utils.helpers import write_to_file
 from diffusc.utils.crytic_print import CryticPrint
+from diffusc.utils.echidna import create_echidna_process, run_echidna_campaign
 import diffusc.utils.network_vars as net_vars
 
 
-# pylint: disable=too-many-statements
-def main() -> None:
+# pylint: disable=too-many-statements,too-many-branches
+def main() -> int:
     """Main method, parses arguments and calls path_mode or fork_mode."""
     # Read command line arguments
 
@@ -53,7 +55,6 @@ def main() -> None:
         dest="version",
         help="Specifies the solc version to use in the test contract (default is 0.8.0).",
     )
-
     parser.add_argument(
         "-u",
         "--fuzz-upgrade",
@@ -61,12 +62,17 @@ def main() -> None:
         action="store_true",
         help="Specifies whether to upgrade the proxy to the V2 during fuzzing (default is False). Requires a proxy.",
     )
-
+    parser.add_argument(
+        "-L",
+        "--campaign-length",
+        dest="campaign_len",
+        help="Specifies the campaign length to use with Echidna. Default is 1000000000000.",
+    )
     parser.add_argument(
         "-l",
         "--seq-length",
         dest="seq_len",
-        help="Specifies the sequence length to use with Slither. Default is 100.",
+        help="Specifies the sequence length to use with Echidna. Default is 100.",
     )
     parser.add_argument(
         "-n",
@@ -96,15 +102,31 @@ def main() -> None:
         "(default false).",
     )
     parser.add_argument(
+        "-P",
         "--protected",
         dest="include_protected",
         action="store_true",
         help="Specifies whether to include wrappers for protected functions (default false).",
     )
     parser.add_argument(
+        "-K",
         "--etherscan-key",
         dest="etherscan_key",
         help="Specifies the API key to use with Etherscan.",
+    )
+    parser.add_argument(
+        "-r",
+        "--run",
+        dest="run_mode",
+        action="store_true",
+        help="Specifies whether to run Echidna on the generated test contract (default false).",
+    )
+    parser.add_argument(
+        "-x",
+        "--external-taint",
+        dest="external_taint",
+        action="store_true",
+        help="Specifies whether to analyze external calls to find tainted external contracts (default false).",
     )
 
     args = parser.parse_args()
@@ -126,6 +148,15 @@ def main() -> None:
     if args.seq_len:
         if str(args.seq_len).isnumeric():
             seq_len = int(args.seq_len)
+        else:
+            CryticPrint.print_error(
+                "\n* Sequence length provided is not numeric. Defaulting to 100.",
+            )
+
+    test_len = 1000000000000
+    if args.campaign_len:
+        if str(args.campaign_len).isnumeric():
+            test_len = int(args.campaign_len)
         else:
             CryticPrint.print_error(
                 "\n* Sequence length provided is not numeric. Defaulting to 100.",
@@ -166,7 +197,7 @@ def main() -> None:
         holders = analysis.token_holders
         config_file = CodeGenerator.generate_config_file(
             f"{output_dir}corpus",
-            "1000000000000",
+            test_len,
             contract_addr,
             seq_len,
             block=analysis.block_number,
@@ -175,12 +206,26 @@ def main() -> None:
         )
     else:
         config_file = CodeGenerator.generate_config_file(
-            f"{output_dir}corpus", "1000000000000", contract_addr, seq_len
+            f"{output_dir}corpus", test_len, contract_addr, seq_len
         )
     write_to_file(f"{output_dir}CryticConfig.yaml", config_file)
     CryticPrint.print_success(
         f"  * Echidna configuration file generated and written to {output_dir}CryticConfig.yaml.",
     )
+
+    if args.run_mode:
+        CryticPrint.print_information("* Run mode enabled. Starting Echidna...")
+        proc = create_echidna_process(
+            output_dir,
+            "DiffFuzzUpgrades.sol",
+            "DiffFuzzUpgrades",
+            "CryticConfig.yaml",
+            ["--format", "text"],
+        )
+        max_value = run_echidna_campaign(proc)
+        if max_value <= 0:
+            CryticPrint.print_error("* Echidna failed to find an exploit")
+            return 1
 
     CryticPrint.print_message(
         "\n-----------------------------------------------------------",
@@ -191,7 +236,8 @@ def main() -> None:
     CryticPrint.print_message(
         "-----------------------------------------------------------",
     )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

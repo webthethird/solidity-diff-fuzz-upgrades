@@ -79,8 +79,12 @@ def get_pragma_version_from_file(filepath: str, seen: Optional[List[str]] = None
     return ".".join(high_version)
 
 
+# pylint: disable=too-many-locals
 def do_diff(
-    v_1: ContractData, v_2: ContractData, additional_targets: Optional[List[ContractData]] = None
+    v_1: ContractData,
+    v_2: ContractData,
+    additional_targets: Optional[List[ContractData]] = None,
+    include_external: bool = False,
 ) -> Diff:
     """Use slither.utils.upgradeability to perform a diff between two contract versions."""
     assert v_1["valid_data"] and v_2["valid_data"]
@@ -94,7 +98,7 @@ def do_diff(
         modified_funcs,
         tainted_funcs,
         tainted_contracts,
-    ) = compare(v_1["contract_object"], v_2["contract_object"])
+    ) = compare(v_1["contract_object"], v_2["contract_object"], include_external)
     if additional_targets:
         tainted_contracts = tainted_inheriting_contracts(
             tainted_contracts,
@@ -162,7 +166,11 @@ def camel_case(name: str) -> str:
 
 
 def write_to_file(filename: str, content: str) -> None:
-    """Write content to a file."""
+    """Write content to a file. If the parent directory doesn't exist, create it."""
+
+    base_dir = os.path.dirname(filename)
+    if not os.path.exists(base_dir):
+        os.makedirs(base_dir, exist_ok=True)
 
     with open(filename, "wt", encoding="utf-8") as out_file:
         out_file.write(content)
