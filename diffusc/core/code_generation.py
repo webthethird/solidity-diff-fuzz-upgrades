@@ -551,8 +551,10 @@ class CodeGenerator:
                         wrapped += "        emit SwitchedFork(fork2);\n"
                         wrapped += f"        {var.type.type_to} a2 = {target_v2}.{var.name}(a);\n"
                         wrapped += "        assert(a1 == a2);\n"
+                        wrapped += "        return a1;\n"
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(a) == {target_v2}.{var.name}(a));\n"
+                        wrapped += f"        return {target_v1}.{var.name}(a);\n"
                 elif isinstance(var.type, ArrayType):
                     base_type = var.type.type
                     if isinstance(base_type, UserDefinedType) and isinstance(
@@ -568,8 +570,10 @@ class CodeGenerator:
                         wrapped += "        emit SwitchedFork(fork2);\n"
                         wrapped += f"        {var.type.type} a2 = {target_v2}.{var.name}(i);\n"
                         wrapped += "        assert(a1 == a2);\n"
+                        wrapped += "        return a1;\n"
                     else:
                         wrapped += f"        assert({target_v1}.{var.name}(i) == {target_v2}.{var.name}(i));\n"
+                        wrapped += f"        return {target_v1}.{var.name}(i);\n"
             else:
                 wrapped += (
                     f"    function {v_1['name']}_{var.full_name} public returns ({var.type}) {{\n"
@@ -582,12 +586,10 @@ class CodeGenerator:
                     wrapped += "        emit SwitchedFork(fork2);\n"
                     wrapped += f"        {'address' if isinstance(var.type, UserDefinedType) and isinstance(var.type.type, Contract) else var.type} a2 = {target_v2}.{var.full_name};\n"
                     wrapped += "        assert(a1 == a2);\n"
+                    wrapped += "        return a1;\n"
                 else:
                     wrapped += f"        assert({target_v1}.{var.full_name} == {target_v2}.{var.full_name});\n"
-            if fork:
-                wrapped += "        return a1;\n"
-            else:
-                wrapped += f"        return {target_v1}.{var.full_name};\n"
+                    wrapped += f"        return {target_v1}.{var.full_name};\n"
             wrapped += "    }\n\n"
         return wrapped
 
