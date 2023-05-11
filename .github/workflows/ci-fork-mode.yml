@@ -1,4 +1,4 @@
-name: Crytic-exploit
+name: Diffusc
 
 on:
   push:
@@ -22,8 +22,8 @@ jobs:
       matrix:
         include:
           - name: Safemoon
-            args: 0x0296201bfdfb410c29ef30bcae1b395537aeeb31 0xEb11a0a0beF1AC028B8C2d4CD64138DD5938cA7A -p 0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5 -n bsc -u -v 0.8.11
-            block: 26855370
+            args: 0x0296201bfdfb410c29ef30bcae1b395537aeeb31 0xEb11a0a0beF1AC028B8C2d4CD64138DD5938cA7A -p 0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5 -n bsc -v 0.8.11
+            block: 26857408
             rpckey: BSC_RPC_URL
             apikey: BSC_API_KEY
 
@@ -38,14 +38,16 @@ jobs:
 
     - name: Install diffusc
       run: |
-        pip3 install -r requirements.txt
-        python3 setup.py install
+        pip3 install .
+        sudo cp bin/echidna /usr/local/bin
+        solc-select install 0.8.11
+        solc-select use 0.8.11
 
     - name: Run diffusc
       id: prepare
       run: |
         #rm -rf crytic-export contracts
-        python3 src/crytic-exploit.py -L 200000 -r ${{ matrix.args }} -d ${{ matrix.name }}
+        diffusc -L 200000 -r ${{ matrix.args }} -d ${{ matrix.name }}
       env:
         ECHIDNA_RPC_BLOCK: ${{ matrix.block }}
         ECHIDNA_RPC_URL: ${{ secrets[matrix.rpckey] }}
