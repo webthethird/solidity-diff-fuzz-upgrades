@@ -40,7 +40,7 @@ setup(
         ],
         "dev": [
             "diffusc[lint,test]",
-        ]
+        ],
     },
     license="AGPL-3.0",
     long_description=long_description,
