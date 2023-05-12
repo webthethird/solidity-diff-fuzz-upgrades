@@ -116,9 +116,9 @@ def get_pragma_versions_from_file(
     # Recursively call this function for each imported file, and update max and min
     for path in files:
         if path.startswith("./"):
-            path = path.replace("./", filepath.rsplit("/", maxsplit=1)[0] + "/")
+            path = os.path.join(os.path.dirname(path), path[2:])
         elif path.startswith("../"):
-            path = path.replace("../", filepath.rsplit("/", maxsplit=2)[0] + "/")
+            path = os.path.join(os.path.dirname(os.path.dirname(path)), path[3:])
         if path not in seen:
             seen.append(path)
             file_versions = get_pragma_versions_from_file(path, seen)
