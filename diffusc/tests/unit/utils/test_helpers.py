@@ -9,25 +9,26 @@ TEST_DATA_DIR = Path(__file__).resolve().parent / "test_data" / "helpers"
 
 
 def test_pragma_from_file() -> None:
-    file = Path(TEST_DATA_DIR, "pragmaA.sol").as_posix()
+
+    file = os.path.join(TEST_DATA_DIR, "pragmaA.sol")
     versions = helpers.get_pragma_versions_from_file(file)
     assert versions == ("0.8.0", "0.8.20")
-    file = Path(TEST_DATA_DIR, "pragmaB.sol").as_posix()
+    file = os.path.join(TEST_DATA_DIR, "pragmaB.sol")
     versions = helpers.get_pragma_versions_from_file(file)
     assert versions == ("0.8.2", "0.8.20")
-    file = Path(TEST_DATA_DIR, "pragmaC.sol").as_posix()
+    file = os.path.join(TEST_DATA_DIR, "pragmaC.sol")
     versions = helpers.get_pragma_versions_from_file(file)
     assert versions == ("0.8.2", "0.8.17")
-    file = Path(TEST_DATA_DIR, "pragmaD.sol").as_posix()
+    file = os.path.join(TEST_DATA_DIR, "pragmaD.sol")
     versions = helpers.get_pragma_versions_from_file(file)
     assert versions == ("0.8.2", "0.8.14")
-    file = Path(TEST_DATA_DIR, "pragmaE.sol").as_posix()
+    file = os.path.join(TEST_DATA_DIR, "pragmaE.sol")
     versions = helpers.get_pragma_versions_from_file(file)
     assert versions == ("0.8.10", "0.8.10")
 
 
 def test_compilation_unit_name() -> None:
-    file = Path(TEST_DATA_DIR, "pragmaA.sol").as_posix()
+    file = os.path.join(TEST_DATA_DIR, "pragmaA.sol")
     sl = Slither(file)
     assert helpers.get_compilation_unit_name(sl) == "pragmaA"
 

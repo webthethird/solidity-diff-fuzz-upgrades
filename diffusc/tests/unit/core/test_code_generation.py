@@ -17,7 +17,7 @@ TEST_CONTRACTS = {"CodeGeneration.sol": "0.8.4", "TransparentUpgradeableProxy.so
 def test_interface_from_file() -> None:
     for test, version in TEST_CONTRACTS.items():
         solc_select.switch_global_version(version, always_install=True)
-        file_path = Path(TEST_DATA_DIR, f"{test}").as_posix()
+        file_path = os.path.join(TEST_DATA_DIR, test)
         sl = Slither(file_path)
         contract = sl.get_contract_from_name(test.replace(".sol", ""))[0]
         contract_data = ContractData(
@@ -29,7 +29,7 @@ def test_interface_from_file() -> None:
             suffix="",
         )  # type: ignore[typeddict-item]
         contract_data = CodeGenerator.get_contract_interface(contract_data)
-        expected_file = Path(TEST_DATA_DIR, f"I{test}").as_posix()
+        expected_file = os.path.join(TEST_DATA_DIR, f"I{test}")
         with open(expected_file, "r") as file:
             expected = file.read()
         assert contract_data["interface"] == expected
@@ -38,7 +38,7 @@ def test_interface_from_file() -> None:
 def test_contract_data_from_slither() -> None:
     for test, version in TEST_CONTRACTS.items():
         solc_select.switch_global_version(version, always_install=True)
-        file_path = Path(TEST_DATA_DIR, f"{test}").as_posix()
+        file_path = os.path.join(TEST_DATA_DIR, test)
         sl = Slither(file_path)
         contract = sl.get_contract_from_name(test.replace(".sol", ""))[0]
         contract_data = CodeGenerator.get_contract_data(contract)
@@ -49,7 +49,7 @@ def test_contract_data_from_slither() -> None:
         assert contract_data["name"] == test.replace(".sol", "")
         assert contract_data["interface_name"] == "I" + test.replace(".sol", "")
         assert contract_data["solc_version"] == version
-        expected_file = Path(TEST_DATA_DIR, f"I{test}").as_posix()
+        expected_file = os.path.join(TEST_DATA_DIR, f"I{test}")
         with open(expected_file, "r") as file:
             expected_interface = file.read()
         assert contract_data["interface"] == expected_interface
