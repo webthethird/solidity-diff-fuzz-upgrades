@@ -2,10 +2,10 @@
 
 import os
 import difflib
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 # pylint: disable= no-name-in-module
-from solc_select.solc_select import get_installable_versions
+from solc_select.solc_select import get_available_versions
 from slither.utils.upgradeability import (
     compare,
     tainted_inheriting_contracts,
@@ -31,21 +31,79 @@ def get_compilation_unit_name(slither_object: "Slither") -> str:
     return name
 
 
-def get_pragma_version_from_file(filepath: str, seen: Optional[List[str]] = None) -> str:
-    """Recursive function to determine minimum solc version required by a Solidity file."""
+# TODO: remove these disables if possible
+# pylint: disable=too-many-locals,too-many-statements,too-many-branches
+def get_pragma_versions_from_file(
+    filepath: str, seen: Optional[List[str]] = None
+) -> Tuple[str, str]:
+    """Recursive function to determine minimum and maximum solc versions required by a Solidity file."""
+
+    def is_higher_version(cur_vers: List[str], high_vers: List[str]) -> bool:
+        if int(cur_vers[1]) > int(high_vers[1]) or (
+            int(cur_vers[1]) == int(high_vers[1]) and int(cur_vers[2]) > int(high_vers[2])
+        ):
+            return True
+        return False
+
+    def is_lower_version(cur_vers: List[str], low_vers: List[str]) -> bool:
+        if int(cur_vers[1]) < int(low_vers[1]) or (
+            int(cur_vers[1]) == int(low_vers[1]) and int(cur_vers[2]) < int(low_vers[2])
+        ):
+            return True
+        return False
+
+    def next_version(cur_vers: List[str]) -> List[str]:
+        ret_vers = ["0", "0", "0"]
+        all_versions = list(get_available_versions().keys())
+        all_versions.reverse()
+        if ".".join(cur_vers) in all_versions:
+            cur_index = all_versions.index(".".join(cur_vers))
+            if cur_index + 1 != len(all_versions):
+                return all_versions[cur_index + 1].split(".")
+            return ret_vers
+        if cur_vers[2] == "99":
+            ret_vers[1] = str(int(cur_vers[1]) + 1)
+        else:
+            ret_vers[1] = cur_vers[1]
+            ret_vers[2] = str(int(cur_vers[2]) + 1)
+        return ret_vers
+
+    def prev_version(cur_vers: List[str]) -> List[str]:
+        ret_vers = ["0", "0", "0"]
+        all_versions = list(get_available_versions().keys())
+        all_versions.reverse()
+        if ".".join(cur_vers) in all_versions:
+            cur_index = all_versions.index(".".join(cur_vers))
+            if cur_index - 1 >= 0:
+                return all_versions[cur_index - 1].split(".")
+            return ret_vers
+        ret_vers[1] = cur_vers[1]
+        ret_vers[2] = str(int(cur_vers[2]) - 1)
+        return ret_vers
+
+    def last_before_breaking(cur_vers: List[str]) -> List[str]:
+        all_versions = list(get_available_versions().keys())
+        last_vers = next(v for v in all_versions if v.split(".")[1] == cur_vers[1])
+        return last_vers.split(".")
 
     if seen is None:
         seen = []
+    # Read from the file and extract pragma solidity version statements
     try:
         with open(filepath, "r", encoding="utf-8") as file:
             lines = file.readlines()
     except FileNotFoundError:
         return "0.0.0"
     versions = [
-        line.split("solidity")[1].split(";")[0].replace(" ", "")
-        for line in lines
-        if "pragma solidity" in line
+        line.split("solidity")[1].split(";")[0] for line in lines if "pragma solidity" in line
     ]
+    versions = [
+        v.replace("= ", "=").replace("> ", ">").replace("< ", "<").replace("^ ", "^").split()
+        for v in versions
+    ]
+    versions = [item for sublist in versions for item in sublist]
+
+    # Extract import statements from the file
     imports = [line for line in lines if "import" in line]
     files = [
         line.split()[1].split(";")[0].replace('"', "").replace("'", "")
@@ -53,6 +111,10 @@ def get_pragma_version_from_file(filepath: str, seen: Optional[List[str]] = None
         else line.split()[1].replace('"', "").replace("'", "")
         for line in imports
     ]
+    # Keep track of the version constraints imposed by imports
+    max_version = ["0", "9", "99"]
+    min_version = ["0", "0", "0"]
+    # Recursively call this function for each imported file, and update max and min
     for path in files:
         if path.startswith("./"):
             path = path.replace("./", filepath.rsplit("/", maxsplit=1)[0] + "/")
@@ -60,23 +122,37 @@ def get_pragma_version_from_file(filepath: str, seen: Optional[List[str]] = None
             path = path.replace("../", filepath.rsplit("/", maxsplit=2)[0] + "/")
         if path not in seen:
             seen.append(path)
-            versions.append(get_pragma_version_from_file(path, seen))
-    high_version = ["0", "0", "0"]
+            file_versions = get_pragma_versions_from_file(path, seen)
+            if is_higher_version(file_versions[0].split("."), min_version):
+                min_version = file_versions[0].split(".")
+            if is_lower_version(file_versions[1].split("."), max_version):
+                max_version = file_versions[1].split(".")
+
+    # Iterate over the versions found in this file, and update the version constraints accordingly
     for ver in versions:
+        operator = ver.split("0.")[0]
         vers = ver.split(".")
         vers[0] = "0"
-        if int(vers[1]) > int(high_version[1]) or (
-            int(vers[1]) == int(high_version[1]) and int(vers[2]) > int(high_version[2])
-        ):
-            high_version = vers
-            if ver.startswith(">") and not ver.startswith(">="):
-                vers[2] = str(int(vers[2]) + 1)
-                if ".".join(vers) not in get_installable_versions():
-                    vers[1] = str(int(vers[1]) + 1)
-                    vers[2] = "0"
-                if ".".join(vers) in get_installable_versions():
-                    high_version = vers
-    return ".".join(high_version)
+        if operator == ">=" and is_higher_version(vers, min_version):
+            min_version = vers
+        elif operator == ">" and is_higher_version(next_version(vers), min_version):
+            min_version = next_version(vers)
+        elif operator == "<=" and is_lower_version(vers, max_version):
+            max_version = vers
+        elif operator == "<" and is_lower_version(prev_version(vers), max_version):
+            max_version = prev_version(vers)
+        elif operator == "^" and is_higher_version(vers, min_version):
+            min_version = vers
+            max_version = last_before_breaking(vers)
+        elif operator == "":
+            min_version = vers
+            max_version = vers
+    # If one of the constraints has not been defined, pick a reasonable constraint
+    if max_version == ["0", "9", "99"]:
+        max_version = last_before_breaking(min_version)
+    if min_version == ["0", "0", "0"]:
+        min_version = [max_version[0], max_version[1], "0"]
+    return ".".join(min_version), ".".join(max_version)
 
 
 # pylint: disable=too-many-locals

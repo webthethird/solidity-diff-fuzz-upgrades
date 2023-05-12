@@ -34,7 +34,7 @@ from diffusc.utils.classes import FunctionInfo, ContractData, Diff
 from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.network_info_provider import NetworkInfoProvider
 from diffusc.utils.helpers import (
-    get_pragma_version_from_file,
+    get_pragma_versions_from_file,
     similar,
     camel_case,
 )
@@ -235,7 +235,7 @@ class CodeGenerator:
 
         CryticPrint.print_message(f"  * Getting contract data from {contract.name}")
 
-        version = get_pragma_version_from_file(contract.file_scope.filename.absolute)
+        version = get_pragma_versions_from_file(contract.file_scope.filename.absolute)[0]
         contract_data = ContractData(
             contract_object=contract,
             suffix=suffix,
