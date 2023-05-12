@@ -93,15 +93,15 @@ def get_pragma_versions_from_file(
         with open(filepath, "r", encoding="utf-8") as file:
             lines = file.readlines()
     except FileNotFoundError:
-        return "0.0.0"
+        return "0.0.0", "0.0.0"
     versions = [
         line.split("solidity")[1].split(";")[0] for line in lines if "pragma solidity" in line
     ]
-    versions = [
+    versions_sublists = [
         v.replace("= ", "=").replace("> ", ">").replace("< ", "<").replace("^ ", "^").split()
         for v in versions
     ]
-    versions = [item for sublist in versions for item in sublist]
+    versions = [item for sublist in versions_sublists for item in sublist]
 
     # Extract import statements from the file
     imports = [line for line in lines if "import" in line]

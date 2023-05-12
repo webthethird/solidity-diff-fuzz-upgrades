@@ -26,8 +26,8 @@ def test_interface_from_file() -> None:
             path=contract.file_scope.filename.absolute,
             valid_data=True,
             is_proxy=False,
-            suffix=""
-        )   # type: ignore[typeddict-item]
+            suffix="",
+        )  # type: ignore[typeddict-item]
         contract_data = CodeGenerator.get_contract_interface(contract_data)
         expected_file = Path(TEST_DATA_DIR, f"I{test}").as_posix()
         with open(expected_file, "r") as file:
@@ -43,6 +43,7 @@ def test_contract_data_from_slither() -> None:
         contract = sl.get_contract_from_name(test.replace(".sol", ""))[0]
         contract_data = CodeGenerator.get_contract_data(contract)
         assert contract_data["valid_data"]
+        assert isinstance(contract_data["slither"], Slither)
         assert contract_data["slither"].crytic_compile == sl.crytic_compile
         assert contract_data["path"] == file_path
         assert contract_data["name"] == test.replace(".sol", "")
