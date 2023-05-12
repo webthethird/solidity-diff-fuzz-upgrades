@@ -25,11 +25,18 @@ setup(
         "web3>=6.0.0",
     ],
     extras_require={
-        "dev": [
+        "lint": [
             "black==22.3.0",
             "pylint==2.13.4",
             "mypy==1.2.0",
+        ],
+        "test": [
             "pytest",
+            "pytest-cov",
+            "pytest-xdist",
+            "deepdiff",
+            "numpy",
+            "coverage[toml]",
         ],
     },
     license="AGPL-3.0",
