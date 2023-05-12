@@ -24,8 +24,7 @@ def get_compilation_unit_name(slither_object: "Slither") -> str:
     """Get the name of the compilation unit from Slither."""
 
     name = list(slither_object.crytic_compile.compilation_units.keys())[0]
-    if os.path.sep in name:
-        name = name.rsplit(os.path.sep, maxsplit=1)[1]
+    name = os.path.basename(name)
     if name.endswith(".sol"):
         name = os.path.splitext(name)[0]
     return name
