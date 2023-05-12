@@ -46,7 +46,7 @@ jobs:
         # Only run coverage on ubuntu-latest.
         run: |
           if [ ${{ matrix.os }} = "ubuntu-latest" ]; then
-            TEST_ARGS="--cov=slither --cov-append"
+            TEST_ARGS="--cov=diffusc --cov-append"
           elif [ ${{ matrix.os }} = "windows-2022" ]; then
             TEST_ARGS=""
           fi
