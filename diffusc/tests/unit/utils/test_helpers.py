@@ -29,6 +29,7 @@ def test_pragma_from_file() -> None:
 
 def test_compilation_unit_name() -> None:
     file = os.path.join(TEST_DATA_DIR, "pragmaA.sol")
+    solc_select.switch_global_version("0.8.0", always_install=True)
     sl = Slither(file)
     assert helpers.get_compilation_unit_name(sl) == "pragmaA"
 
