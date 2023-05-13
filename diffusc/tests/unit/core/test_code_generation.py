@@ -1,13 +1,15 @@
+import argparse
 import os
 from pathlib import Path
-from argparse import Namespace
 
 from solc_select import solc_select
 from slither import Slither
 from diffusc.core.code_generation import CodeGenerator
 from diffusc.utils.classes import ContractData, FunctionInfo, SlotInfo
+from diffusc.utils.helpers import do_diff
 from diffusc.utils.from_address import get_contract_data_from_address
 from diffusc.utils.from_path import get_contract_data_from_path
+from diffusc.utils.slither_provider import FileSlitherProvider, NetworkSlitherProvider
 
 
 TEST_DATA_DIR = Path(__file__).resolve().parent / "test_data"
@@ -67,4 +69,51 @@ def test_args_and_returns() -> None:
     # func_info = FunctionInfo()
 
 
-# def test_generate_test_contract_fork() -> None:
+def test_generate_contract_path_mode() -> None:
+    provider = FileSlitherProvider()
+    output_dir = os.path.join(TEST_DATA_DIR, "output")
+    v1_data = get_contract_data_from_path(
+        os.path.join(TEST_DATA_DIR, "ContractV1.sol"), output_dir, provider
+    )
+    v2_data = get_contract_data_from_path(
+        os.path.join(TEST_DATA_DIR, "ContractV2.sol"), output_dir, provider
+    )
+    proxy_data = get_contract_data_from_path(
+        os.path.join(TEST_DATA_DIR, "TransparentUpgradeableProxy.sol"), output_dir, provider
+    )
+    market_data = get_contract_data_from_path(
+        os.path.join(TEST_DATA_DIR, "token", "MarketToken.sol"), output_dir, provider
+    )
+    oracle_data = get_contract_data_from_path(
+        os.path.join(TEST_DATA_DIR, "SimplePriceOracle.sol"), output_dir, provider
+    )
+
+    assert v1_data["valid_data"] and v2_data["valid_data"]
+    diff = do_diff(v1_data, v2_data)
+
+    # Test code generation w/o proxy, additional targets, upgrade function or protected functions
+    generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, False)
+    code = generator.generate_test_contract(diff)
+    # assert code == expected_code
+
+    # Test code generation w/ proxy and upgrade function, w/o additional targets or protected functions
+    generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", True, False)
+    assert proxy_data["valid_data"]
+    generator.proxy = proxy_data
+    code = generator.generate_test_contract(diff)
+    # assert code == expected_code
+
+    # Test code generation w/ additional targets, w/o proxy, upgrade function, protected functions
+    generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, False)
+    assert market_data["valid_data"] and oracle_data["valid_data"]
+    generator.targets = [market_data, oracle_data]
+    diff = do_diff(v1_data, v2_data, [market_data, oracle_data])
+    code = generator.generate_test_contract(diff)
+    # assert code == expected_code
+
+    # Test code generation w/ additional targets, external taint and protected functions, w/o proxy, upgrade function
+    generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, True)
+    generator.targets = [market_data, oracle_data]
+    diff = do_diff(v1_data, v2_data, [market_data, oracle_data], include_external=True)
+    code = generator.generate_test_contract(diff)
+    # assert code == expected_code

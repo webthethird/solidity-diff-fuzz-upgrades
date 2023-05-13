@@ -1,8 +1,7 @@
 pragma solidity ^0.8.2;
 
-import "./ProxyStorage.sol";
-
-contract ContractV1 is ProxyStorage {
+contract ContractV1 {
+    address admin;
     uint private stateA = 0;
     uint private stateB = 0;
     uint constant CONST = 32;
