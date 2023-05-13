@@ -26,7 +26,7 @@ class PathMode(AnalysisMode):
     _output_dir: str
 
     def __init__(self, args: argparse.Namespace) -> None:
-        self._mode = "deploy"
+        self._mode = "path"
         self._provider = FileSlitherProvider()
         self._net_info = None
         super().__init__(args)

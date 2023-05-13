@@ -55,7 +55,7 @@ class CodeGenerator:
         protected: bool,
         net_info: NetworkInfoProvider = None,
     ):
-        assert mode in ["deploy", "fork"]
+        assert mode in ["path", "fork"]
 
         self._v_1: ContractData = v_1
         self._v_2: ContractData = v_2
