@@ -96,7 +96,7 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff)
     with open(os.path.join(TEST_DATA_DIR, "output", "Expected_0.sol"), "r") as expected:
         expected_code = expected.read()
-    assert code == expected_code
+    assert code.replace(f".{os.sep}", "./") == expected_code
 
     # Test code generation w/ proxy and upgrade function, w/o additional targets or protected functions
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", True, False)
@@ -105,7 +105,7 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff)
     with open(os.path.join(TEST_DATA_DIR, "output", "Expected_1.sol"), "r") as expected:
         expected_code = expected.read()
-    assert code == expected_code
+    assert code.replace(f".{os.sep}", "./") == expected_code
 
     # Test code generation w/ additional targets, w/o proxy, upgrade function, protected functions
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, False)
@@ -115,7 +115,7 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff)
     with open(os.path.join(TEST_DATA_DIR, "output", "Expected_2.sol"), "r") as expected:
         expected_code = expected.read()
-    assert code == expected_code
+    assert code.replace(f".{os.sep}", "./") == expected_code
 
     # Test code generation w/ additional targets, external taint and protected functions, w/o proxy, upgrade function
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, True)
@@ -124,4 +124,4 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff)
     with open(os.path.join(TEST_DATA_DIR, "output", "Expected_3.sol"), "r") as expected:
         expected_code = expected.read()
-    assert code == expected_code
+    assert code.replace(f".{os.sep}", "./") == expected_code
