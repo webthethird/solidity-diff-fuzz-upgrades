@@ -12,6 +12,8 @@ interface IContractV1 {
     function f(uint256) external;
     function g(uint256) external;
     function h() external;
+    function totalValue() external returns (uint256);
+    function balance() external returns (uint256);
 }
 
 interface IContractV2 {
@@ -22,6 +24,8 @@ interface IContractV2 {
     function g(uint256) external;
     function h() external;
     function i() external;
+    function totalValue() external returns (uint256);
+    function balance(address) external returns (uint256);
 }
 
 interface IMarketToken {
@@ -83,7 +87,7 @@ contract DiffFuzzUpgrades {
     }
 
 
-    /*** Modified Functions ***/
+    /*** Modified Functions ***/ 
 
     function ContractV2_g(uint256 a) public virtual {
         hevm.prank(msg.sender);
@@ -98,14 +102,33 @@ contract DiffFuzzUpgrades {
                 contractV2.g.selector, a
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function ContractV2_totalValue() public virtual {
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+            abi.encodeWithSelector(
+                contractV1.totalValue.selector
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+            abi.encodeWithSelector(
+                contractV2.totalValue.selector
+            )
+        );
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
     }
 
 
-    /*** Tainted Functions ***/
+    /*** Tainted Functions ***/ 
 
     function ContractV2_h() public virtual {
         hevm.prank(msg.sender);
@@ -120,17 +143,41 @@ contract DiffFuzzUpgrades {
                 contractV2.h.selector
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
     }
 
 
-    /*** New Functions ***/
+    /*** New Functions ***/ 
+
+    // TODO: Double-check this function for correctness
+    // ContractV2.balance(address)
+    // is a new function, which appears to replace a function with a similar name,
+    // ContractV1.balance().
+    // If these functions have different arguments, this function may be incorrect.
+    function ContractV2_balance(address a) public virtual {
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+            abi.encodeWithSelector(
+                contractV1.balance.selector
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+            abi.encodeWithSelector(
+                contractV2.balance.selector, a
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
 
 
-    /*** Tainted Variables ***/
+    /*** Tainted Variables ***/ 
 
     function ContractV1_stateB() public returns (uint256) {
         assert(contractV1.stateB() == contractV2.stateB());
@@ -138,288 +185,22 @@ contract DiffFuzzUpgrades {
     }
 
 
-    /*** Additional Targets ***/
-
-    function MarketToken_name() public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.name.selector
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.name.selector
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_symbol() public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.symbol.selector
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.symbol.selector
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_decimals() public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.decimals.selector
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.decimals.selector
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_totalSupply() public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.totalSupply.selector
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.totalSupply.selector
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
+    /*** Tainted External Contracts ***/ 
 
     function MarketToken_balanceOf(address a) public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
+        (bool successV1, bytes memory outputV1) = address(marketTokenV1).call(
             abi.encodeWithSelector(
-                marketToken.balanceOf.selector, a
+                marketTokenV1.balanceOf.selector, a
             )
         );
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
+        (bool successV2, bytes memory outputV2) = address(marketTokenV2).call(
             abi.encodeWithSelector(
-                marketToken.balanceOf.selector, a
+                marketTokenV2.balanceOf.selector, a
             )
         );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_transfer(address a, uint256 b) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.transfer.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.transfer.selector, a, b
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_allowance(address a, address b) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.allowance.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.allowance.selector, a, b
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_approve(address a, uint256 b) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.approve.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.approve.selector, a, b
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_transferFrom(address a, address b, uint256 c) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.transferFrom.selector, a, b, c
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.transferFrom.selector, a, b, c
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_increaseAllowance(address a, uint256 b) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.increaseAllowance.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.increaseAllowance.selector, a, b
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_decreaseAllowance(address a, uint256 b) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.decreaseAllowance.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.decreaseAllowance.selector, a, b
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_mint(uint256 a) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.mint.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.mint.selector, a
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_redeem(uint256 a) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.redeem.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.redeem.selector, a
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_borrow(uint256 a) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.borrow.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.borrow.selector, a
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function MarketToken_underlyingBalance(address a) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.underlyingBalance.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(marketToken).call(
-            abi.encodeWithSelector(
-                marketToken.underlyingBalance.selector, a
-            )
-        );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -427,78 +208,24 @@ contract DiffFuzzUpgrades {
 
     function SimplePriceOracle_getUnderlyingPrice(address a) public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(simplePriceOracle).call(
+        (bool successV1, bytes memory outputV1) = address(simplePriceOracleV1).call(
             abi.encodeWithSelector(
-                simplePriceOracle.getUnderlyingPrice.selector, a
+                simplePriceOracleV1.getUnderlyingPrice.selector, a
             )
         );
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(simplePriceOracle).call(
+        (bool successV2, bytes memory outputV2) = address(simplePriceOracleV2).call(
             abi.encodeWithSelector(
-                simplePriceOracle.getUnderlyingPrice.selector, a
+                simplePriceOracleV2.getUnderlyingPrice.selector, a
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
     }
 
-    function SimplePriceOracle_setUnderlyingPrice(address a, uint256 b) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(simplePriceOracle).call(
-            abi.encodeWithSelector(
-                simplePriceOracle.setUnderlyingPrice.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(simplePriceOracle).call(
-            abi.encodeWithSelector(
-                simplePriceOracle.setUnderlyingPrice.selector, a, b
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
 
-    function SimplePriceOracle_setDirectPrice(address a, uint256 b) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(simplePriceOracle).call(
-            abi.encodeWithSelector(
-                simplePriceOracle.setDirectPrice.selector, a, b
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(simplePriceOracle).call(
-            abi.encodeWithSelector(
-                simplePriceOracle.setDirectPrice.selector, a, b
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
-
-    function SimplePriceOracle_assetPrices(address a) public virtual {
-        hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(simplePriceOracle).call(
-            abi.encodeWithSelector(
-                simplePriceOracle.assetPrices.selector, a
-            )
-        );
-        hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(simplePriceOracle).call(
-            abi.encodeWithSelector(
-                simplePriceOracle.assetPrices.selector, a
-            )
-        );
-        assert(successV1 == successV2);
-        if(successV1 && successV2) {
-            assert(keccak256(outputV1) == keccak256(outputV2));
-        }
-    }
+    /*** Additional Targets ***/ 
 
 }

@@ -10,6 +10,8 @@ interface IContractV1 {
     function f(uint256) external;
     function g(uint256) external;
     function h() external;
+    function totalValue() external returns (uint256);
+    function balance() external returns (uint256);
 }
 
 interface IContractV2 {
@@ -20,6 +22,8 @@ interface IContractV2 {
     function g(uint256) external;
     function h() external;
     function i() external;
+    function totalValue() external returns (uint256);
+    function balance(address) external returns (uint256);
 }
 
 interface IHevm {
@@ -47,7 +51,7 @@ contract DiffFuzzUpgrades {
     }
 
 
-    /*** Modified Functions ***/
+    /*** Modified Functions ***/ 
 
     function ContractV2_g(uint256 a) public virtual {
         hevm.prank(msg.sender);
@@ -62,14 +66,33 @@ contract DiffFuzzUpgrades {
                 contractV2.g.selector, a
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function ContractV2_totalValue() public virtual {
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+            abi.encodeWithSelector(
+                contractV1.totalValue.selector
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+            abi.encodeWithSelector(
+                contractV2.totalValue.selector
+            )
+        );
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
     }
 
 
-    /*** Tainted Functions ***/
+    /*** Tainted Functions ***/ 
 
     function ContractV2_h() public virtual {
         hevm.prank(msg.sender);
@@ -84,17 +107,41 @@ contract DiffFuzzUpgrades {
                 contractV2.h.selector
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
     }
 
 
-    /*** New Functions ***/
+    /*** New Functions ***/ 
+
+    // TODO: Double-check this function for correctness
+    // ContractV2.balance(address)
+    // is a new function, which appears to replace a function with a similar name,
+    // ContractV1.balance().
+    // If these functions have different arguments, this function may be incorrect.
+    function ContractV2_balance(address a) public virtual {
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+            abi.encodeWithSelector(
+                contractV1.balance.selector
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+            abi.encodeWithSelector(
+                contractV2.balance.selector, a
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
 
 
-    /*** Tainted Variables ***/
+    /*** Tainted Variables ***/ 
 
     function ContractV1_stateB() public returns (uint256) {
         assert(contractV1.stateB() == contractV2.stateB());

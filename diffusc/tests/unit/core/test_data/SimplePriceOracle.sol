@@ -11,7 +11,7 @@ contract SimplePriceOracle {
         if (compareStrings(mToken.symbol(), "cETH")) {
             asset = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
         } else {
-            asset = address(MarketToken(address(mToken)).underlying());
+            asset = address(mToken.underlying());
         }
         return asset;
     }

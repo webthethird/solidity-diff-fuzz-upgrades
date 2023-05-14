@@ -12,6 +12,8 @@ interface IContractV1 {
     function f(uint256) external;
     function g(uint256) external;
     function h() external;
+    function totalValue() external returns (uint256);
+    function balance() external returns (uint256);
 }
 
 interface IContractV2 {
@@ -22,6 +24,8 @@ interface IContractV2 {
     function g(uint256) external;
     function h() external;
     function i() external;
+    function totalValue() external returns (uint256);
+    function balance(address) external returns (uint256);
 }
 
 interface IMarketToken {
@@ -83,7 +87,7 @@ contract DiffFuzzUpgrades {
     }
 
 
-    /*** Modified Functions ***/
+    /*** Modified Functions ***/ 
 
     function ContractV2_g(uint256 a) public virtual {
         hevm.prank(msg.sender);
@@ -98,14 +102,33 @@ contract DiffFuzzUpgrades {
                 contractV2.g.selector, a
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function ContractV2_totalValue() public virtual {
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+            abi.encodeWithSelector(
+                contractV1.totalValue.selector
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+            abi.encodeWithSelector(
+                contractV2.totalValue.selector
+            )
+        );
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
     }
 
 
-    /*** Tainted Functions ***/
+    /*** Tainted Functions ***/ 
 
     function ContractV2_h() public virtual {
         hevm.prank(msg.sender);
@@ -120,17 +143,41 @@ contract DiffFuzzUpgrades {
                 contractV2.h.selector
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
     }
 
 
-    /*** New Functions ***/
+    /*** New Functions ***/ 
+
+    // TODO: Double-check this function for correctness
+    // ContractV2.balance(address)
+    // is a new function, which appears to replace a function with a similar name,
+    // ContractV1.balance().
+    // If these functions have different arguments, this function may be incorrect.
+    function ContractV2_balance(address a) public virtual {
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+            abi.encodeWithSelector(
+                contractV1.balance.selector
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+            abi.encodeWithSelector(
+                contractV2.balance.selector, a
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
 
 
-    /*** Tainted Variables ***/
+    /*** Tainted Variables ***/ 
 
     function ContractV1_stateB() public returns (uint256) {
         assert(contractV1.stateB() == contractV2.stateB());
@@ -138,7 +185,7 @@ contract DiffFuzzUpgrades {
     }
 
 
-    /*** Additional Targets ***/
+    /*** Additional Targets ***/ 
 
     function MarketToken_name() public virtual {
         hevm.prank(msg.sender);
@@ -153,7 +200,7 @@ contract DiffFuzzUpgrades {
                 marketToken.name.selector
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -172,7 +219,7 @@ contract DiffFuzzUpgrades {
                 marketToken.symbol.selector
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -191,7 +238,7 @@ contract DiffFuzzUpgrades {
                 marketToken.decimals.selector
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -210,7 +257,7 @@ contract DiffFuzzUpgrades {
                 marketToken.totalSupply.selector
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -229,7 +276,7 @@ contract DiffFuzzUpgrades {
                 marketToken.balanceOf.selector, a
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -248,7 +295,7 @@ contract DiffFuzzUpgrades {
                 marketToken.transfer.selector, a, b
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -267,7 +314,7 @@ contract DiffFuzzUpgrades {
                 marketToken.allowance.selector, a, b
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -286,7 +333,7 @@ contract DiffFuzzUpgrades {
                 marketToken.approve.selector, a, b
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -305,7 +352,7 @@ contract DiffFuzzUpgrades {
                 marketToken.transferFrom.selector, a, b, c
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -324,7 +371,7 @@ contract DiffFuzzUpgrades {
                 marketToken.increaseAllowance.selector, a, b
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -343,7 +390,7 @@ contract DiffFuzzUpgrades {
                 marketToken.decreaseAllowance.selector, a, b
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -362,7 +409,7 @@ contract DiffFuzzUpgrades {
                 marketToken.mint.selector, a
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -381,7 +428,7 @@ contract DiffFuzzUpgrades {
                 marketToken.redeem.selector, a
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -400,7 +447,7 @@ contract DiffFuzzUpgrades {
                 marketToken.borrow.selector, a
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -419,7 +466,7 @@ contract DiffFuzzUpgrades {
                 marketToken.underlyingBalance.selector, a
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -438,7 +485,7 @@ contract DiffFuzzUpgrades {
                 simplePriceOracle.getUnderlyingPrice.selector, a
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -457,7 +504,7 @@ contract DiffFuzzUpgrades {
                 simplePriceOracle.setUnderlyingPrice.selector, a, b
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -476,7 +523,7 @@ contract DiffFuzzUpgrades {
                 simplePriceOracle.setDirectPrice.selector, a, b
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
@@ -495,7 +542,7 @@ contract DiffFuzzUpgrades {
                 simplePriceOracle.assetPrices.selector, a
             )
         );
-        assert(successV1 == successV2);
+        assert(successV1 == successV2); 
         if(successV1 && successV2) {
             assert(keccak256(outputV1) == keccak256(outputV2));
         }
