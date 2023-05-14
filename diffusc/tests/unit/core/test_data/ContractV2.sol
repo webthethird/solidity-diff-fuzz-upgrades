@@ -2,11 +2,11 @@ pragma solidity ^0.8.2;
 
 contract ContractV2 {
     address admin;
-    uint private stateA = 0;
-    uint private stateB = 0;
+    uint public stateA = 0;
+    uint public stateB = 0;
     uint constant CONST = 32;
     bool bug = false;
-    uint private stateC = 0;
+    uint public stateC = 0;
 
     function f(uint x) public {
         if (msg.sender == admin) {

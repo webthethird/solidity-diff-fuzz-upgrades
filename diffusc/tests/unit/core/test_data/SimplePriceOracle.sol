@@ -16,7 +16,7 @@ contract SimplePriceOracle {
         return asset;
     }
 
-    function getUnderlyingPrice(MarketToken mToken) public override view returns (uint) {
+    function getUnderlyingPrice(MarketToken mToken) public view returns (uint) {
         return prices[_getUnderlyingAddress(mToken)];
     }
 

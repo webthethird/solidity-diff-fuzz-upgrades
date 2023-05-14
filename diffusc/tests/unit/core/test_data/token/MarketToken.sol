@@ -5,7 +5,7 @@ import "./ERC20/ERC20.sol";
 contract MarketToken is ERC20 {
     ERC20 public underlying;
 
-    constructor(address _underlying) {
+    constructor(address _underlying, string memory name_, string memory symbol_) ERC20(name_, symbol_) {
         underlying = ERC20(_underlying);
     }
 

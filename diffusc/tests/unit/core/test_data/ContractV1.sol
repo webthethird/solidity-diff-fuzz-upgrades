@@ -2,8 +2,8 @@ pragma solidity ^0.8.2;
 
 contract ContractV1 {
     address admin;
-    uint private stateA = 0;
-    uint private stateB = 0;
+    uint public stateA = 0;
+    uint public stateB = 0;
     uint constant CONST = 32;
     bool bug = false;
 

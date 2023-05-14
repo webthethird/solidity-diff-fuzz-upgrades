@@ -94,14 +94,18 @@ def test_generate_contract_path_mode() -> None:
     # Test code generation w/o proxy, additional targets, upgrade function or protected functions
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, False)
     code = generator.generate_test_contract(diff)
-    # assert code == expected_code
+    with open(os.path.join(TEST_DATA_DIR, "Expected_0.sol"), "r") as expected:
+        expected_code = expected.read()
+    assert code == expected_code
 
     # Test code generation w/ proxy and upgrade function, w/o additional targets or protected functions
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", True, False)
     assert proxy_data["valid_data"]
     generator.proxy = proxy_data
     code = generator.generate_test_contract(diff)
-    # assert code == expected_code
+    with open(os.path.join(TEST_DATA_DIR, "Expected_1.sol"), "r") as expected:
+        expected_code = expected.read()
+    assert code == expected_code
 
     # Test code generation w/ additional targets, w/o proxy, upgrade function, protected functions
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, False)
@@ -109,11 +113,15 @@ def test_generate_contract_path_mode() -> None:
     generator.targets = [market_data, oracle_data]
     diff = do_diff(v1_data, v2_data, [market_data, oracle_data])
     code = generator.generate_test_contract(diff)
-    # assert code == expected_code
+    with open(os.path.join(TEST_DATA_DIR, "Expected_2.sol"), "r") as expected:
+        expected_code = expected.read()
+    assert code == expected_code
 
     # Test code generation w/ additional targets, external taint and protected functions, w/o proxy, upgrade function
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, True)
     generator.targets = [market_data, oracle_data]
     diff = do_diff(v1_data, v2_data, [market_data, oracle_data], include_external=True)
     code = generator.generate_test_contract(diff)
-    # assert code == expected_code
+    with open(os.path.join(TEST_DATA_DIR, "Expected_3.sol"), "r") as expected:
+        expected_code = expected.read()
+    assert code == expected_code
