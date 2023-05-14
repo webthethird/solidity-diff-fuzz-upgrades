@@ -1,5 +1,5 @@
 """Module for generating test contract code."""
-
+import os
 from os.path import abspath
 from typing import List, Tuple, Optional
 
@@ -765,22 +765,26 @@ class CodeGenerator:
 
         if not fork:
             final_contract += (
-                f'import {{ {v_1["name"]} as {v_1["name"]}_V1 }} from "{v_1["path"]}";\n'
+                f'import {{ {v_1["name"]} as {v_1["name"]}_V1 }} '
+                f'from "{v_1["path"].replace(os.sep, "/")}";\n'
             )
             final_contract += (
-                f'import {{ {v_2["name"]} as {v_2["name"]}_V2 }} from "{v_2["path"]}";\n'
+                f'import {{ {v_2["name"]} as {v_2["name"]}_V2 }} '
+                f'from "{v_2["path"].replace(os.sep, "/")}";\n'
             )
             if proxy:
-                final_contract += f'import {{ {proxy["name"]} }} from "{proxy["path"]}";\n'
+                final_contract += f'import {{ {proxy["name"]} }} ' \
+                                  f'from "{proxy["path"].replace(os.sep, "/")}";\n'
             for target in targets:
-                final_contract += f'import {{ {target["name"]} }} from "{target["path"]}";\n'
+                final_contract += f'import {{ {target["name"]} }} ' \
+                                  f'from "{target["path"].replace(os.sep, "/")}";\n'
             if tainted_targets is not None:
                 for tainted in tainted_targets:
                     contract: Contract = tainted["contract_object"]
                     if contract.name not in (t["name"] for t in other_targets):
                         final_contract += (
                             f"import {{ {contract.name} }} from "
-                            f'"{contract.file_scope.filename.absolute}";\n'
+                            f'"{tainted["path"].replace(os.sep, "/")}";\n'
                         )
             final_contract += "\n"
 
