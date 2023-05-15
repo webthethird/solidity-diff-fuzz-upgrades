@@ -225,3 +225,20 @@ def test_generate_contract_fork_mode() -> None:
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
+
+
+def test_generate_config() -> None:
+    config = CodeGenerator.generate_config_file(
+        corpus_dir="../test/corpus/",
+        campaign_length=123456,
+        contract_addr="0x999999",
+        seq_len=999999,
+        block=12345678,
+        rpc_url="https://mainnet.infura.io/v3/1234567891011121314151617181920",
+        senders=["0x0123", "0x4567", "0x8910"],
+    )
+    with open(
+        os.path.join(TEST_DATA_DIR, "output", "ExpectedConfig.yaml"), "r", encoding="utf-8"
+    ) as file:
+        expected = file.read()
+    assert config == expected
