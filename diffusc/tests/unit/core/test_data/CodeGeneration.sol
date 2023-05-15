@@ -53,4 +53,15 @@ contract CodeGeneration is I {
     function removeSt(St memory st) public {
         delete structs[msg.sender][st.v];
     }
+
+    function complexTypes(I addr, uint256[] memory ints) public view returns (St[] memory, SomeEnum) {
+        uint len = ints.length;
+        St[] memory sts = new St[](len);
+        for(uint i = 0; i < len; i++) {
+            uint j = ints[i];
+            sts[i] = structs[address(addr)][j];
+        }
+        SomeEnum e = SomeEnum.ONE;
+        return (sts, e);
+    }
 }
