@@ -219,18 +219,115 @@ interface ISafemoonV2 {
     function burn(address,uint256) external;
 }
 
-interface IOptimizedTransparentUpgradeableProxy {
+interface ISafeSwapTradeRouter {
+    enum SwapKind { SEND_ONLY, SWAP_AND_SEND, SWAP_AND_BURN }
+    enum FeeKind { TOKEN_FEE, PORTAL_FEE }
+    enum TransactionType { SELL, BUY }
+    struct Trade {
+        uint256 amountIn;
+        uint256 amountOut;
+        address[] path;
+        address to;
+        uint256 deadline;
+    }
+    struct TokenFee {
+        TokenInfo tokenInfo;
+        SafeSwapTradeRouter.SingleSwapFee[] singleSwapFees;
+    }
+    struct TokenInfo {
+        TransactionType transactionType;
+        address tokenAddress;
+        uint256 feePercentage;
+        bool isEnabled;
+        bool isDeleted;
+    }
+    struct SingleSwapFee {
+        SwapKind swapKind;
+        address assetOut;
+        address beneficiary;
+        uint256 percentage;
+        bool isEnabled;
+    }
+    function feeJar() external returns (address);
+    function swapRouter() external returns (address);
     function admin() external returns (address);
-    function implementation() external returns (address);
-    function upgradeTo(address) external;
-    function upgradeToAndCall(address,bytes calldata) external payable;
+    function percent() external returns (uint256);
+    function feePercent() external returns (uint256);
+    function whitelistFfsFee(address) external returns (bool);
+    function initialize(address,address,uint256,uint256) external;
+    function setRouter(address) external;
+    function setFeePercent(uint256) external;
+    function sePercent(uint256) external;
+    function addFfsWhitelist(address) external;
+    function removeFfsWhitelist(address) external;
+    function setFeeJar(address) external;
+    function submitTokenSwapFee(address,TransactionType memory,SingleSwapFee memory) external;
+    function updateTokenSwapFee(address,TransactionType memory,SingleSwapFee memory,uint256) external;
+    function switchTokenDeletion(address,TransactionType memory) external;
+    function switchTokenActivation(address,TransactionType memory) external;
+    function switchSingleSwapActivation(address,TransactionType memory,uint256) external;
+    function getTokenFeeAddresses() external view returns (address[] memory);
+    function getTokenInfoDetails(address,TransactionType memory) external view returns (TokenFee memory);
+    function swapExactTokensForETHAndFeeAmount(Trade memory) external payable;
+    function swapTokensForExactETHAndFeeAmount(Trade memory) external payable;
+    function swapExactETHForTokensWithFeeAmount(Trade memory,uint256) external payable;
+    function swapETHForExactTokensWithFeeAmount(Trade memory,uint256) external payable;
+    function swapExactTokensForTokensWithFeeAmount(Trade memory) external payable;
+    function swapTokensForExactTokensWithFeeAmount(Trade memory) external payable;
+    function getPortalSwapFee(uint256,uint256,address,address) external view returns (uint256);
+    function getTotalSwapFees(uint256,address[] memory) external view returns (uint256,uint256);
+    function getSwapFees(uint256,address[] memory) external view returns (uint256);
+    function getTokenSwapFee(uint256,TransactionType memory,address,bool) external view returns (uint256);
 }
 
-interface IOptimizedTransparentUpgradeableProxy {
+interface ISafeswapRouterProxy1 {
+    struct TokenInfo {
+        bool enabled;
+        bool isDeleted;
+        string tokenName;
+        address tokenAddress;
+        address feesAddress;
+        uint256 buyFeePercent;
+        uint256 sellFeePercent;
+    }
+    function ONE() external returns (uint256);
+    function factory() external returns (address);
+    function WETH() external returns (address);
     function admin() external returns (address);
-    function implementation() external returns (address);
-    function upgradeTo(address) external;
-    function upgradeToAndCall(address,bytes calldata) external payable;
+    function idToAddress(uint256) external returns (address);
+    function routerTrade() external returns (address);
+    function whitelistAccess(address) external returns (bool);
+    function impls(uint256) external returns (address);
+    function factory() external view returns (address);
+    function WETH() external view returns (address);
+    function initialize(address,address) external;
+    function setRouterTrade(address) external;
+    function setWhitelist(address,bool) external;
+    function version() external view returns (uint256);
+    function setImpls(uint256,address) external;
+    function addLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256) external returns (uint256,uint256,uint256);
+    function addLiquidityETH(address,uint256,uint256,uint256,address,uint256) external payable returns (uint256,uint256,uint256);
+    function removeLiquidity(address,address,uint256,uint256,uint256,address,uint256) external returns (uint256,uint256);
+    function removeLiquidityETH(address,uint256,uint256,uint256,address,uint256) external returns (uint256,uint256);
+    function removeLiquidityWithPermit(address,address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32) external returns (uint256,uint256);
+    function removeLiquidityETHWithPermit(address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32) external returns (uint256,uint256);
+    function removeLiquidityETHSupportingFeeOnTransferTokens(address,uint256,uint256,uint256,address,uint256) external returns (uint256);
+    function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32) external returns (uint256);
+    function swapExactETHForTokens(uint256,address[] calldata,address,uint256) external payable returns (uint256[] memory);
+    function swapTokensForExactETH(uint256,uint256,address[] calldata,address,address,uint256) external returns (uint256[] memory);
+    function swapExactTokensForETH(uint256,uint256,address[] calldata,address,address,uint256) external returns (uint256[] memory);
+    function swapETHForExactTokens(uint256,address[] calldata,address,uint256) external payable returns (uint256[] memory);
+    function swapExactETHForTokensSupportingFeeOnTransferTokens(uint256,address[] calldata,address,uint256) external payable;
+    function swapExactTokensForETHSupportingFeeOnTransferTokens(uint256,uint256,address[] calldata,address,address,uint256) external;
+    function swapExactTokensForETHSupportingFeeOnTransferTokens(uint256,uint256,address[] calldata,address,uint256) external;
+    function swapTokensForExactETH(uint256,uint256,address[] calldata,address,uint256) external returns (uint256[] memory);
+    function swapExactTokensForETH(uint256,uint256,address[] calldata,address,uint256) external returns (uint256[] memory);
+    function quote(uint256,uint256,uint256) external pure returns (uint256);
+    function getAmountOut(uint256,uint256,uint256) external pure returns (uint256);
+    function getAmountIn(uint256,uint256,uint256) external pure returns (uint256);
+    function getAmountsOut(uint256,address[] memory) external view returns (uint256[] memory);
+    function getAmountsIn(uint256,address[] memory) external view returns (uint256[] memory);
+    function lockLP(address,uint256) external;
 }
 
 interface IHevm {
@@ -251,8 +348,8 @@ contract DiffFuzzUpgrades {
 
     ISafemoonV1 safemoonV1;
     ISafemoonV2 safemoonV2;
-    IOptimizedTransparentUpgradeableProxy optimizedTransparentUpgradeableProxy;
-    IOptimizedTransparentUpgradeableProxy optimizedTransparentUpgradeableProxy;
+    ISafeSwapTradeRouter safeSwapTradeRouter;
+    ISafeswapRouterProxy1 safeswapRouterProxy1;
     uint256 fork1;
     uint256 fork2;
 
@@ -265,8 +362,8 @@ contract DiffFuzzUpgrades {
         fork2 = hevm.createFork();
         safemoonV1 = ISafemoonV1(0x0296201BfDfB410C29EF30BCaE1b395537aeEB31);
         safemoonV2 = ISafemoonV2(0xEb11a0a0beF1AC028B8C2d4CD64138DD5938cA7A);
-        optimizedTransparentUpgradeableProxy = IOptimizedTransparentUpgradeableProxy(0x6AC68913d8FcCD52d196B09e6bC0205735A4be5f);
-        optimizedTransparentUpgradeableProxy = IOptimizedTransparentUpgradeableProxy(0x524BC73fCb4fB70E2E84dC08EFE255252A3b026E);
+        safeSwapTradeRouter = ISafeSwapTradeRouter(0x524BC73fCb4fB70E2E84dC08EFE255252A3b026E);
+        safeswapRouterProxy1 = ISafeswapRouterProxy1(0x6AC68913d8FcCD52d196B09e6bC0205735A4be5f);
     }
 
 
@@ -665,5 +762,894 @@ contract DiffFuzzUpgrades {
 
 
     /*** Additional Targets ***/ 
+
+    function SafeSwapTradeRouter_initialize(address a, address b, uint256 c, uint256 d) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.initialize.selector, a, b, c, d
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.initialize.selector, a, b, c, d
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_getTokenFeeAddresses() public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getTokenFeeAddresses.selector
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getTokenFeeAddresses.selector
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_getTokenInfoDetails(address a, address b) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getTokenInfoDetails.selector, a, b
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getTokenInfoDetails.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_swapExactTokensForETHAndFeeAmount(SafeSwapTradeRouter.Trade calldata a) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapExactTokensForETHAndFeeAmount.selector, a
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapExactTokensForETHAndFeeAmount.selector, a
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_swapTokensForExactETHAndFeeAmount(SafeSwapTradeRouter.Trade calldata a) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapTokensForExactETHAndFeeAmount.selector, a
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapTokensForExactETHAndFeeAmount.selector, a
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_swapExactETHForTokensWithFeeAmount(SafeSwapTradeRouter.Trade calldata a, uint256 b) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapExactETHForTokensWithFeeAmount.selector, a, b
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapExactETHForTokensWithFeeAmount.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_swapETHForExactTokensWithFeeAmount(SafeSwapTradeRouter.Trade calldata a, uint256 b) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapETHForExactTokensWithFeeAmount.selector, a, b
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapETHForExactTokensWithFeeAmount.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_swapExactTokensForTokensWithFeeAmount(SafeSwapTradeRouter.Trade calldata a) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapExactTokensForTokensWithFeeAmount.selector, a
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapExactTokensForTokensWithFeeAmount.selector, a
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_swapTokensForExactTokensWithFeeAmount(SafeSwapTradeRouter.Trade calldata a) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapTokensForExactTokensWithFeeAmount.selector, a
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.swapTokensForExactTokensWithFeeAmount.selector, a
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_getPortalSwapFee(uint256 a, uint256 b, address c, address d) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getPortalSwapFee.selector, a, b, c, d
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getPortalSwapFee.selector, a, b, c, d
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_getTotalSwapFees(uint256 a, address[] memory b) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getTotalSwapFees.selector, a, b
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getTotalSwapFees.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_getSwapFees(uint256 a, address[] memory b) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getSwapFees.selector, a, b
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getSwapFees.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeSwapTradeRouter_getTokenSwapFee(uint256 a, uint256 b, address c, bool d) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getTokenSwapFee.selector, a, b, c, d
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                safeSwapTradeRouter.getTokenSwapFee.selector, a, b, c, d
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_factory() public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.factory.selector
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.factory.selector
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_WETH() public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.WETH.selector
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.WETH.selector
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_initialize(address a, address b) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.initialize.selector, a, b
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.initialize.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_version() public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.version.selector
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.version.selector
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_addLiquidity(address a, address b, uint256 c, uint256 d, uint256 e, uint256 f, address g, uint256 h) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.addLiquidity.selector, a, b, c, d, e, f, g, h
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.addLiquidity.selector, a, b, c, d, e, f, g, h
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_addLiquidityETH(address a, uint256 b, uint256 c, uint256 d, address e, uint256 f) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.addLiquidityETH.selector, a, b, c, d, e, f
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.addLiquidityETH.selector, a, b, c, d, e, f
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_removeLiquidity(address a, address b, uint256 c, uint256 d, uint256 e, address f, uint256 g) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidity.selector, a, b, c, d, e, f, g
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidity.selector, a, b, c, d, e, f, g
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_removeLiquidityETH(address a, uint256 b, uint256 c, uint256 d, address e, uint256 f) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidityETH.selector, a, b, c, d, e, f
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidityETH.selector, a, b, c, d, e, f
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_removeLiquidityWithPermit(address a, address b, uint256 c, uint256 d, uint256 e, address f, uint256 g, bool h, uint8 i, bytes32 j, bytes32 k) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidityWithPermit.selector, a, b, c, d, e, f, g, h, i, j, k
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidityWithPermit.selector, a, b, c, d, e, f, g, h, i, j, k
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_removeLiquidityETHWithPermit(address a, uint256 b, uint256 c, uint256 d, address e, uint256 f, bool g, uint8 h, bytes32 i, bytes32 j) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidityETHWithPermit.selector, a, b, c, d, e, f, g, h, i, j
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidityETHWithPermit.selector, a, b, c, d, e, f, g, h, i, j
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_removeLiquidityETHSupportingFeeOnTransferTokens(address a, uint256 b, uint256 c, uint256 d, address e, uint256 f) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidityETHSupportingFeeOnTransferTokens.selector, a, b, c, d, e, f
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidityETHSupportingFeeOnTransferTokens.selector, a, b, c, d, e, f
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(address a, uint256 b, uint256 c, uint256 d, address e, uint256 f, bool g, uint8 h, bytes32 i, bytes32 j) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidityETHWithPermitSupportingFeeOnTransferTokens.selector, a, b, c, d, e, f, g, h, i, j
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.removeLiquidityETHWithPermitSupportingFeeOnTransferTokens.selector, a, b, c, d, e, f, g, h, i, j
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_swapExactETHForTokens(uint256 a, address[] calldata b, address c, uint256 d) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactETHForTokens.selector, a, b, c, d
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactETHForTokens.selector, a, b, c, d
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_swapTokensForExactETH(uint256 a, uint256 b, address[] calldata c, address d, address e, uint256 f) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapTokensForExactETH.selector, a, b, c, d, e, f
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapTokensForExactETH.selector, a, b, c, d, e, f
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_swapExactTokensForETH(uint256 a, uint256 b, address[] calldata c, address d, address e, uint256 f) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactTokensForETH.selector, a, b, c, d, e, f
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactTokensForETH.selector, a, b, c, d, e, f
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_swapETHForExactTokens(uint256 a, address[] calldata b, address c, uint256 d) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapETHForExactTokens.selector, a, b, c, d
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapETHForExactTokens.selector, a, b, c, d
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_swapExactETHForTokensSupportingFeeOnTransferTokens(uint256 a, address[] calldata b, address c, uint256 d) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactETHForTokensSupportingFeeOnTransferTokens.selector, a, b, c, d
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactETHForTokensSupportingFeeOnTransferTokens.selector, a, b, c, d
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_swapExactTokensForETHSupportingFeeOnTransferTokens(uint256 a, uint256 b, address[] calldata c, address d, address e, uint256 f) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactTokensForETHSupportingFeeOnTransferTokens.selector, a, b, c, d, e, f
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactTokensForETHSupportingFeeOnTransferTokens.selector, a, b, c, d, e, f
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_swapExactTokensForETHSupportingFeeOnTransferTokens(uint256 a, uint256 b, address[] calldata c, address d, uint256 e) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactTokensForETHSupportingFeeOnTransferTokens.selector, a, b, c, d, e
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactTokensForETHSupportingFeeOnTransferTokens.selector, a, b, c, d, e
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_swapTokensForExactETH(uint256 a, uint256 b, address[] calldata c, address d, uint256 e) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapTokensForExactETH.selector, a, b, c, d, e
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapTokensForExactETH.selector, a, b, c, d, e
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_swapExactTokensForETH(uint256 a, uint256 b, address[] calldata c, address d, uint256 e) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactTokensForETH.selector, a, b, c, d, e
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.swapExactTokensForETH.selector, a, b, c, d, e
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_quote(uint256 a, uint256 b, uint256 c) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.quote.selector, a, b, c
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.quote.selector, a, b, c
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_getAmountOut(uint256 a, uint256 b, uint256 c) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.getAmountOut.selector, a, b, c
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.getAmountOut.selector, a, b, c
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_getAmountIn(uint256 a, uint256 b, uint256 c) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.getAmountIn.selector, a, b, c
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.getAmountIn.selector, a, b, c
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_getAmountsOut(uint256 a, address[] memory b) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.getAmountsOut.selector, a, b
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.getAmountsOut.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
+    function SafeswapRouterProxy1_getAmountsIn(uint256 a, address[] memory b) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.getAmountsIn.selector, a, b
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.getAmountsIn.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
 
 }

@@ -219,18 +219,115 @@ interface ISafemoonV2 {
     function burn(address,uint256) external;
 }
 
-interface IOptimizedTransparentUpgradeableProxy {
+interface ISafeSwapTradeRouter {
+    enum SwapKind { SEND_ONLY, SWAP_AND_SEND, SWAP_AND_BURN }
+    enum FeeKind { TOKEN_FEE, PORTAL_FEE }
+    enum TransactionType { SELL, BUY }
+    struct Trade {
+        uint256 amountIn;
+        uint256 amountOut;
+        address[] path;
+        address to;
+        uint256 deadline;
+    }
+    struct TokenFee {
+        TokenInfo tokenInfo;
+        SafeSwapTradeRouter.SingleSwapFee[] singleSwapFees;
+    }
+    struct TokenInfo {
+        TransactionType transactionType;
+        address tokenAddress;
+        uint256 feePercentage;
+        bool isEnabled;
+        bool isDeleted;
+    }
+    struct SingleSwapFee {
+        SwapKind swapKind;
+        address assetOut;
+        address beneficiary;
+        uint256 percentage;
+        bool isEnabled;
+    }
+    function feeJar() external returns (address);
+    function swapRouter() external returns (address);
     function admin() external returns (address);
-    function implementation() external returns (address);
-    function upgradeTo(address) external;
-    function upgradeToAndCall(address,bytes calldata) external payable;
+    function percent() external returns (uint256);
+    function feePercent() external returns (uint256);
+    function whitelistFfsFee(address) external returns (bool);
+    function initialize(address,address,uint256,uint256) external;
+    function setRouter(address) external;
+    function setFeePercent(uint256) external;
+    function sePercent(uint256) external;
+    function addFfsWhitelist(address) external;
+    function removeFfsWhitelist(address) external;
+    function setFeeJar(address) external;
+    function submitTokenSwapFee(address,TransactionType memory,SingleSwapFee memory) external;
+    function updateTokenSwapFee(address,TransactionType memory,SingleSwapFee memory,uint256) external;
+    function switchTokenDeletion(address,TransactionType memory) external;
+    function switchTokenActivation(address,TransactionType memory) external;
+    function switchSingleSwapActivation(address,TransactionType memory,uint256) external;
+    function getTokenFeeAddresses() external view returns (address[] memory);
+    function getTokenInfoDetails(address,TransactionType memory) external view returns (TokenFee memory);
+    function swapExactTokensForETHAndFeeAmount(Trade memory) external payable;
+    function swapTokensForExactETHAndFeeAmount(Trade memory) external payable;
+    function swapExactETHForTokensWithFeeAmount(Trade memory,uint256) external payable;
+    function swapETHForExactTokensWithFeeAmount(Trade memory,uint256) external payable;
+    function swapExactTokensForTokensWithFeeAmount(Trade memory) external payable;
+    function swapTokensForExactTokensWithFeeAmount(Trade memory) external payable;
+    function getPortalSwapFee(uint256,uint256,address,address) external view returns (uint256);
+    function getTotalSwapFees(uint256,address[] memory) external view returns (uint256,uint256);
+    function getSwapFees(uint256,address[] memory) external view returns (uint256);
+    function getTokenSwapFee(uint256,TransactionType memory,address,bool) external view returns (uint256);
 }
 
-interface IOptimizedTransparentUpgradeableProxy {
+interface ISafeswapRouterProxy1 {
+    struct TokenInfo {
+        bool enabled;
+        bool isDeleted;
+        string tokenName;
+        address tokenAddress;
+        address feesAddress;
+        uint256 buyFeePercent;
+        uint256 sellFeePercent;
+    }
+    function ONE() external returns (uint256);
+    function factory() external returns (address);
+    function WETH() external returns (address);
     function admin() external returns (address);
-    function implementation() external returns (address);
-    function upgradeTo(address) external;
-    function upgradeToAndCall(address,bytes calldata) external payable;
+    function idToAddress(uint256) external returns (address);
+    function routerTrade() external returns (address);
+    function whitelistAccess(address) external returns (bool);
+    function impls(uint256) external returns (address);
+    function factory() external view returns (address);
+    function WETH() external view returns (address);
+    function initialize(address,address) external;
+    function setRouterTrade(address) external;
+    function setWhitelist(address,bool) external;
+    function version() external view returns (uint256);
+    function setImpls(uint256,address) external;
+    function addLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256) external returns (uint256,uint256,uint256);
+    function addLiquidityETH(address,uint256,uint256,uint256,address,uint256) external payable returns (uint256,uint256,uint256);
+    function removeLiquidity(address,address,uint256,uint256,uint256,address,uint256) external returns (uint256,uint256);
+    function removeLiquidityETH(address,uint256,uint256,uint256,address,uint256) external returns (uint256,uint256);
+    function removeLiquidityWithPermit(address,address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32) external returns (uint256,uint256);
+    function removeLiquidityETHWithPermit(address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32) external returns (uint256,uint256);
+    function removeLiquidityETHSupportingFeeOnTransferTokens(address,uint256,uint256,uint256,address,uint256) external returns (uint256);
+    function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32) external returns (uint256);
+    function swapExactETHForTokens(uint256,address[] calldata,address,uint256) external payable returns (uint256[] memory);
+    function swapTokensForExactETH(uint256,uint256,address[] calldata,address,address,uint256) external returns (uint256[] memory);
+    function swapExactTokensForETH(uint256,uint256,address[] calldata,address,address,uint256) external returns (uint256[] memory);
+    function swapETHForExactTokens(uint256,address[] calldata,address,uint256) external payable returns (uint256[] memory);
+    function swapExactETHForTokensSupportingFeeOnTransferTokens(uint256,address[] calldata,address,uint256) external payable;
+    function swapExactTokensForETHSupportingFeeOnTransferTokens(uint256,uint256,address[] calldata,address,address,uint256) external;
+    function swapExactTokensForETHSupportingFeeOnTransferTokens(uint256,uint256,address[] calldata,address,uint256) external;
+    function swapTokensForExactETH(uint256,uint256,address[] calldata,address,uint256) external returns (uint256[] memory);
+    function swapExactTokensForETH(uint256,uint256,address[] calldata,address,uint256) external returns (uint256[] memory);
+    function quote(uint256,uint256,uint256) external pure returns (uint256);
+    function getAmountOut(uint256,uint256,uint256) external pure returns (uint256);
+    function getAmountIn(uint256,uint256,uint256) external pure returns (uint256);
+    function getAmountsOut(uint256,address[] memory) external view returns (uint256[] memory);
+    function getAmountsIn(uint256,address[] memory) external view returns (uint256[] memory);
+    function lockLP(address,uint256) external;
 }
 
 interface IISafeSwapTradeRouter {
@@ -282,8 +379,8 @@ contract DiffFuzzUpgrades {
 
     ISafemoonV1 safemoonV1;
     ISafemoonV2 safemoonV2;
-    IOptimizedTransparentUpgradeableProxy optimizedTransparentUpgradeableProxy;
-    IOptimizedTransparentUpgradeableProxy optimizedTransparentUpgradeableProxy;
+    ISafeSwapTradeRouter safeSwapTradeRouter;
+    ISafeswapRouterProxy1 safeswapRouterProxy1;
     IISafeSwapTradeRouter iSafeSwapTradeRouter;
     IIUniswapV2Router02 iUniswapV2Router02;
     uint256 fork1;
@@ -298,8 +395,8 @@ contract DiffFuzzUpgrades {
         fork2 = hevm.createFork();
         safemoonV1 = ISafemoonV1(0x0296201BfDfB410C29EF30BCaE1b395537aeEB31);
         safemoonV2 = ISafemoonV2(0xEb11a0a0beF1AC028B8C2d4CD64138DD5938cA7A);
-        optimizedTransparentUpgradeableProxy = IOptimizedTransparentUpgradeableProxy(0x6AC68913d8FcCD52d196B09e6bC0205735A4be5f);
-        optimizedTransparentUpgradeableProxy = IOptimizedTransparentUpgradeableProxy(0x524BC73fCb4fB70E2E84dC08EFE255252A3b026E);
+        safeSwapTradeRouter = ISafeSwapTradeRouter(0x524BC73fCb4fB70E2E84dC08EFE255252A3b026E);
+        safeswapRouterProxy1 = ISafeswapRouterProxy1(0x6AC68913d8FcCD52d196B09e6bC0205735A4be5f);
         // TODO: Fill in target address below (address not found automatically)
         iSafeSwapTradeRouter = IISafeSwapTradeRouter(MISSING_TARGET_ADDRESS);
         // TODO: Fill in target address below (address not found automatically)
@@ -955,6 +1052,29 @@ contract DiffFuzzUpgrades {
 
     /*** Tainted External Contracts ***/ 
 
+    function ISafeSwapTradeRouter_getSwapFees(uint256 a, address[] memory b) public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(iSafeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                iSafeSwapTradeRouter.getSwapFees.selector, a, b
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(iSafeSwapTradeRouter).call(
+            abi.encodeWithSelector(
+                iSafeSwapTradeRouter.getSwapFees.selector, a, b
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
     function ISafeSwapTradeRouter_swapExactTokensForETHAndFeeAmount(ISafeSwapTradeRouter.Trade calldata a) public virtual {
         hevm.selectFork(fork1);
         emit SwitchedFork(fork1);
@@ -978,21 +1098,21 @@ contract DiffFuzzUpgrades {
         }
     }
 
-    function ISafeSwapTradeRouter_getSwapFees(uint256 a, address[] memory b) public virtual {
+    function IUniswapV2Router02_factory() public virtual {
         hevm.selectFork(fork1);
         emit SwitchedFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(iSafeSwapTradeRouter).call(
+        (bool successV1, bytes memory outputV1) = address(iUniswapV2Router02).call(
             abi.encodeWithSelector(
-                iSafeSwapTradeRouter.getSwapFees.selector, a, b
+                iUniswapV2Router02.factory.selector
             )
         );
         hevm.selectFork(fork2);
         emit SwitchedFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(iSafeSwapTradeRouter).call(
+        (bool successV2, bytes memory outputV2) = address(iUniswapV2Router02).call(
             abi.encodeWithSelector(
-                iSafeSwapTradeRouter.getSwapFees.selector, a, b
+                iUniswapV2Router02.factory.selector
             )
         );
         assert(successV1 == successV2); 
@@ -1047,21 +1167,24 @@ contract DiffFuzzUpgrades {
         }
     }
 
-    function IUniswapV2Router02_factory() public virtual {
+
+    /*** Additional Targets ***/ 
+
+    function SafeSwapTradeRouter_getSwapFees(uint256 a, address[] memory b) public virtual {
         hevm.selectFork(fork1);
         emit SwitchedFork(fork1);
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(iUniswapV2Router02).call(
+        (bool successV1, bytes memory outputV1) = address(safeSwapTradeRouter).call(
             abi.encodeWithSelector(
-                iUniswapV2Router02.factory.selector
+                safeSwapTradeRouter.getSwapFees.selector, a, b
             )
         );
         hevm.selectFork(fork2);
         emit SwitchedFork(fork2);
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(iUniswapV2Router02).call(
+        (bool successV2, bytes memory outputV2) = address(safeSwapTradeRouter).call(
             abi.encodeWithSelector(
-                iUniswapV2Router02.factory.selector
+                safeSwapTradeRouter.getSwapFees.selector, a, b
             )
         );
         assert(successV1 == successV2); 
@@ -1070,7 +1193,50 @@ contract DiffFuzzUpgrades {
         }
     }
 
+    function SafeswapRouterProxy1_factory() public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.factory.selector
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.factory.selector
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
 
-    /*** Additional Targets ***/ 
+    function SafeswapRouterProxy1_WETH() public virtual {
+        hevm.selectFork(fork1);
+        emit SwitchedFork(fork1);
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.WETH.selector
+            )
+        );
+        hevm.selectFork(fork2);
+        emit SwitchedFork(fork2);
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(safeswapRouterProxy1).call(
+            abi.encodeWithSelector(
+                safeswapRouterProxy1.WETH.selector
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
 
 }

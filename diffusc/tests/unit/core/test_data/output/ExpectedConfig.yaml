@@ -1,6 +1,6 @@
 testMode: assertion
 testLimit: 123456
-corpusDir: /home/webthethird/Ethereum/solidity-diff-fuzz-upgrades/diffusc/tests/unit/test/corpus
+corpusDir: /home/runner/work/diffusc/diffusc/tests/unit/test/corpus
 codeSize: 0xffff
 seqLen: 999999
 contractAddr: '0x999999'
