@@ -77,7 +77,7 @@ def test_args_and_returns() -> None:
     for func in contract.functions_entry_points:
         results[func.canonical_name] = {
             "args": CodeGenerator.get_solidity_function_parameters(func.parameters),
-            "rets": CodeGenerator.get_solidity_function_returns(func.return_type)
+            "rets": CodeGenerator.get_solidity_function_returns(func.return_type),
         }
     expected_path = os.path.join(TEST_DATA_DIR, "output", "test_args_and_returns.json")
     # with open(expected_path, "w", encoding="utf-8") as expected_file:
@@ -112,7 +112,9 @@ def test_generate_contract_path_mode() -> None:
     # Test code generation w/o proxy, additional targets, upgrade function or protected functions
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, False)
     code = generator.generate_test_contract(diff)
-    with open(os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_0.sol"), "r", encoding="utf-8") as expected:
+    with open(
+        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_0.sol"), "r", encoding="utf-8"
+    ) as expected:
         expected_code = expected.read()
     assert code == expected_code
 
@@ -121,7 +123,9 @@ def test_generate_contract_path_mode() -> None:
     assert proxy_data["valid_data"]
     generator.proxy = proxy_data
     code = generator.generate_test_contract(diff)
-    with open(os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_1.sol"), "r", encoding="utf-8") as expected:
+    with open(
+        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_1.sol"), "r", encoding="utf-8"
+    ) as expected:
         expected_code = expected.read()
     assert code == expected_code
 
@@ -131,7 +135,9 @@ def test_generate_contract_path_mode() -> None:
     generator.targets = [market_data, oracle_data]
     diff = do_diff(v1_data, v2_data, [market_data, oracle_data])
     code = generator.generate_test_contract(diff)
-    with open(os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_2.sol"), "r", encoding="utf-8") as expected:
+    with open(
+        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_2.sol"), "r", encoding="utf-8"
+    ) as expected:
         expected_code = expected.read()
     assert code == expected_code
 
@@ -140,7 +146,9 @@ def test_generate_contract_path_mode() -> None:
     generator.targets = [market_data, oracle_data]
     diff = do_diff(v1_data, v2_data, [market_data, oracle_data], include_external=True)
     code = generator.generate_test_contract(diff)
-    with open(os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_3.sol"), "r", encoding="utf-8") as expected:
+    with open(
+        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_3.sol"), "r", encoding="utf-8"
+    ) as expected:
         expected_code = expected.read()
     assert code == expected_code
 
@@ -178,7 +186,9 @@ def test_generate_contract_fork_mode() -> None:
     # Test code generation w/o proxy, additional targets, upgrade function or protected functions
     generator = CodeGenerator(v1_data, v2_data, "fork", "0.8.11", False, False, net_info)
     code = generator.generate_test_contract(diff)
-    with open(os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_0.sol"), "r", encoding="utf-8") as expected:
+    with open(
+        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_0.sol"), "r", encoding="utf-8"
+    ) as expected:
         expected_code = expected.read()
     assert code == expected_code
 
@@ -187,7 +197,9 @@ def test_generate_contract_fork_mode() -> None:
     assert proxy_data["valid_data"]
     generator.proxy = proxy_data
     code = generator.generate_test_contract(diff)
-    with open(os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_1.sol"), "r", encoding="utf-8") as expected:
+    with open(
+        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_1.sol"), "r", encoding="utf-8"
+    ) as expected:
         expected_code = expected.read()
     assert code == expected_code
 
@@ -197,7 +209,9 @@ def test_generate_contract_fork_mode() -> None:
     generator.targets = [swap_router_data, trade_router_data]
     diff = do_diff(v1_data, v2_data, [swap_router_data, trade_router_data])
     code = generator.generate_test_contract(diff)
-    with open(os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_2.sol"), "r", encoding="utf-8") as expected:
+    with open(
+        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_2.sol"), "r", encoding="utf-8"
+    ) as expected:
         expected_code = expected.read()
     assert code == expected_code
 
@@ -206,6 +220,8 @@ def test_generate_contract_fork_mode() -> None:
     generator.targets = [swap_router_data, trade_router_data]
     diff = do_diff(v1_data, v2_data, [swap_router_data, trade_router_data], include_external=True)
     code = generator.generate_test_contract(diff)
-    with open(os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_3.sol"), "r", encoding="utf-8") as expected:
+    with open(
+        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_3.sol"), "r", encoding="utf-8"
+    ) as expected:
         expected_code = expected.read()
     assert code == expected_code

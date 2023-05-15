@@ -773,11 +773,15 @@ class CodeGenerator:
                 f'from "{v_2["path"].replace(os.sep, "/")}";\n'
             )
             if proxy:
-                final_contract += f'import {{ {proxy["name"]} }} ' \
-                                  f'from "{proxy["path"].replace(os.sep, "/")}";\n'
+                final_contract += (
+                    f'import {{ {proxy["name"]} }} '
+                    f'from "{proxy["path"].replace(os.sep, "/")}";\n'
+                )
             for target in targets:
-                final_contract += f'import {{ {target["name"]} }} ' \
-                                  f'from "{target["path"].replace(os.sep, "/")}";\n'
+                final_contract += (
+                    f'import {{ {target["name"]} }} '
+                    f'from "{target["path"].replace(os.sep, "/")}";\n'
+                )
             if tainted_targets is not None:
                 for tainted in tainted_targets:
                     contract: Contract = tainted["contract_object"]
