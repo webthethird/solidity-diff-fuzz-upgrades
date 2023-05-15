@@ -37,6 +37,7 @@ setup(
             "deepdiff",
             "numpy",
             "coverage[toml]",
+            "dotenv"
         ],
         "dev": [
             "diffusc[lint,test]",
