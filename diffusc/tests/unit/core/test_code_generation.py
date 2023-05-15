@@ -245,7 +245,6 @@ def test_generate_contract_fork_mode() -> None:
     generator = CodeGenerator(v1_data, v2_data, "fork", "0.8.11", True, True, net_info)
     generator.targets = [swap_router_data, trade_router_data]
     generator.proxy = proxy_data
-    diff = do_diff(v1_data, v2_data, [swap_router_data, trade_router_data], include_external=True)
     code = generator.generate_test_contract(diff)
     with open(
         os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_4.sol"), "r", encoding="utf-8"
