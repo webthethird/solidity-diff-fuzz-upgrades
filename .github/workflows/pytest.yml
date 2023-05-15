@@ -43,10 +43,10 @@ jobs:
       - name: Run ${{ matrix.type }} tests
         env:
           TEST_TYPE: ${{ matrix.type }}
-          ETHEREUM_API_KEY: ${{ secrets["ETHEREUM_API_KEY"] }}
-          ETHEREUM_RPC_URL: ${{ secrets["ETHEREUM_RPC_URL"] }}
-          BSC_API_KEY: ${{ secrets["BSC_API_KEY"] }}
-          BSC_RPC_URL: ${{ secrets["BSC_RPC_URL"] }}
+          ETHEREUM_API_KEY: ${{ secrets[ETHEREUM_API_KEY] }}
+          ETHEREUM_RPC_URL: ${{ secrets[ETHEREUM_RPC_URL] }}
+          BSC_API_KEY: ${{ secrets[BSC_API_KEY] }}
+          BSC_RPC_URL: ${{ secrets[BSC_RPC_URL] }}
         # Only run coverage on ubuntu-latest.
         run: |
           if [ ${{ matrix.os }} = "ubuntu-latest" ]; then
