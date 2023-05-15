@@ -174,13 +174,13 @@ class CodeGenerator:
                     if isinstance(out.type, UserDefinedType) and isinstance(
                         out.type.type, Structure
                     ):
-                        base_type = f"{out.type.type.name}[] memory"
+                        base_type = f"{out.type.type.canonical_name}[] memory"
                     else:
                         base_type = convert_type_for_solidity_signature_to_string(out)
                         base_type += " memory"
                 elif isinstance(out, UserDefinedType):
                     if isinstance(out.type, Structure):
-                        base_type = f"{out.type.name} memory"
+                        base_type = f"{out.type.canonical_name} memory"
                     elif isinstance(out.type, (Contract, Enum)):
                         base_type = convert_type_for_solidity_signature_to_string(out)
                 outputs.append(base_type)
