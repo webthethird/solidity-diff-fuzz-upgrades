@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 from pathlib import Path
 
 from solc_select import solc_select
@@ -61,12 +62,22 @@ def test_contract_data_from_slither() -> None:
 
 
 def test_args_and_returns() -> None:
-    pass
-    # solc_select.switch_global_version("0.8.4", always_install=True)
-    # file_path = Path(TEST_DATA_DIR, "CodeGeneration.sol").as_posix()
-    # sl = Slither(file_path)
-    # contract = sl.get_contract_from_name("CodeGeneration")[0]
-    # func_info = FunctionInfo()
+    solc_select.switch_global_version("0.8.4", always_install=True)
+    file_path = os.path.join(TEST_DATA_DIR, "CodeGeneration.sol")
+    sl = Slither(file_path)
+    contract = sl.get_contract_from_name("CodeGeneration")[0]
+    results = {}
+    for func in contract.functions_entry_points:
+        results[func.canonical_name] = {
+            "args": CodeGenerator.get_solidity_function_parameters(func.parameters),
+            "rets": CodeGenerator.get_solidity_function_returns(func.return_type)
+        }
+    expected_path = os.path.join(TEST_DATA_DIR, "output", "test_args_and_returns.json")
+    # with open(expected_path, "w", encoding="utf-8") as expected_file:
+    #     expected_file.write(json.dumps(results, indent=4))
+    with open(expected_path, "r", encoding="utf-8") as file:
+        expected_results = json.load(file)
+    assert results == expected_results
 
 
 def test_generate_contract_path_mode() -> None:
