@@ -151,6 +151,17 @@ def test_generate_contract_path_mode() -> None:
         expected_code = expected.read()
     assert code == expected_code
 
+    # Test code generation w/ proxy, additional targets, external taint, protected functions and upgrade function
+    generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", True, True)
+    generator.targets = [market_data, oracle_data]
+    generator.proxy = proxy_data
+    code = generator.generate_test_contract(diff)
+    with open(
+            os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_4.sol"), "r", encoding="utf-8"
+    ) as expected:
+        expected_code = expected.read()
+    assert code == expected_code
+
 
 def test_generate_contract_fork_mode() -> None:
     api_key = os.getenv("BSC_API_KEY")
@@ -171,11 +182,11 @@ def test_generate_contract_fork_mode() -> None:
     )
     sleep(random() * 3)
     swap_router_data = get_contract_data_from_address(
-        "0x6ac68913d8fccd52d196b09e6bc0205735a4be5f", "", provider, net_info
+        "0x6ac68913d8fccd52d196b09e6bc0205735a4be5f", "0xaa62468f41d9f1076920feb60b561a84ce62e9c3", provider, net_info
     )
     sleep(random() * 3)
     trade_router_data = get_contract_data_from_address(
-        "0x524bc73fcb4fb70e2e84dc08efe255252a3b026e", "", provider, net_info
+        "0x524bc73fcb4fb70e2e84dc08efe255252a3b026e", "0x8d63502B5E50f8F100C407B34ef16bF808DFA278", provider, net_info
     )
 
     assert v1_data["valid_data"] and v2_data["valid_data"]
@@ -220,6 +231,18 @@ def test_generate_contract_fork_mode() -> None:
     code = generator.generate_test_contract(diff)
     with open(
         os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_3.sol"), "r", encoding="utf-8"
+    ) as expected:
+        expected_code = expected.read()
+    assert code == expected_code
+
+    # Test code generation w/ proxy, additional targets, external taint, protected functions and upgrade function
+    generator = CodeGenerator(v1_data, v2_data, "fork", "0.8.11", True, True, net_info)
+    generator.targets = [swap_router_data, trade_router_data]
+    generator.proxy = proxy_data
+    diff = do_diff(v1_data, v2_data, [swap_router_data, trade_router_data], include_external=True)
+    code = generator.generate_test_contract(diff)
+    with open(
+        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_4.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
