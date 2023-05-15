@@ -98,6 +98,8 @@ def get_contract_data_from_address(
             contract_data["implementation_object"] = impl_contract
             contract_data["implementation_slot"] = get_proxy_implementation_slot(contract)
             contract_data["is_erc20"] = impl_contract.is_erc20()
+            if implementation != "":
+                contract_data["contract_object"] = contract_data["implementation_object"]
         else:
             contract_data["is_proxy"] = False
             contract_data["is_erc20"] = contract.is_erc20()
