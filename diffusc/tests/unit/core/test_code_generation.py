@@ -3,7 +3,6 @@ import json
 from random import random
 from time import sleep
 from pathlib import Path
-from dotenv import load_dotenv
 
 from solc_select import solc_select
 from slither import Slither
@@ -154,7 +153,6 @@ def test_generate_contract_path_mode() -> None:
 
 
 def test_generate_contract_fork_mode() -> None:
-    load_dotenv()
     api_key = os.getenv("BSC_API_KEY")
     rpc_url = os.getenv("BSC_RPC_URL")
     provider = NetworkSlitherProvider("bsc:", api_key)
