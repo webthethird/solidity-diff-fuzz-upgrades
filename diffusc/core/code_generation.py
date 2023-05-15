@@ -199,7 +199,9 @@ class CodeGenerator:
 
         contract_data["functions"] = []
 
-        for i in contract.functions_entry_points:
+        entry_points = contract.functions_entry_points
+        entry_points.sort(key=lambda func: func.canonical_name)
+        for i in entry_points:
 
             # Interface won't need constructor or fallbacks
             if i.is_constructor or i.is_fallback or i.is_receive:
@@ -361,6 +363,7 @@ class CodeGenerator:
                 # already covered by wrap_diff_functions
                 continue
             functions_to_wrap: List[FunctionInfo] = target["functions"]
+            functions_to_wrap.sort(key=lambda info: info["name"])
             for func in functions_to_wrap:
                 mods = [m.name for m in func["function"].modifiers]
                 if not self._protected and any(m in protected_mods for m in mods):
@@ -687,7 +690,9 @@ class CodeGenerator:
 
         if external_taint:
             wrapped += "\n    /*** Tainted External Contracts ***/ \n\n"
-            for tainted in diff["tainted_contracts"]:
+            tainted_contracts = diff["tainted_contracts"]
+            tainted_contracts.sort(key=lambda item: item.contract.name)
+            for tainted in tainted_contracts:
                 contract: Contract = tainted.contract
                 contract_data = next(
                     (t for t in external_taint if t["name"] == contract.name), None
@@ -697,7 +702,9 @@ class CodeGenerator:
                     if not fork:
                         contract_data["suffix"] = "V1"
                         contract_data_2["suffix"] = "V2"
-                    for diff_func in tainted.tainted_functions:
+                    tainted_functions = tainted.tainted_functions
+                    tainted_functions.sort(key=lambda tainted_func: tainted_func.canonical_name)
+                    for diff_func in tainted_functions:
                         mods = [m.name for m in diff_func.modifiers]
                         if not protected and any(m in protected_mods for m in mods):
                             continue
@@ -727,6 +734,8 @@ class CodeGenerator:
         fork = self._fork
         upgrade = self._upgrade
 
+        targets.sort(key=lambda target: target["name"])
+
         final_contract = ""
         tainted_contracts: List[TaintedExternalContract] = diff["tainted_contracts"]
         tainted_contracts = [
@@ -734,6 +743,7 @@ class CodeGenerator:
             for t in tainted_contracts
             if t.contract not in [v_1["contract_object"], v_2["contract_object"]]
         ]
+        tainted_contracts.sort(key=lambda taint: taint.contract.name)
         CryticPrint.print_information("* Getting contract data for tainted contracts.")
         tainted_targets = [
             self.get_contract_data(t.contract)
@@ -755,6 +765,7 @@ class CodeGenerator:
             for t in tainted_contracts
         ]
         tainted_targets = [t for t in tainted_targets if t["valid_data"]]
+        tainted_targets.sort(key=lambda target: target["name"])
         other_targets = list(targets)
         if proxy:
             other_targets.append(proxy)
@@ -802,7 +813,7 @@ class CodeGenerator:
         for target in tainted_targets:
             if target["name"] not in (
                 t["contract_object"].name for t in other_targets if t["contract_object"]
-            ):
+            ) and str(target["interface"]) not in final_contract:
                 final_contract += str(target["interface"])
         if proxy is not None:
             final_contract += str(proxy["interface"])
