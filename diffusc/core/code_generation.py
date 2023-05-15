@@ -811,9 +811,11 @@ class CodeGenerator:
         for target in targets:
             final_contract += str(target["interface"])
         for target in tainted_targets:
-            if target["name"] not in (
-                t["contract_object"].name for t in other_targets if t["contract_object"]
-            ) and str(target["interface"]) not in final_contract:
+            if (
+                target["name"]
+                not in (t["contract_object"].name for t in other_targets if t["contract_object"])
+                and str(target["interface"]) not in final_contract
+            ):
                 final_contract += str(target["interface"])
         if proxy is not None:
             final_contract += str(proxy["interface"])
