@@ -250,7 +250,7 @@ def test_generate_contract_fork_mode() -> None:
 
 def test_generate_config() -> None:
     config = CodeGenerator.generate_config_file(
-        corpus_dir="../test/corpus/",
+        corpus_dir="",
         campaign_length=123456,
         contract_addr="0x999999",
         seq_len=999999,

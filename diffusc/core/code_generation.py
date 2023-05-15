@@ -116,7 +116,7 @@ class CodeGenerator:
         )
         config_file = "testMode: assertion\n"
         config_file += f"testLimit: {campaign_length}\n"
-        config_file += f"corpusDir: {abspath(corpus_dir)}\n"
+        config_file += f"corpusDir: {abspath(corpus_dir)}\n" if corpus_dir != "" else ""
         config_file += "codeSize: 0xffff\n"
         config_file += f"seqLen: {seq_len}\n"
         if contract_addr != "":
