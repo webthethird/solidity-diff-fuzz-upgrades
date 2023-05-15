@@ -12,5 +12,6 @@ interface ICodeGeneration {
     function newSt(uint256) external returns (St memory);
     function getSt(uint256) external view returns (St memory);
     function removeSt(St memory) external;
+    function complexTypes(address,uint256[] memory) external view returns (uint256[] memory,SomeEnum memory);
 }
 
