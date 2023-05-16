@@ -6,6 +6,7 @@ from typing import Any, Tuple, List
 from requests.exceptions import HTTPError
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
+from web3.exceptions import ExtraDataLengthError
 from slither.core.variables.state_variable import StateVariable
 from slither.core.declarations.contract import Contract
 from slither.tools.read_storage import SlitherReadStorage  # , RpcInfo
@@ -35,10 +36,16 @@ class NetworkInfoProvider:
             CryticPrint.print_error("* Could not connect to the provided RPC endpoint.")
             raise ValueError(f"Could not connect to the provided RPC endpoint: {rpc_provider}.")
 
-        if block in [0, ""]:
-            self._block = int(self._w3.eth.get_block("latest")["number"])
-        else:
-            self._block = int(block)
+        try:
+            if block in [0, ""]:
+                self._block = int(self._w3.eth.get_block("latest")["number"])
+            elif block in ["latest", "earliest", "pending", "safe", "finalized"]:
+                self._block = int(self._w3.eth.get_block(block)["number"])
+            else:
+                self._block = int(block)
+        except ExtraDataLengthError:
+            raise ValueError(f"Got ExtraDataLengthError when getting block {block}."
+                             " Probably missing network value, if RPC url is for a POA chain.")
 
         # Workaround for PoA networks
         if is_poa:

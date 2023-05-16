@@ -34,7 +34,10 @@ class AnalysisMode:
         self._proxy = None
         self._targets = None
         self._diff = None
-        self.parse_args(args)
+        try:
+            self.parse_args(args)
+        except ValueError as err:
+            raise ValueError(str(err)) from err
 
     def parse_args(self, args: argparse.Namespace) -> None:
         """Parse arguments that are used in both analysis modes."""
