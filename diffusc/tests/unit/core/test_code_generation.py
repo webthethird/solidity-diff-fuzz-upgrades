@@ -52,7 +52,7 @@ def test_contract_data_from_slither() -> None:
         assert contract_data["valid_data"]
         assert isinstance(contract_data["slither"], Slither)
         assert contract_data["slither"].crytic_compile == sl.crytic_compile
-        assert contract_data["path"] == file_path
+        assert contract_data["path"] == os.path.relpath(file_path)
         assert contract_data["name"] == test.replace(".sol", "")
         assert contract_data["interface_name"] == "I" + test.replace(".sol", "")
         assert contract_data["solc_version"] == version
