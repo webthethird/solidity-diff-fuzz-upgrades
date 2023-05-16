@@ -95,10 +95,10 @@ def test_generate_contract_path_mode() -> None:
     provider = FileSlitherProvider()
     output_dir = os.path.join(TEST_DATA_DIR, "expected")
     v1_data = get_contract_data_from_path(
-        os.path.join(TEST_DATA_DIR, "ContractV1.sol"), output_dir, provider
+        os.path.join(TEST_DATA_DIR, "ContractV1.sol"), output_dir, provider, "V1"
     )
     v2_data = get_contract_data_from_path(
-        os.path.join(TEST_DATA_DIR, "ContractV2.sol"), output_dir, provider
+        os.path.join(TEST_DATA_DIR, "ContractV2.sol"), output_dir, provider, "V2"
     )
     proxy_data = get_contract_data_from_path(
         os.path.join(TEST_DATA_DIR, "TransparentUpgradeableProxy.sol"), output_dir, provider
