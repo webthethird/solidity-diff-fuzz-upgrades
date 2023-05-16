@@ -9,23 +9,32 @@ import { SimplePriceOracle } from "../SimplePriceOracle.sol";
 interface IContractV1 {
     function stateA() external returns (uint256);
     function stateB() external returns (uint256);
+    function mapB(uint256) external returns (uint256);
+    function callers(uint256) external returns (address);
     function f(uint256) external;
     function g(uint256) external;
     function h() external;
+    function setMap(uint256,uint256) external;
     function totalValue() external returns (uint256);
     function balance() external returns (uint256);
+    function balanceUnderlying() external returns (uint256);
 }
 
 interface IContractV2 {
     function stateA() external returns (uint256);
     function stateB() external returns (uint256);
+    function mapB(uint256) external returns (uint256);
+    function callers(uint256) external returns (address);
     function stateC() external returns (uint256);
     function f(uint256) external;
     function g(uint256) external;
     function h() external;
     function i() external;
+    function j() external;
+    function setMap(uint256,uint256) external;
     function totalValue() external returns (uint256);
     function balance(address) external returns (uint256);
+    function balanceUnderlying(address) external returns (uint256);
 }
 
 interface IMarketToken {
@@ -176,12 +185,46 @@ contract DiffFuzzUpgrades {
         }
     }
 
+    // TODO: Double-check this function for correctness
+    // ContractV2.balanceUnderlying(address)
+    // is a new function, which appears to replace a function with a similar name,
+    // ContractV1.balanceUnderlying().
+    // If these functions have different arguments, this function may be incorrect.
+    function ContractV2_balanceUnderlying(address a) public virtual {
+        hevm.prank(msg.sender);
+        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+            abi.encodeWithSelector(
+                contractV1.balanceUnderlying.selector
+            )
+        );
+        hevm.prank(msg.sender);
+        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+            abi.encodeWithSelector(
+                contractV2.balanceUnderlying.selector, a
+            )
+        );
+        assert(successV1 == successV2); 
+        if(successV1 && successV2) {
+            assert(keccak256(outputV1) == keccak256(outputV2));
+        }
+    }
+
 
     /*** Tainted Variables ***/ 
 
     function ContractV1_stateB() public returns (uint256) {
         assert(contractV1.stateB() == contractV2.stateB());
         return contractV1.stateB();
+    }
+
+    function ContractV1_mapB(uint256 a) public returns (uint256) {
+        assert(contractV1.mapB(a) == contractV2.mapB(a));
+        return contractV1.mapB(a);
+    }
+
+    function ContractV1_callers(uint i) public returns (address) {
+        assert(contractV1.callers(i) == contractV2.callers(i));
+        return contractV1.callers(i);
     }
 
 
