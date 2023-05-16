@@ -5,7 +5,6 @@ from time import sleep
 from typing import Any, Tuple, List
 from requests.exceptions import HTTPError
 from web3 import Web3, logs
-from web3.types import BlockIdentifier
 from web3.middleware import geth_poa_middleware
 from web3.exceptions import ExtraDataLengthError
 from slither.core.variables.state_variable import StateVariable
