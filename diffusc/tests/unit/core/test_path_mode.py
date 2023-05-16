@@ -30,11 +30,13 @@ def test_diffusc_path_mode() -> None:
     assert actual == expected
 
     # Test w/ proxy and upgrade function, w/o additional targets or protected functions
-    args.extend([
-        "-p",
-        os.path.join(TEST_DATA_DIR, "TransparentUpgradeableProxy.sol"),
-        "-u",
-    ])
+    args.extend(
+        [
+            "-p",
+            os.path.join(TEST_DATA_DIR, "TransparentUpgradeableProxy.sol"),
+            "-u",
+        ]
+    )
     assert main(args) == 0
     with open(os.path.join(expected_dir, "Expected_PathMode_1.sol"), "r", encoding="utf-8") as file:
         expected = file.read()
@@ -44,10 +46,12 @@ def test_diffusc_path_mode() -> None:
 
     # Test w/ additional targets, w/o proxy, upgrade function, protected functions
     args[6] = "-t"
-    args[7] = ",".join([
-        os.path.join(TEST_DATA_DIR, "token", "MarketToken.sol"),
-        os.path.join(TEST_DATA_DIR, "SimplePriceOracle.sol"),
-    ])
+    args[7] = ",".join(
+        [
+            os.path.join(TEST_DATA_DIR, "token", "MarketToken.sol"),
+            os.path.join(TEST_DATA_DIR, "SimplePriceOracle.sol"),
+        ]
+    )
     assert main(args) == 0
     with open(os.path.join(expected_dir, "Expected_PathMode_2.sol"), "r", encoding="utf-8") as file:
         expected = file.read()
@@ -56,10 +60,12 @@ def test_diffusc_path_mode() -> None:
     assert actual == expected
 
     # Test w/ additional targets, external taint and protected functions, w/o proxy, upgrade function
-    args.extend([
-        "-x",
-        "-P",
-    ])
+    args.extend(
+        [
+            "-x",
+            "-P",
+        ]
+    )
     assert main(args) == 0
     with open(os.path.join(expected_dir, "Expected_PathMode_3.sol"), "r", encoding="utf-8") as file:
         expected = file.read()
@@ -68,10 +74,12 @@ def test_diffusc_path_mode() -> None:
     assert actual == expected
 
     # Test w/ proxy, additional targets, external taint, protected functions and upgrade function
-    args.extend([
-        "-p",
-        os.path.join(TEST_DATA_DIR, "TransparentUpgradeableProxy.sol"),
-    ])
+    args.extend(
+        [
+            "-p",
+            os.path.join(TEST_DATA_DIR, "TransparentUpgradeableProxy.sol"),
+        ]
+    )
     assert main(args) == 0
     with open(os.path.join(expected_dir, "Expected_PathMode_4.sol"), "r", encoding="utf-8") as file:
         expected = file.read()

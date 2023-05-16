@@ -44,8 +44,10 @@ class NetworkInfoProvider:
             else:
                 self._block = int(block)
         except ExtraDataLengthError:
-            raise ValueError(f"Got ExtraDataLengthError when getting block {block}."
-                             " Probably missing network value, if RPC url is for a POA chain.")
+            raise ValueError(
+                f"Got ExtraDataLengthError when getting block {block}."
+                " Probably missing network value, if RPC url is for a POA chain."
+            )
 
         # Workaround for PoA networks
         if is_poa:

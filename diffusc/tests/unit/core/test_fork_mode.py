@@ -21,26 +21,30 @@ def test_diffusc_fork_mode() -> None:
     # Missing RPC argument, should fail
     assert main(args) == 1
 
-    args.extend([
-        "-K",
-        api_key,
-        "-R",
-        rpc_url,
-    ])
+    args.extend(
+        [
+            "-K",
+            api_key,
+            "-R",
+            rpc_url,
+        ]
+    )
     # Missing network, should fail because addresses have no code on Ethereum
     assert main(args) == 1
 
     # Test w/o proxy, additional targets, upgrade function or protected functions
-    args.extend([
-        "-n",
-        "bsc",
-        "-b",
-        "26857408",
-        "-v",
-        "0.8.11",
-        "-d",
-        output_dir,
-    ])
+    args.extend(
+        [
+            "-n",
+            "bsc",
+            "-b",
+            "26857408",
+            "-v",
+            "0.8.11",
+            "-d",
+            output_dir,
+        ]
+    )
     assert main(args) == 0
     with open(os.path.join(expected_dir, "Expected_ForkMode_0.sol"), "r", encoding="utf-8") as file:
         expected = file.read()
@@ -49,11 +53,13 @@ def test_diffusc_fork_mode() -> None:
     assert actual == expected
 
     # Test w/ proxy and upgrade function, w/o additional targets or protected functions
-    args.extend([
-        "-p",
-        "0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5",
-        "-u",
-    ])
+    args.extend(
+        [
+            "-p",
+            "0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5",
+            "-u",
+        ]
+    )
     assert main(args) == 0
     with open(os.path.join(expected_dir, "Expected_ForkMode_1.sol"), "r", encoding="utf-8") as file:
         expected = file.read()
@@ -63,8 +69,10 @@ def test_diffusc_fork_mode() -> None:
 
     # Test w/ additional targets, w/o proxy, upgrade function, protected functions
     args[14] = "-t"
-    args[15] = "0x6ac68913d8fccd52d196b09e6bc0205735a4be5f:0xaa62468f41d9f1076920feb60b561a84ce62e9c3," \
-               "0x524bc73fcb4fb70e2e84dc08efe255252a3b026e:0x8d63502B5E50f8F100C407B34ef16bF808DFA278"
+    args[15] = (
+        "0x6ac68913d8fccd52d196b09e6bc0205735a4be5f:0xaa62468f41d9f1076920feb60b561a84ce62e9c3,"
+        "0x524bc73fcb4fb70e2e84dc08efe255252a3b026e:0x8d63502B5E50f8F100C407B34ef16bF808DFA278"
+    )
     assert main(args) == 0
     with open(os.path.join(expected_dir, "Expected_ForkMode_2.sol"), "r", encoding="utf-8") as file:
         expected = file.read()
@@ -73,10 +81,12 @@ def test_diffusc_fork_mode() -> None:
     assert actual == expected
 
     # Test w/ additional targets, external taint and protected functions, w/o proxy, upgrade function
-    args.extend([
-        "-x",
-        "-P",
-    ])
+    args.extend(
+        [
+            "-x",
+            "-P",
+        ]
+    )
     assert main(args) == 0
     with open(os.path.join(expected_dir, "Expected_ForkMode_3.sol"), "r", encoding="utf-8") as file:
         expected = file.read()
@@ -85,11 +95,13 @@ def test_diffusc_fork_mode() -> None:
     assert actual == expected
 
     # Test w/ proxy, additional targets, external taint, token holders, protected functions and upgrade function
-    args.extend([
-        "-p",
-        "0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5",
-        "-T",
-    ])
+    args.extend(
+        [
+            "-p",
+            "0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5",
+            "-T",
+        ]
+    )
     assert main(args) == 0
     with open(os.path.join(expected_dir, "Expected_ForkMode_4.sol"), "r", encoding="utf-8") as file:
         expected = file.read()

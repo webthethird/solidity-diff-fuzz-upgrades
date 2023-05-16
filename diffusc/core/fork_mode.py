@@ -41,7 +41,9 @@ class ForkMode(AnalysisMode):
         try:
             super().__init__(args)
             self._provider = NetworkSlitherProvider(self._prefix, self._api_key)
-            self._net_info = NetworkInfoProvider(self._network_rpc, self._block_number, self._is_poa)
+            self._net_info = NetworkInfoProvider(
+                self._network_rpc, self._block_number, self._is_poa
+            )
             self._tokens = []
         except ValueError as err:
             raise ValueError(str(err)) from err
@@ -110,7 +112,9 @@ class ForkMode(AnalysisMode):
                 f"* Block number specified via command line parameter: {self._block_number}",
             )
         elif "ECHIDNA_RPC_BLOCK" in os.environ:
-            self._block_number = args.block if args.block in valid else int(os.environ["ECHIDNA_RPC_BLOCK"])
+            self._block_number = (
+                args.block if args.block in valid else int(os.environ["ECHIDNA_RPC_BLOCK"])
+            )
             CryticPrint.print_information(
                 "* Block number specified via ECHIDNA_RPC_BLOCK environment variable: "
                 f"{self._block_number}",

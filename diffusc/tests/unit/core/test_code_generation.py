@@ -118,7 +118,9 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_0.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_0.sol"),
+            "w",
+            encoding="utf-8",
         ) as expected:
             expected.write(code)
     with open(
@@ -134,7 +136,9 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_1.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_1.sol"),
+            "w",
+            encoding="utf-8",
         ) as expected:
             expected.write(code)
     with open(
@@ -151,7 +155,9 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_2.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_2.sol"),
+            "w",
+            encoding="utf-8",
         ) as expected:
             expected.write(code)
     with open(
@@ -167,7 +173,9 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff, output_dir)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_3.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_3.sol"),
+            "w",
+            encoding="utf-8",
         ) as expected:
             expected.write(code)
     with open(
@@ -183,7 +191,9 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff, output_dir)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_4.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_4.sol"),
+            "w",
+            encoding="utf-8",
         ) as expected:
             expected.write(code)
     with open(
@@ -233,7 +243,9 @@ def test_generate_contract_fork_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_0.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_0.sol"),
+            "w",
+            encoding="utf-8",
         ) as expected:
             expected.write(code)
     with open(
@@ -249,7 +261,9 @@ def test_generate_contract_fork_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_1.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_1.sol"),
+            "w",
+            encoding="utf-8",
         ) as expected:
             expected.write(code)
     with open(
@@ -266,7 +280,9 @@ def test_generate_contract_fork_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_2.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_2.sol"),
+            "w",
+            encoding="utf-8",
         ) as expected:
             expected.write(code)
     with open(
@@ -282,7 +298,9 @@ def test_generate_contract_fork_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_3.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_3.sol"),
+            "w",
+            encoding="utf-8",
         ) as expected:
             expected.write(code)
     with open(
@@ -298,7 +316,9 @@ def test_generate_contract_fork_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_4.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_4.sol"),
+            "w",
+            encoding="utf-8",
         ) as expected:
             expected.write(code)
     with open(
