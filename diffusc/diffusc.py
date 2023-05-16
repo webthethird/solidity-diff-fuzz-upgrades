@@ -6,6 +6,7 @@ import argparse
 import logging
 import os
 import sys
+from typing import Sequence, Optional
 
 from eth_utils import is_address
 from diffusc.core.path_mode import PathMode
@@ -19,7 +20,7 @@ import diffusc.utils.network_vars as net_vars
 
 
 # pylint: disable=too-many-statements,too-many-branches
-def main() -> int:
+def main(_args: Optional[Sequence[str]] = None) -> int:
     """Main method, parses arguments and calls path_mode or fork_mode."""
     # Read command line arguments
 
@@ -136,7 +137,7 @@ def main() -> int:
         help="Specifies whether to analyze external calls to find tainted external contracts (default false).",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(_args)
 
     CryticPrint.initialize()
     CryticPrint.print_message("\nWelcome to diff-fuzz-upgrades, enjoy your stay!")
