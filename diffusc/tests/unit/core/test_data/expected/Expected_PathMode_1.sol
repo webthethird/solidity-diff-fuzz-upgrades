@@ -5,7 +5,7 @@ import { ContractV1 as ContractV1_V1 } from "../ContractV1.sol";
 import { ContractV2 as ContractV2_V2 } from "../ContractV2.sol";
 import { TransparentUpgradeableProxy } from "../TransparentUpgradeableProxy.sol";
 
-interface IContractV1 {
+interface IContractV1V1 {
     function stateA() external returns (uint256);
     function stateB() external returns (uint256);
     function mapB(uint256) external returns (uint256);
@@ -19,7 +19,7 @@ interface IContractV1 {
     function balanceUnderlying() external returns (uint256);
 }
 
-interface IContractV2 {
+interface IContractV2V2 {
     function stateA() external returns (uint256);
     function stateB() external returns (uint256);
     function mapB(uint256) external returns (uint256);
@@ -60,26 +60,26 @@ interface IHevm {
 contract DiffFuzzUpgrades {
     IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
-    IContractV1 contractV1V1;
-    IContractV2 contractV2V2;
+    IContractV1V1 contractV1V1;
+    IContractV2V2 contractV2V2;
     ITransparentUpgradeableProxy transparentUpgradeableProxyV1;
     ITransparentUpgradeableProxy transparentUpgradeableProxyV2;
 
     constructor() public {
-        contractV1 = IContractV1(address(new ContractV1_V1()));
-        contractV2 = IContractV2(address(new ContractV2_V2()));
-        transparentUpgradeableProxy = ITransparentUpgradeableProxy(address(new TransparentUpgradeableProxy()));
-        transparentUpgradeableProxy = ITransparentUpgradeableProxy(address(new TransparentUpgradeableProxy()));
+        contractV1V1 = IContractV1V1(address(new ContractV1_V1()));
+        contractV2V2 = IContractV2V2(address(new ContractV2_V2()));
+        transparentUpgradeableProxyV1 = ITransparentUpgradeableProxy(address(new TransparentUpgradeableProxy()));
+        transparentUpgradeableProxyV2 = ITransparentUpgradeableProxy(address(new TransparentUpgradeableProxy()));
         // Store the implementation addresses in the proxy.
         hevm.store(
-            address(transparentUpgradeableProxy),
+            address(transparentUpgradeableProxyV1),
             bytes32(uint(24440054405305269366569402256811496959409073762505157381672968839269610695612)),
-            bytes32(uint256(uint160(address(contractV1))))
+            bytes32(uint256(uint160(address(contractV1V1))))
         );
         hevm.store(
-            address(transparentUpgradeableProxy),
+            address(transparentUpgradeableProxyV2),
             bytes32(uint(24440054405305269366569402256811496959409073762505157381672968839269610695612)),
-            bytes32(uint256(uint160(address(contractV1))))
+            bytes32(uint256(uint160(address(contractV1V1))))
         );
     }
 
@@ -88,9 +88,9 @@ contract DiffFuzzUpgrades {
     // TODO: Consider replacing this with the actual upgrade method
     function upgradeV2() external virtual {
         hevm.store(
-            address(transparentUpgradeableProxy),
+            address(transparentUpgradeableProxyV2),
             bytes32(uint(24440054405305269366569402256811496959409073762505157381672968839269610695612)),
-            bytes32(uint256(uint160(address(contractV2))))
+            bytes32(uint256(uint160(address(contractV2V2))))
         );
     }
 
@@ -99,15 +99,15 @@ contract DiffFuzzUpgrades {
 
     function ContractV2_g(uint256 a) public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
-                contractV1.g.selector, a
+                contractV1V1.g.selector, a
             )
         );
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
-                contractV2.g.selector, a
+                contractV2V2.g.selector, a
             )
         );
         assert(successV1 == successV2); 
@@ -118,15 +118,15 @@ contract DiffFuzzUpgrades {
 
     function ContractV2_totalValue() public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
-                contractV1.totalValue.selector
+                contractV1V1.totalValue.selector
             )
         );
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
-                contractV2.totalValue.selector
+                contractV2V2.totalValue.selector
             )
         );
         assert(successV1 == successV2); 
@@ -140,15 +140,15 @@ contract DiffFuzzUpgrades {
 
     function ContractV2_h() public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
-                contractV1.h.selector
+                contractV1V1.h.selector
             )
         );
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxy).call(
+        (bool successV2, bytes memory outputV2) = address(transparentUpgradeableProxyV2).call(
             abi.encodeWithSelector(
-                contractV2.h.selector
+                contractV2V2.h.selector
             )
         );
         assert(successV1 == successV2); 
@@ -167,27 +167,27 @@ contract DiffFuzzUpgrades {
     // If these functions have different arguments, this function may be incorrect.
     function ContractV2_balance(address a) public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
-                contractV1.balance.selector
+                contractV1V1.balance.selector
             )
         );
         address impl = address(uint160(uint256(
-            hevm.load(address(transparentUpgradeableProxy),0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc)
+            hevm.load(address(transparentUpgradeableProxyV2),0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc)
         )));
         hevm.prank(msg.sender);
         bool successV2;
         bytes memory outputV2;
-        if(impl == address(contractV2)) {
-            (successV2, outputV2) = address(transparentUpgradeableProxy).call(
+        if(impl == address(contractV2V2)) {
+            (successV2, outputV2) = address(transparentUpgradeableProxyV2).call(
                 abi.encodeWithSelector(
-                        contractV2.balance.selector, a
+                        contractV2V2.balance.selector, a
                 )
             );
         } else {
-            (successV2, outputV2) = address(transparentUpgradeableProxy).call(
+            (successV2, outputV2) = address(transparentUpgradeableProxyV1).call(
                 abi.encodeWithSelector(
-                        contractV1.balance.selector
+                        contractV1V1.balance.selector
                 )
             );
         }
@@ -204,27 +204,27 @@ contract DiffFuzzUpgrades {
     // If these functions have different arguments, this function may be incorrect.
     function ContractV2_balanceUnderlying(address a) public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxy).call(
+        (bool successV1, bytes memory outputV1) = address(transparentUpgradeableProxyV1).call(
             abi.encodeWithSelector(
-                contractV1.balanceUnderlying.selector
+                contractV1V1.balanceUnderlying.selector
             )
         );
         address impl = address(uint160(uint256(
-            hevm.load(address(transparentUpgradeableProxy),0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc)
+            hevm.load(address(transparentUpgradeableProxyV2),0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc)
         )));
         hevm.prank(msg.sender);
         bool successV2;
         bytes memory outputV2;
-        if(impl == address(contractV2)) {
-            (successV2, outputV2) = address(transparentUpgradeableProxy).call(
+        if(impl == address(contractV2V2)) {
+            (successV2, outputV2) = address(transparentUpgradeableProxyV2).call(
                 abi.encodeWithSelector(
-                        contractV2.balanceUnderlying.selector, a
+                        contractV2V2.balanceUnderlying.selector, a
                 )
             );
         } else {
-            (successV2, outputV2) = address(transparentUpgradeableProxy).call(
+            (successV2, outputV2) = address(transparentUpgradeableProxyV1).call(
                 abi.encodeWithSelector(
-                        contractV1.balanceUnderlying.selector
+                        contractV1V1.balanceUnderlying.selector
                 )
             );
         }
@@ -238,18 +238,18 @@ contract DiffFuzzUpgrades {
     /*** Tainted Variables ***/ 
 
     function ContractV1_stateB() public returns (uint256) {
-        assert(IContractV1(address(transparentUpgradeableProxy)).stateB() == IContractV2(address(transparentUpgradeableProxy)).stateB());
-        return IContractV1(address(transparentUpgradeableProxy)).stateB();
+        assert(IContractV1V1(address(transparentUpgradeableProxyV1)).stateB() == IContractV2V2(address(transparentUpgradeableProxyV2)).stateB());
+        return IContractV1V1(address(transparentUpgradeableProxyV1)).stateB();
     }
 
     function ContractV1_mapB(uint256 a) public returns (uint256) {
-        assert(IContractV1(address(transparentUpgradeableProxy)).mapB(a) == IContractV2(address(transparentUpgradeableProxy)).mapB(a));
-        return IContractV1(address(transparentUpgradeableProxy)).mapB(a);
+        assert(IContractV1V1(address(transparentUpgradeableProxyV1)).mapB(a) == IContractV2V2(address(transparentUpgradeableProxyV2)).mapB(a));
+        return IContractV1V1(address(transparentUpgradeableProxyV1)).mapB(a);
     }
 
     function ContractV1_callers(uint i) public returns (address) {
-        assert(IContractV1(address(transparentUpgradeableProxy)).callers(i) == IContractV2(address(transparentUpgradeableProxy)).callers(i));
-        return IContractV1(address(transparentUpgradeableProxy)).callers(i);
+        assert(IContractV1V1(address(transparentUpgradeableProxyV1)).callers(i) == IContractV2V2(address(transparentUpgradeableProxyV2)).callers(i));
+        return IContractV1V1(address(transparentUpgradeableProxyV1)).callers(i);
     }
 
 

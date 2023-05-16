@@ -6,7 +6,7 @@ import { ContractV2 as ContractV2_V2 } from "../ContractV2.sol";
 import { MarketToken } from "../token/MarketToken.sol";
 import { SimplePriceOracle } from "../SimplePriceOracle.sol";
 
-interface IContractV1 {
+interface IContractV1V1 {
     function stateA() external returns (uint256);
     function stateB() external returns (uint256);
     function mapB(uint256) external returns (uint256);
@@ -20,7 +20,7 @@ interface IContractV1 {
     function balanceUnderlying() external returns (uint256);
 }
 
-interface IContractV2 {
+interface IContractV2V2 {
     function stateA() external returns (uint256);
     function stateB() external returns (uint256);
     function mapB(uint256) external returns (uint256);
@@ -79,20 +79,20 @@ interface IHevm {
 contract DiffFuzzUpgrades {
     IHevm hevm = IHevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
-    IContractV1 contractV1V1;
-    IContractV2 contractV2V2;
+    IContractV1V1 contractV1V1;
+    IContractV2V2 contractV2V2;
     IMarketToken marketTokenV1;
     IMarketToken marketTokenV2;
     ISimplePriceOracle simplePriceOracleV1;
     ISimplePriceOracle simplePriceOracleV2;
 
     constructor() public {
-        contractV1 = IContractV1(address(new ContractV1_V1()));
-        contractV2 = IContractV2(address(new ContractV2_V2()));
-        marketToken = IMarketToken(address(new MarketToken()));
-        marketToken = IMarketToken(address(new MarketToken()));
-        simplePriceOracle = ISimplePriceOracle(address(new SimplePriceOracle()));
-        simplePriceOracle = ISimplePriceOracle(address(new SimplePriceOracle()));
+        contractV1V1 = IContractV1V1(address(new ContractV1_V1()));
+        contractV2V2 = IContractV2V2(address(new ContractV2_V2()));
+        marketTokenV1 = IMarketToken(address(new MarketToken()));
+        marketTokenV2 = IMarketToken(address(new MarketToken()));
+        simplePriceOracleV1 = ISimplePriceOracle(address(new SimplePriceOracle()));
+        simplePriceOracleV2 = ISimplePriceOracle(address(new SimplePriceOracle()));
     }
 
 
@@ -100,15 +100,15 @@ contract DiffFuzzUpgrades {
 
     function ContractV2_g(uint256 a) public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+        (bool successV1, bytes memory outputV1) = address(contractV1V1).call(
             abi.encodeWithSelector(
-                contractV1.g.selector, a
+                contractV1V1.g.selector, a
             )
         );
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+        (bool successV2, bytes memory outputV2) = address(contractV2V2).call(
             abi.encodeWithSelector(
-                contractV2.g.selector, a
+                contractV2V2.g.selector, a
             )
         );
         assert(successV1 == successV2); 
@@ -119,15 +119,15 @@ contract DiffFuzzUpgrades {
 
     function ContractV2_totalValue() public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+        (bool successV1, bytes memory outputV1) = address(contractV1V1).call(
             abi.encodeWithSelector(
-                contractV1.totalValue.selector
+                contractV1V1.totalValue.selector
             )
         );
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+        (bool successV2, bytes memory outputV2) = address(contractV2V2).call(
             abi.encodeWithSelector(
-                contractV2.totalValue.selector
+                contractV2V2.totalValue.selector
             )
         );
         assert(successV1 == successV2); 
@@ -141,15 +141,15 @@ contract DiffFuzzUpgrades {
 
     function ContractV2_h() public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+        (bool successV1, bytes memory outputV1) = address(contractV1V1).call(
             abi.encodeWithSelector(
-                contractV1.h.selector
+                contractV1V1.h.selector
             )
         );
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+        (bool successV2, bytes memory outputV2) = address(contractV2V2).call(
             abi.encodeWithSelector(
-                contractV2.h.selector
+                contractV2V2.h.selector
             )
         );
         assert(successV1 == successV2); 
@@ -168,15 +168,15 @@ contract DiffFuzzUpgrades {
     // If these functions have different arguments, this function may be incorrect.
     function ContractV2_balance(address a) public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+        (bool successV1, bytes memory outputV1) = address(contractV1V1).call(
             abi.encodeWithSelector(
-                contractV1.balance.selector
+                contractV1V1.balance.selector
             )
         );
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+        (bool successV2, bytes memory outputV2) = address(contractV2V2).call(
             abi.encodeWithSelector(
-                contractV2.balance.selector, a
+                contractV2V2.balance.selector, a
             )
         );
         assert(successV1 == successV2); 
@@ -192,15 +192,15 @@ contract DiffFuzzUpgrades {
     // If these functions have different arguments, this function may be incorrect.
     function ContractV2_balanceUnderlying(address a) public virtual {
         hevm.prank(msg.sender);
-        (bool successV1, bytes memory outputV1) = address(contractV1).call(
+        (bool successV1, bytes memory outputV1) = address(contractV1V1).call(
             abi.encodeWithSelector(
-                contractV1.balanceUnderlying.selector
+                contractV1V1.balanceUnderlying.selector
             )
         );
         hevm.prank(msg.sender);
-        (bool successV2, bytes memory outputV2) = address(contractV2).call(
+        (bool successV2, bytes memory outputV2) = address(contractV2V2).call(
             abi.encodeWithSelector(
-                contractV2.balanceUnderlying.selector, a
+                contractV2V2.balanceUnderlying.selector, a
             )
         );
         assert(successV1 == successV2); 
@@ -213,18 +213,18 @@ contract DiffFuzzUpgrades {
     /*** Tainted Variables ***/ 
 
     function ContractV1_stateB() public returns (uint256) {
-        assert(contractV1.stateB() == contractV2.stateB());
-        return contractV1.stateB();
+        assert(contractV1V1.stateB() == contractV2V2.stateB());
+        return contractV1V1.stateB();
     }
 
     function ContractV1_mapB(uint256 a) public returns (uint256) {
-        assert(contractV1.mapB(a) == contractV2.mapB(a));
-        return contractV1.mapB(a);
+        assert(contractV1V1.mapB(a) == contractV2V2.mapB(a));
+        return contractV1V1.mapB(a);
     }
 
     function ContractV1_callers(uint i) public returns (address) {
-        assert(contractV1.callers(i) == contractV2.callers(i));
-        return contractV1.callers(i);
+        assert(contractV1V1.callers(i) == contractV2V2.callers(i));
+        return contractV1V1.callers(i);
     }
 
 
