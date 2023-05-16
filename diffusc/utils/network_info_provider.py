@@ -201,53 +201,6 @@ class NetworkInfoProvider:
             CryticPrint.print_error("      * Proxy storage slot read is not an address")
             raise ValueError("Proxy storage slot read is not an address") from err
 
-    # pylint: disable=too-many-locals
-    def get_token_holder(self, min_token_amount: int, address: str, abi: str) -> str:
-        """Get the address of a holder of the token at the given address."""
-
-        block_from = int(self._block) - 2000
-        block_to = int(self._block)
-        max_retries = 10
-        holder = None
-
-        contract = self._w3.eth.contract(address=to_checksum_address(address), abi=abi)
-
-        while max_retries > 0:
-            block_filter = contract.events.Transfer.create_filter(  # type: ignore[attr-defined]
-                fromBlock=block_from, toBlock=block_to
-            )
-            events = block_filter.get_all_entries()
-            if not events:
-                max_retries -= 1
-                block_from -= 2000
-                block_to -= 2000
-                continue
-
-            events.reverse()
-
-            for event in events:
-                receipt = self._w3.eth.wait_for_transaction_receipt(event["transactionHash"])
-                result = contract.events.Transfer().process_receipt(receipt, errors=logs.DISCARD)
-                event_data = list(result[0]["args"].values())
-                recipient = event_data[1]
-                amount = int(event_data[2])
-                if amount > min_token_amount and not self._w3.eth.get_code(recipient, self._block):
-                    holder = recipient
-                    break
-
-            if holder:
-                return holder
-            max_retries -= 1
-            block_from -= 2000
-            block_to -= 2000
-
-        CryticPrint.print_error(
-            f"* Could not find a token holder for {address}. "
-            "Please use --token-holder to set it manually."
-        )
-        raise ValueError(
-            "Could not find a token holder. Please use --token-holder to set it manually."
-        )
 
     # pylint: disable=too-many-locals
     def get_token_holders(
