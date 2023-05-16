@@ -186,11 +186,8 @@ def main(_args: Optional[Sequence[str]] = None) -> int:
         try:
             analysis = ForkMode(args)
             contract = analysis.write_test_contract()
-        except ValueError as err:
-            CryticPrint.print_error(f"* ValueError: fork mode failed ({err})")
-            return 1
-        except AssertionError as err:
-            CryticPrint.print_error(f"* AssertionError: fork mode failed ({err})")
+        except (ValueError, AssertionError) as err:
+            CryticPrint.print_error(f"* Error: fork mode failed ({err})")
             return 1
     elif os.path.exists(args.v1) and os.path.exists(args.v2):
         CryticPrint.print_information("* Using 'path mode' (no fork):")
