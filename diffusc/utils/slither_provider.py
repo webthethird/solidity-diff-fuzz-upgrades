@@ -3,6 +3,8 @@
 import base64
 import io
 import os
+from time import sleep
+from random import random
 
 from zipfile import ZipFile
 from slither import Slither
@@ -40,7 +42,7 @@ class SlitherProvider:
 
     def _get_slither_from_cache(self, address: str) -> Slither | None:
         """Check if the contract at an address has already been compiled and cached."""
-        CryticPrint.print_information(f"  * Downloading contract {address}.")
+        CryticPrint.print_information(f"  * Looking for contract {address} in cache.")
 
         if os.path.exists(self._cache_path + self._cache_filename):
             CryticPrint.print_success(
@@ -99,13 +101,21 @@ class NetworkSlitherProvider(SlitherProvider):
         if slither is not None:
             self._slither_object = slither
             return slither
-        try:
-            args = self._generate_api_key_dict()
-            slither = Slither(f"{self._network_prefix}:{address}", **args)
-            self._slither_object = slither
-            self._save_slither_to_cache()
-        except SlitherError as err:
-            raise SlitherError(str(err)) from err
+        CryticPrint.print_information(f"  * Did not find contract {address} in cache. Downloading...")
+        tries = 5
+        while slither is None and tries > 0:
+            try:
+                args = self._generate_api_key_dict()
+                slither = Slither(f"{self._network_prefix}:{address}", **args)
+                self._slither_object = slither
+                self._save_slither_to_cache()
+            except SlitherError as err:
+                if tries > 0:
+                    tries -= 1
+                    CryticPrint.print_warning(f"    * Failed to download contract {address}. {tries} tries remaining...")
+                    sleep(random() * 3)
+                    continue
+                raise SlitherError(str(err)) from err
         return slither
 
     def _generate_api_key_dict(self) -> dict:
