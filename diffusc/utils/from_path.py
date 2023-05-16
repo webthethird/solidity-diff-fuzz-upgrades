@@ -14,7 +14,7 @@ from diffusc.utils.classes import ContractData
 from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.slither_provider import FileSlitherProvider
 from diffusc.utils.helpers import (
-    get_pragma_version_from_file,
+    get_pragma_versions_from_file,
     get_compilation_unit_name,
 )
 from diffusc.core.code_generation import CodeGenerator
@@ -43,7 +43,7 @@ def get_contract_data_from_path(
 
     # contract_data["path"] = filepath
     contract_data["suffix"] = suffix
-    version = get_pragma_version_from_file(filepath)
+    version = get_pragma_versions_from_file(filepath)[0]
     contract_data["solc_version"] = version
     if version in installed_versions() or version in get_installable_versions():
         switch_global_version(version, True)

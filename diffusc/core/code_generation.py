@@ -1,5 +1,5 @@
 """Module for generating test contract code."""
-
+import os
 from os.path import abspath
 from typing import List, Tuple, Optional
 
@@ -34,7 +34,7 @@ from diffusc.utils.classes import FunctionInfo, ContractData, Diff
 from diffusc.utils.crytic_print import CryticPrint
 from diffusc.utils.network_info_provider import NetworkInfoProvider
 from diffusc.utils.helpers import (
-    get_pragma_version_from_file,
+    get_pragma_versions_from_file,
     similar,
     camel_case,
 )
@@ -55,7 +55,7 @@ class CodeGenerator:
         protected: bool,
         net_info: NetworkInfoProvider = None,
     ):
-        assert mode in ["deploy", "fork"]
+        assert mode in ["path", "fork"]
 
         self._v_1: ContractData = v_1
         self._v_2: ContractData = v_2
@@ -116,7 +116,7 @@ class CodeGenerator:
         )
         config_file = "testMode: assertion\n"
         config_file += f"testLimit: {campaign_length}\n"
-        config_file += f"corpusDir: {abspath(corpus_dir)}\n"
+        config_file += f"corpusDir: {abspath(corpus_dir)}\n" if corpus_dir != "" else ""
         config_file += "codeSize: 0xffff\n"
         config_file += f"seqLen: {seq_len}\n"
         if contract_addr != "":
@@ -174,13 +174,13 @@ class CodeGenerator:
                     if isinstance(out.type, UserDefinedType) and isinstance(
                         out.type.type, Structure
                     ):
-                        base_type = f"{out.type.type.name}[] memory"
+                        base_type = f"{out.type.type.canonical_name}[] memory"
                     else:
                         base_type = convert_type_for_solidity_signature_to_string(out)
                         base_type += " memory"
                 elif isinstance(out, UserDefinedType):
                     if isinstance(out.type, Structure):
-                        base_type = f"{out.type.name} memory"
+                        base_type = f"{out.type.canonical_name} memory"
                     elif isinstance(out.type, (Contract, Enum)):
                         base_type = convert_type_for_solidity_signature_to_string(out)
                 outputs.append(base_type)
@@ -199,7 +199,9 @@ class CodeGenerator:
 
         contract_data["functions"] = []
 
-        for i in contract.functions_entry_points:
+        entry_points = contract.functions_entry_points
+        entry_points.sort(key=lambda func: func.canonical_name)
+        for i in entry_points:
 
             # Interface won't need constructor or fallbacks
             if i.is_constructor or i.is_fallback or i.is_receive:
@@ -235,7 +237,7 @@ class CodeGenerator:
 
         CryticPrint.print_message(f"  * Getting contract data from {contract.name}")
 
-        version = get_pragma_version_from_file(contract.file_scope.filename.absolute)
+        version = get_pragma_versions_from_file(contract.file_scope.filename.absolute)[0]
         contract_data = ContractData(
             contract_object=contract,
             suffix=suffix,
@@ -361,6 +363,7 @@ class CodeGenerator:
                 # already covered by wrap_diff_functions
                 continue
             functions_to_wrap: List[FunctionInfo] = target["functions"]
+            functions_to_wrap.sort(key=lambda info: info["name"])
             for func in functions_to_wrap:
                 mods = [m.name for m in func["function"].modifiers]
                 if not self._protected and any(m in protected_mods for m in mods):
@@ -687,7 +690,9 @@ class CodeGenerator:
 
         if external_taint:
             wrapped += "\n    /*** Tainted External Contracts ***/ \n\n"
-            for tainted in diff["tainted_contracts"]:
+            tainted_contracts = diff["tainted_contracts"]
+            tainted_contracts.sort(key=lambda item: item.contract.name)
+            for tainted in tainted_contracts:
                 contract: Contract = tainted.contract
                 contract_data = next(
                     (t for t in external_taint if t["name"] == contract.name), None
@@ -697,7 +702,9 @@ class CodeGenerator:
                     if not fork:
                         contract_data["suffix"] = "V1"
                         contract_data_2["suffix"] = "V2"
-                    for diff_func in tainted.tainted_functions:
+                    tainted_functions = tainted.tainted_functions
+                    tainted_functions.sort(key=lambda tainted_func: tainted_func.canonical_name)
+                    for diff_func in tainted_functions:
                         mods = [m.name for m in diff_func.modifiers]
                         if not protected and any(m in protected_mods for m in mods):
                             continue
@@ -727,6 +734,8 @@ class CodeGenerator:
         fork = self._fork
         upgrade = self._upgrade
 
+        targets.sort(key=lambda target: target["name"])
+
         final_contract = ""
         tainted_contracts: List[TaintedExternalContract] = diff["tainted_contracts"]
         tainted_contracts = [
@@ -734,6 +743,7 @@ class CodeGenerator:
             for t in tainted_contracts
             if t.contract not in [v_1["contract_object"], v_2["contract_object"]]
         ]
+        tainted_contracts.sort(key=lambda taint: taint.contract.name)
         CryticPrint.print_information("* Getting contract data for tainted contracts.")
         tainted_targets = [
             self.get_contract_data(t.contract)
@@ -755,6 +765,7 @@ class CodeGenerator:
             for t in tainted_contracts
         ]
         tainted_targets = [t for t in tainted_targets if t["valid_data"]]
+        tainted_targets.sort(key=lambda target: target["name"])
         other_targets = list(targets)
         if proxy:
             other_targets.append(proxy)
@@ -765,22 +776,30 @@ class CodeGenerator:
 
         if not fork:
             final_contract += (
-                f'import {{ {v_1["name"]} as {v_1["name"]}_V1 }} from "{v_1["path"]}";\n'
+                f'import {{ {v_1["name"]} as {v_1["name"]}_V1 }} '
+                f'from "{v_1["path"].replace(os.sep, "/")}";\n'
             )
             final_contract += (
-                f'import {{ {v_2["name"]} as {v_2["name"]}_V2 }} from "{v_2["path"]}";\n'
+                f'import {{ {v_2["name"]} as {v_2["name"]}_V2 }} '
+                f'from "{v_2["path"].replace(os.sep, "/")}";\n'
             )
             if proxy:
-                final_contract += f'import {{ {proxy["name"]} }} from "{proxy["path"]}";\n'
+                final_contract += (
+                    f'import {{ {proxy["name"]} }} '
+                    f'from "{proxy["path"].replace(os.sep, "/")}";\n'
+                )
             for target in targets:
-                final_contract += f'import {{ {target["name"]} }} from "{target["path"]}";\n'
+                final_contract += (
+                    f'import {{ {target["name"]} }} '
+                    f'from "{target["path"].replace(os.sep, "/")}";\n'
+                )
             if tainted_targets is not None:
                 for tainted in tainted_targets:
                     contract: Contract = tainted["contract_object"]
                     if contract.name not in (t["name"] for t in other_targets):
                         final_contract += (
                             f"import {{ {contract.name} }} from "
-                            f'"{contract.file_scope.filename.absolute}";\n'
+                            f'"{tainted["path"].replace(os.sep, "/")}";\n'
                         )
             final_contract += "\n"
 
@@ -792,8 +811,10 @@ class CodeGenerator:
         for target in targets:
             final_contract += str(target["interface"])
         for target in tainted_targets:
-            if target["name"] not in (
-                t["contract_object"].name for t in other_targets if t["contract_object"]
+            if (
+                target["name"]
+                not in (t["contract_object"].name for t in other_targets if t["contract_object"])
+                and str(target["interface"]) not in final_contract
             ):
                 final_contract += str(target["interface"])
         if proxy is not None:
