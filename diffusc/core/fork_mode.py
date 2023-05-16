@@ -53,7 +53,7 @@ class ForkMode(AnalysisMode):
         return self._network_rpc
 
     @property
-    def block_number(self) -> int:
+    def block_number(self) -> Union[int, str]:
         return self._block_number
 
     @property

@@ -62,6 +62,7 @@ def test_contract_data_from_slither() -> None:
         expected_file = os.path.join(TEST_DATA_DIR, f"I{test}")
         if UPDATE:
             with open(expected_file, "w", encoding="utf-8") as file:
+                assert contract_data["interface"] is not None
                 file.write(contract_data["interface"])
         with open(expected_file, "r", encoding="utf-8") as file:
             expected_interface = file.read()
@@ -206,8 +207,8 @@ def test_generate_contract_path_mode() -> None:
 
 # pylint: disable=too-many-statements
 def test_generate_contract_fork_mode() -> None:
-    api_key = os.getenv("BSC_API_KEY")
-    rpc_url = os.getenv("BSC_RPC_URL")
+    api_key = os.getenv("BSC_API_KEY") or ""
+    rpc_url = os.getenv("BSC_RPC_URL") or ""
     provider = NetworkSlitherProvider("bsc:", api_key)
     net_info = NetworkInfoProvider(rpc_url, 26857408, is_poa=True)
 
@@ -348,7 +349,7 @@ def test_generate_config() -> None:
     with open(
         os.path.join(TEST_DATA_DIR, "expected", "ExpectedConfig.yaml"), "r", encoding="utf-8"
     ) as file:
-        expected = file.read()
+        expected = file.read()  # type: ignore[assignment]
     assert config == expected
 
 

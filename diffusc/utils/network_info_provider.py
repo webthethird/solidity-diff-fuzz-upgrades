@@ -5,6 +5,7 @@ from time import sleep
 from typing import Any, Tuple, List
 from requests.exceptions import HTTPError
 from web3 import Web3, logs
+from web3.types import BlockIdentifier
 from web3.middleware import geth_poa_middleware
 from web3.exceptions import ExtraDataLengthError
 from slither.core.variables.state_variable import StateVariable
@@ -40,12 +41,12 @@ class NetworkInfoProvider:
             if block in [0, ""]:
                 self._block = int(self._w3.eth.get_block("latest")["number"])
             elif block in ["latest", "earliest", "pending", "safe", "finalized"]:
-                self._block = int(self._w3.eth.get_block(block)["number"])
+                self._block = int(self._w3.eth.get_block(block)["number"])  # type: ignore[arg-type]
             else:
                 self._block = int(block)
         except ExtraDataLengthError as err:
             raise ValueError(
-                f"Got ExtraDataLengthError when getting block {block}."
+                f"Got ExtraDataLengthError when getting block {str(block)}."
                 " Probably missing network value, if RPC url is for a POA chain."
             ) from err
 

@@ -103,7 +103,7 @@ class CodeGenerator:
         campaign_length: int,
         contract_addr: str,
         seq_len: int,
-        block: int = 0,
+        block: str | int = 0,
         rpc_url: str = "",
         senders: List[str] = None,
     ) -> str:
@@ -121,7 +121,7 @@ class CodeGenerator:
         config_file += f"seqLen: {seq_len}\n"
         if contract_addr != "":
             config_file += f"contractAddr: '{contract_addr}'\n"
-        if block > 0:
+        if str(block) != "0":
             config_file += f"rpcBlock: {block}\n"
         if rpc_url != "":
             config_file += f"rpcUrl: {rpc_url}\n"

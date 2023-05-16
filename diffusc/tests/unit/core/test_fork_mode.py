@@ -10,8 +10,8 @@ def test_diffusc_fork_mode() -> None:
     output_dir = os.path.join(TEST_DATA_DIR, "output")
     expected_dir = os.path.join(TEST_DATA_DIR, "expected")
     os.makedirs(output_dir, exist_ok=True)
-    api_key = os.getenv("BSC_API_KEY")
-    rpc_url = os.getenv("BSC_RPC_URL")
+    api_key = os.getenv("BSC_API_KEY") or ""
+    rpc_url = os.getenv("BSC_RPC_URL") or ""
     args = [
         "0x0296201bfdfb410c29ef30bcae1b395537aeeb31",
         "0xEb11a0a0beF1AC028B8C2d4CD64138DD5938cA7A",
