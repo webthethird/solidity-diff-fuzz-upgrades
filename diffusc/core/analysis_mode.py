@@ -22,6 +22,7 @@ class AnalysisMode:
     _proxy: Optional[ContractData]
     _targets: Optional[List[ContractData]]
     _diff: Optional[Diff]
+    out_dir: str
     version: str
     upgrade: bool
     protected: bool
@@ -37,6 +38,11 @@ class AnalysisMode:
 
     def parse_args(self, args: argparse.Namespace) -> None:
         """Parse arguments that are used in both analysis modes."""
+
+        if args.output_dir:
+            self.out_dir = args.output_dir
+        else:
+            self.out_dir = "./"
 
         if args.version:
             self.version = args.version
@@ -93,5 +99,5 @@ class AnalysisMode:
         if self._targets is not None:
             code_generator.targets = self._targets
 
-        contract = code_generator.generate_test_contract(self._diff)
+        contract = code_generator.generate_test_contract(self._diff, output_dir=self.out_dir)
         return contract

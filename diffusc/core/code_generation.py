@@ -232,7 +232,7 @@ class CodeGenerator:
         return contract_data
 
     @staticmethod
-    def get_contract_data(contract: Contract, suffix: str = "") -> ContractData:
+    def get_contract_data(contract: Contract, suffix: str = "", out_dir: str = "./") -> ContractData:
         """Get ContractData object from Contract object."""
 
         CryticPrint.print_message(f"  * Getting contract data from {contract.name}")
@@ -241,7 +241,7 @@ class CodeGenerator:
         contract_data = ContractData(
             contract_object=contract,
             suffix=suffix,
-            path=contract.file_scope.filename.absolute,
+            path=os.path.relpath(contract.file_scope.filename.absolute, out_dir),
             solc_version=version,
             address="",
             valid_data=False,
@@ -723,7 +723,7 @@ class CodeGenerator:
         return wrapped
 
     # pylint: disable=too-many-branches,too-many-statements,too-many-locals
-    def generate_test_contract(self, diff: Diff) -> str:
+    def generate_test_contract(self, diff: Diff, output_dir: str = "./") -> str:
         """Main function for generating a diff fuzzing test contract."""
 
         v_1 = self.v_1
@@ -746,7 +746,7 @@ class CodeGenerator:
         tainted_contracts.sort(key=lambda taint: taint.contract.name)
         CryticPrint.print_information("* Getting contract data for tainted contracts.")
         tainted_targets = [
-            self.get_contract_data(t.contract)
+            self.get_contract_data(t.contract, out_dir=output_dir)
             if t.contract.name
             not in [
                 target["contract_object"].name if target["contract_object"] is not None else ""
