@@ -111,6 +111,10 @@ def test_generate_contract_path_mode() -> None:
     # Test code generation w/o proxy, additional targets, upgrade function or protected functions
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, False)
     code = generator.generate_test_contract(diff)
+    # with open(
+    #     os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_0.sol"), "w", encoding="utf-8"
+    # ) as expected:
+    #     expected.write(code)
     with open(
         os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_0.sol"), "r", encoding="utf-8"
     ) as expected:
@@ -122,6 +126,10 @@ def test_generate_contract_path_mode() -> None:
     assert proxy_data["valid_data"]
     generator.proxy = proxy_data
     code = generator.generate_test_contract(diff)
+    # with open(
+    #     os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_1.sol"), "w", encoding="utf-8"
+    # ) as expected:
+    #     expected.write(code)
     with open(
         os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_1.sol"), "r", encoding="utf-8"
     ) as expected:
@@ -134,6 +142,10 @@ def test_generate_contract_path_mode() -> None:
     generator.targets = [market_data, oracle_data]
     diff = do_diff(v1_data, v2_data, [market_data, oracle_data])
     code = generator.generate_test_contract(diff)
+    # with open(
+    #     os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_2.sol"), "w", encoding="utf-8"
+    # ) as expected:
+    #     expected.write(code)
     with open(
         os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_2.sol"), "r", encoding="utf-8"
     ) as expected:
@@ -144,7 +156,11 @@ def test_generate_contract_path_mode() -> None:
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, True)
     generator.targets = [market_data, oracle_data]
     diff = do_diff(v1_data, v2_data, [market_data, oracle_data], include_external=True)
-    code = generator.generate_test_contract(diff)
+    code = generator.generate_test_contract(diff, output_dir)
+    # with open(
+    #     os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_3.sol"), "w", encoding="utf-8"
+    # ) as expected:
+    #     expected.write(code)
     with open(
         os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_3.sol"), "r", encoding="utf-8"
     ) as expected:
@@ -155,7 +171,11 @@ def test_generate_contract_path_mode() -> None:
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", True, True)
     generator.targets = [market_data, oracle_data]
     generator.proxy = proxy_data
-    code = generator.generate_test_contract(diff)
+    code = generator.generate_test_contract(diff, output_dir)
+    # with open(
+    #     os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_4.sol"), "w", encoding="utf-8"
+    # ) as expected:
+    #     expected.write(code)
     with open(
         os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_4.sol"), "r", encoding="utf-8"
     ) as expected:
