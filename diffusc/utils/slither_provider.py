@@ -101,7 +101,9 @@ class NetworkSlitherProvider(SlitherProvider):
         if slither is not None:
             self._slither_object = slither
             return slither
-        CryticPrint.print_information(f"  * Did not find contract {address} in cache. Downloading...")
+        CryticPrint.print_information(
+            f"  * Did not find contract {address} in cache. Downloading..."
+        )
         tries = 5
         while slither is None and tries > 0:
             try:
@@ -112,7 +114,9 @@ class NetworkSlitherProvider(SlitherProvider):
             except SlitherError as err:
                 if tries > 0:
                     tries -= 1
-                    CryticPrint.print_warning(f"    * Failed to download contract {address}. {tries} tries remaining...")
+                    CryticPrint.print_warning(
+                        f"    * Failed to download contract {address}. {tries} tries remaining..."
+                    )
                     sleep(random() * 3)
                     continue
                 raise SlitherError(str(err)) from err
