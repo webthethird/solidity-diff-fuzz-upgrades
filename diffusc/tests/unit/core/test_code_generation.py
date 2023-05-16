@@ -82,7 +82,7 @@ def test_args_and_returns() -> None:
             "args": CodeGenerator.get_solidity_function_parameters(func.parameters),
             "rets": CodeGenerator.get_solidity_function_returns(func.return_type),
         }
-    expected_path = os.path.join(TEST_DATA_DIR, "output", "test_args_and_returns.json")
+    expected_path = os.path.join(TEST_DATA_DIR, "expected", "test_args_and_returns.json")
     if UPDATE:
         with open(expected_path, "w", encoding="utf-8") as expected_file:
             expected_file.write(json.dumps(results, indent=4))
@@ -93,7 +93,7 @@ def test_args_and_returns() -> None:
 
 def test_generate_contract_path_mode() -> None:
     provider = FileSlitherProvider()
-    output_dir = os.path.join(TEST_DATA_DIR, "output")
+    output_dir = os.path.join(TEST_DATA_DIR, "expected")
     v1_data = get_contract_data_from_path(
         os.path.join(TEST_DATA_DIR, "ContractV1.sol"), output_dir, provider
     )
@@ -118,11 +118,11 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_0.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_0.sol"), "w", encoding="utf-8"
         ) as expected:
             expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_0.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_0.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -134,11 +134,11 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_1.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_1.sol"), "w", encoding="utf-8"
         ) as expected:
             expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_1.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_1.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -151,11 +151,11 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_2.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_2.sol"), "w", encoding="utf-8"
         ) as expected:
             expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_2.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_2.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -167,11 +167,11 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff, output_dir)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_3.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_3.sol"), "w", encoding="utf-8"
         ) as expected:
             expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_3.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_3.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -183,11 +183,11 @@ def test_generate_contract_path_mode() -> None:
     code = generator.generate_test_contract(diff, output_dir)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_4.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_4.sol"), "w", encoding="utf-8"
         ) as expected:
             expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_4.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_4.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -233,11 +233,11 @@ def test_generate_contract_fork_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_0.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_0.sol"), "w", encoding="utf-8"
         ) as expected:
             expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_0.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_0.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -249,11 +249,11 @@ def test_generate_contract_fork_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_1.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_1.sol"), "w", encoding="utf-8"
         ) as expected:
             expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_1.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_1.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -266,11 +266,11 @@ def test_generate_contract_fork_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_2.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_2.sol"), "w", encoding="utf-8"
         ) as expected:
             expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_2.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_2.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -282,11 +282,11 @@ def test_generate_contract_fork_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_3.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_3.sol"), "w", encoding="utf-8"
         ) as expected:
             expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_3.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_3.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -298,11 +298,11 @@ def test_generate_contract_fork_mode() -> None:
     code = generator.generate_test_contract(diff)
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_4.sol"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_4.sol"), "w", encoding="utf-8"
         ) as expected:
             expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_4.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_4.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -320,11 +320,11 @@ def test_generate_config() -> None:
     )
     if UPDATE:
         with open(
-            os.path.join(TEST_DATA_DIR, "output", "ExpectedConfig.yaml"), "w", encoding="utf-8"
+            os.path.join(TEST_DATA_DIR, "expected", "ExpectedConfig.yaml"), "w", encoding="utf-8"
         ) as expected:
             expected.write(config)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "ExpectedConfig.yaml"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "ExpectedConfig.yaml"), "r", encoding="utf-8"
     ) as file:
         expected = file.read()
     assert config == expected
