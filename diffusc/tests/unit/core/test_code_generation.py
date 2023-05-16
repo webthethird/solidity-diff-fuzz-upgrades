@@ -91,6 +91,7 @@ def test_args_and_returns() -> None:
     assert results == expected_results
 
 
+# pylint: disable=too-many-statements
 def test_generate_contract_path_mode() -> None:
     provider = FileSlitherProvider()
     output_dir = os.path.join(TEST_DATA_DIR, "expected")
@@ -203,6 +204,7 @@ def test_generate_contract_path_mode() -> None:
     assert code == expected_code
 
 
+# pylint: disable=too-many-statements
 def test_generate_contract_fork_mode() -> None:
     api_key = os.getenv("BSC_API_KEY")
     rpc_url = os.getenv("BSC_RPC_URL")

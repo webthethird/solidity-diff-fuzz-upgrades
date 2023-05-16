@@ -43,11 +43,11 @@ class NetworkInfoProvider:
                 self._block = int(self._w3.eth.get_block(block)["number"])
             else:
                 self._block = int(block)
-        except ExtraDataLengthError:
+        except ExtraDataLengthError as err:
             raise ValueError(
                 f"Got ExtraDataLengthError when getting block {block}."
                 " Probably missing network value, if RPC url is for a POA chain."
-            )
+            ) from err
 
         # Workaround for PoA networks
         if is_poa:

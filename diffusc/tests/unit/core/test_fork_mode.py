@@ -1,7 +1,5 @@
 import os
-import json
 from pathlib import Path
-from solc_select.solc_select import switch_global_version
 from diffusc.diffusc import main
 
 

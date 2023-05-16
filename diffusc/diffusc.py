@@ -6,7 +6,7 @@ import argparse
 import logging
 import os
 import sys
-from typing import Sequence, Optional, Union
+from typing import Sequence, Optional
 
 from eth_utils import is_address
 from diffusc.core.path_mode import PathMode
@@ -209,7 +209,6 @@ def main(_args: Optional[Sequence[str]] = None) -> int:
     )
 
     if isinstance(analysis, ForkMode):
-        holders = analysis.token_holders
         config_file = CodeGenerator.generate_config_file(
             f"{output_dir}corpus",
             test_len,
@@ -217,7 +216,7 @@ def main(_args: Optional[Sequence[str]] = None) -> int:
             seq_len,
             block=analysis.block_number,
             rpc_url=analysis.network_rpc,
-            senders=holders,
+            senders=analysis.token_holders,
         )
     else:
         config_file = CodeGenerator.generate_config_file(
