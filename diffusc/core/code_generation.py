@@ -232,7 +232,9 @@ class CodeGenerator:
         return contract_data
 
     @staticmethod
-    def get_contract_data(contract: Contract, suffix: str = "", out_dir: str = "./") -> ContractData:
+    def get_contract_data(
+        contract: Contract, suffix: str = "", out_dir: str = "./"
+    ) -> ContractData:
         """Get ContractData object from Contract object."""
 
         CryticPrint.print_message(f"  * Getting contract data from {contract.name}")
