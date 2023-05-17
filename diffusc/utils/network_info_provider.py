@@ -6,7 +6,7 @@ from typing import Any, Tuple, List
 from requests.exceptions import HTTPError
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
-from web3.exceptions import ExtraDataLengthError
+from web3.exceptions import ExtraDataLengthError, BadFunctionCallOutput
 from slither.core.variables.state_variable import StateVariable
 from slither.core.declarations.contract import Contract
 from slither.tools.read_storage import SlitherReadStorage  # , RpcInfo
@@ -205,7 +205,7 @@ class NetworkInfoProvider:
     def get_token_holders(
         self, min_token_amount: int, max_holders: int, address: str, abi: str
     ) -> List[str]:
-        """Get the address of a holder of the token at the given address."""
+        """Get a list of holder addresses for the token at the given address."""
 
         block_from = int(self._block) - 2000
         block_to = int(self._block)
@@ -237,11 +237,14 @@ class NetworkInfoProvider:
                     )
                     event_data = list(result[0]["args"].values())
                     recipient = event_data[1]
-                    if recipient in holders:
+                    if recipient in holders or recipient == address:
                         continue
-                    balance = contract.functions.balanceOf(recipient).call(
-                        block_identifier=int(self._block)
-                    )
+                    try:
+                        balance = contract.functions.balanceOf(recipient).call(
+                            block_identifier=int(self._block)
+                        )
+                    except BadFunctionCallOutput:
+                        continue
                     if balance < min_token_amount:
                         continue
                     if self._w3.eth.get_code(recipient, self._block):
