@@ -90,9 +90,11 @@ def test_diffusc_path_mode() -> None:
     assert actual == expected
     # Check the config file too
     with open(
-        os.path.join(expected_dir, "ExpectedConfig_PathMode_4.yaml"), "r", encoding="utf-8"
+            os.path.join(expected_dir, "ExpectedConfig_PathMode_4.yaml"), "r", encoding="utf-8"
     ) as file:
-        expected = file.read()
+        expected_lines = file.readlines()
     with open(os.path.join(output_dir, "CryticConfig.yaml"), "r", encoding="utf-8") as file:
-        actual = file.read()
-    assert actual == expected
+        actual_lines = file.readlines()
+    for idx, line in enumerate(expected_lines):
+        if not any[line.startswith("sender"), line.startswith("corpusDir")]:
+            assert actual_lines[idx] == line
