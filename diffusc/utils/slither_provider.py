@@ -1,15 +1,11 @@
 """Module containing classes for getting (and caching) Slither objects."""
 
-import base64
-import io
 import os
 from time import sleep
 from random import random
 
-from zipfile import ZipFile
 from slither import Slither
 from slither.exceptions import SlitherError
-from crytic_compile import CryticCompile
 from crytic_compile.utils.zip import load_from_zip, save_to_zip
 from eth_utils import to_checksum_address, is_address
 

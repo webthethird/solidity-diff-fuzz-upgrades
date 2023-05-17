@@ -201,7 +201,6 @@ class NetworkInfoProvider:
             CryticPrint.print_error("      * Proxy storage slot read is not an address")
             raise ValueError("Proxy storage slot read is not an address") from err
 
-
     # pylint: disable=too-many-locals
     def get_token_holders(
         self, min_token_amount: int, max_holders: int, address: str, abi: str
