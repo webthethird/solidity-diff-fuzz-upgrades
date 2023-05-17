@@ -89,7 +89,9 @@ def test_diffusc_path_mode() -> None:
         actual = file.read()
     assert actual == expected
     # Check the config file too
-    with open(os.path.join(expected_dir, "ExpectedConfig_PathMode_4.yaml"), "r", encoding="utf-8") as file:
+    with open(
+        os.path.join(expected_dir, "ExpectedConfig_PathMode_4.yaml"), "r", encoding="utf-8"
+    ) as file:
         expected = file.read()
     with open(os.path.join(output_dir, "CryticConfig.yaml"), "r", encoding="utf-8") as file:
         actual = file.read()
