@@ -96,5 +96,5 @@ def test_diffusc_path_mode() -> None:
     with open(os.path.join(output_dir, "CryticConfig.yaml"), "r", encoding="utf-8") as file:
         actual_lines = file.readlines()
     for idx, line in enumerate(expected_lines):
-        if not any[line.startswith("sender"), line.startswith("corpusDir")]:
+        if not (line.startswith("sender") or line.startswith("corpusDir")):
             assert actual_lines[idx] == line
