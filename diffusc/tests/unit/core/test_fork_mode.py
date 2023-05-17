@@ -6,6 +6,7 @@ from diffusc.diffusc import main
 TEST_DATA_DIR = Path(__file__).resolve().parent / "test_data"
 
 
+# pylint: disable=too-many-statements
 def test_diffusc_fork_mode() -> None:
     output_dir = os.path.join(TEST_DATA_DIR, "output")
     expected_dir = os.path.join(TEST_DATA_DIR, "expected")
@@ -98,6 +99,13 @@ def test_diffusc_fork_mode() -> None:
             "-p",
             "0x42981d0bfbAf196529376EE702F2a9Eb9092fcB5",
             "-T",
+            "-L",
+            "999999999",
+            "-l",
+            "99",
+            "-A",
+            "0x309d413391e975B553B7B8D19bC11F8a6c2eB889",
+            # "-r",
         ]
     )
     assert main(args) == 0
@@ -106,3 +114,13 @@ def test_diffusc_fork_mode() -> None:
     with open(os.path.join(output_dir, "DiffFuzzUpgrades.sol"), "r", encoding="utf-8") as file:
         actual = file.read()
     assert actual == expected
+    # Check final config file too. excluding token holders / senders, which may be non-deterministic
+    with open(
+        os.path.join(expected_dir, "ExpectedConfig_ForkMode_4.yaml"), "r", encoding="utf-8"
+    ) as file:
+        expected_lines = file.readlines()
+    with open(os.path.join(output_dir, "CryticConfig.yaml"), "r", encoding="utf-8") as file:
+        actual_lines = file.readlines()
+    for idx, line in enumerate(expected_lines):
+        if not line.startswith("sender"):
+            assert actual_lines[idx] == line

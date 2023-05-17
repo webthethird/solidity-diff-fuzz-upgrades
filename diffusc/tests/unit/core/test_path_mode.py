@@ -76,11 +76,21 @@ def test_diffusc_path_mode() -> None:
         [
             "-p",
             os.path.join(TEST_DATA_DIR, "TransparentUpgradeableProxy.sol"),
+            "-L",
+            "999999999",
+            "-l",
+            "99",
         ]
     )
     assert main(args) == 0
     with open(os.path.join(expected_dir, "Expected_PathMode_4.sol"), "r", encoding="utf-8") as file:
         expected = file.read()
     with open(os.path.join(output_dir, "DiffFuzzUpgrades.sol"), "r", encoding="utf-8") as file:
+        actual = file.read()
+    assert actual == expected
+    # Check the config file too
+    with open(os.path.join(expected_dir, "ExpectedConfig_PathMode_4.yaml"), "r", encoding="utf-8") as file:
+        expected = file.read()
+    with open(os.path.join(output_dir, "CryticConfig.yaml"), "r", encoding="utf-8") as file:
         actual = file.read()
     assert actual == expected
