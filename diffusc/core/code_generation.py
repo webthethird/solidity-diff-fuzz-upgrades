@@ -1,6 +1,6 @@
 """Module for generating test contract code."""
 import os
-from os.path import abspath
+from os.path import relpath, curdir
 from typing import List, Tuple, Optional
 
 # pylint: disable= no-name-in-module,too-many-lines
@@ -116,7 +116,7 @@ class CodeGenerator:
         )
         config_file = "testMode: assertion\n"
         config_file += f"testLimit: {campaign_length}\n"
-        config_file += f"corpusDir: {abspath(corpus_dir)}\n" if corpus_dir != "" else ""
+        config_file += f"corpusDir: {relpath(corpus_dir, curdir)}\n" if corpus_dir != "" else ""
         config_file += "codeSize: 0xffff\n"
         config_file += f"seqLen: {seq_len}\n"
         if contract_addr != "":
