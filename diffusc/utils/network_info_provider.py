@@ -36,6 +36,13 @@ class NetworkInfoProvider:
             CryticPrint.print_error("* Could not connect to the provided RPC endpoint.")
             raise ValueError(f"Could not connect to the provided RPC endpoint: {rpc_provider}.")
 
+        # Workaround for PoA networks
+        if is_poa:
+            self._is_poa = True
+            self._w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        else:
+            self._is_poa = False
+
         try:
             if block in [0, ""]:
                 self._block = int(self._w3.eth.get_block("latest")["number"])
@@ -48,13 +55,6 @@ class NetworkInfoProvider:
                 f"Got ExtraDataLengthError when getting block {str(block)}."
                 " Probably missing network value, if RPC url is for a POA chain."
             ) from err
-
-        # Workaround for PoA networks
-        if is_poa:
-            self._is_poa = True
-            self._w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-        else:
-            self._is_poa = False
 
     def get_block_timestamp(self) -> int:
         """Timestamp getter."""
