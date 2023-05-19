@@ -66,11 +66,11 @@ def test_block_number() -> None:
     assert net_info.get_block_number() != 0
 
 
-def retry_slither(address: str, prefix: str, retries: int, **kwargs: Any) -> Optional[Slither]:
+def _retry_slither_etherscan(address: str, prefix: str, api_key: str, retries: int) -> Optional[Slither]:
     sl: Optional[Slither] = None
     while sl is None and retries > 0:
         try:
-            sl = Slither(f"{prefix}:{address}", kwargs=kwargs)
+            sl = Slither(f"{prefix}:{address}", etherscan_api_key=api_key)
         except SlitherError:
             retries -= 1
     return sl
@@ -83,7 +83,7 @@ def test_contract_variable_value() -> None:
     api_key = os.getenv("GOERLI_API_KEY")
     contract_addr = "0xDc0Da9E56d7AEaA47b0f4913bAbb467b6E0C81cB"
     switch_global_version("0.8.18", always_install=True)
-    sl = retry_slither(contract_addr, "goerli", 5, etherscan_api_key=api_key)
+    sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
     assert sl is not None
     contract = sl.get_contract_from_name("BadProxy")[0]
     state_var = contract.get_state_variable_from_name("stateVar1")
@@ -101,7 +101,7 @@ def test_empty_proxy_implementation() -> None:
     api_key = os.getenv("GOERLI_API_KEY")
     contract_addr = "0xDc0Da9E56d7AEaA47b0f4913bAbb467b6E0C81cB"
     switch_global_version("0.8.18", always_install=True)
-    sl = retry_slither(contract_addr, "goerli", 5, etherscan_api_key=api_key)
+    sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
     assert sl is not None
     contract_obj = sl.get_contract_from_name("BadProxy")[0]
     contract_data = CodeGenerator.get_contract_data(contract_obj)
@@ -121,7 +121,7 @@ def test_proxy_missing_slot_info() -> None:
     api_key = os.getenv("GOERLI_API_KEY")
     contract_addr = "0x5a763c928430bc5742A144358B68CD8E14243030"
     switch_global_version("0.8.18", always_install=True)
-    sl = retry_slither(contract_addr, "goerli", 5, etherscan_api_key=api_key)
+    sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
     assert sl is not None
     contract_obj = sl.get_contract_from_name("BadProxy")[0]
     contract_data = CodeGenerator.get_contract_data(contract_obj)
@@ -139,7 +139,7 @@ def test_missing_token_holders() -> None:
     api_key = os.getenv("GOERLI_API_KEY")
     contract_addr = "0xDc0Da9E56d7AEaA47b0f4913bAbb467b6E0C81cB"
     switch_global_version("0.8.18", always_install=True)
-    sl = retry_slither(contract_addr, "goerli", 5, etherscan_api_key=api_key)
+    sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
     assert sl is not None
     contract = sl.get_contract_from_name("BadProxy")[0]
     abi = contract.file_scope.abi(
