@@ -24,9 +24,11 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "windows-2022"]
-        type: ["unit"]    #, "integration", "tool"]
-        apikey: [BSC_API_KEY]
-        rpcurl: [BSC_RPC_URL]
+        type: ["unit"]
+        bsc_api: [BSC_API_KEY]
+        bsc_rpc: [BSC_RPC_URL]
+        goerli_api: [GOERLI_API_KEY]
+        goerli_rpc: [GOERLI_RPC_URL]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python 3.10
@@ -45,8 +47,10 @@ jobs:
       - name: Run ${{ matrix.type }} tests
         env:
           TEST_TYPE: ${{ matrix.type }}
-          BSC_API_KEY: ${{ secrets[matrix.apikey] }}
-          BSC_RPC_URL: ${{ secrets[matrix.rpcurl] }}
+          BSC_API_KEY: ${{ secrets[matrix.bsc_api] }}
+          BSC_RPC_URL: ${{ secrets[matrix.bsc_rpc] }}
+          GOERLI_API_KEY: ${{ secrets[matrix.goerli_api] }}
+          GOERLI_RPC_URL: ${{ secrets[matrix.goerli_rpc] }}
         # Only run coverage on ubuntu-latest.
         run: |
           if [ ${{ matrix.os }} = "ubuntu-latest" ]; then
