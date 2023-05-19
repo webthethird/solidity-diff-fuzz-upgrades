@@ -2,7 +2,7 @@ import os
 from time import sleep
 from random import random
 from pathlib import Path
-from typing import Optional, Any
+from typing import Optional
 
 # import pytest
 from solc_select.solc_select import switch_global_version
@@ -68,7 +68,9 @@ def test_block_number() -> None:
     assert net_info.get_block_number() != 0
 
 
-def _retry_slither_etherscan(address: str, prefix: str, api_key: str, retries: int) -> Optional[Slither]:
+def _retry_slither_etherscan(
+    address: str, prefix: str, api_key: str, retries: int
+) -> Optional[Slither]:
     sl: Optional[Slither] = None
     while sl is None and retries > 0:
         try:
