@@ -21,3 +21,5 @@ duplicate-code,
 import-error,
 unsubscriptable-object
 """
+[tool.pytest.ini_options]
+xfail_strict = true
