@@ -330,7 +330,7 @@ def test_generate_contract_fork_mode(update: bool = False) -> None:
     assert code == expected_code
 
 
-def test_generate_config() -> None:
+def test_generate_config(update: bool = False) -> None:
     config = CodeGenerator.generate_config_file(
         corpus_dir="",
         campaign_length=123456,
