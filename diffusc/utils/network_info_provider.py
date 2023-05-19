@@ -6,7 +6,7 @@ from typing import Any, Tuple, List
 from requests.exceptions import HTTPError
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
-from web3.exceptions import ExtraDataLengthError, BadFunctionCallOutput
+from web3.exceptions import ExtraDataLengthError, BadFunctionCallOutput, ABIEventFunctionNotFound
 from slither.core.variables.state_variable import StateVariable
 from slither.core.declarations.contract import Contract
 from slither.tools.read_storage import SlitherReadStorage  # , RpcInfo
@@ -55,6 +55,11 @@ class NetworkInfoProvider:
                 f"Got ExtraDataLengthError when getting block {str(block)}."
                 " Probably missing network value, if RPC url is for a POA chain."
             ) from err
+        except ValueError as err:
+            raise ValueError(
+                f'"{block}" is not a valid block identifier. Use '
+                '"latest", "earliest", "pending", "safe" or "finalized" if not specifying an integer block number'
+            ) from err
 
     def get_block_timestamp(self) -> int:
         """Timestamp getter."""
@@ -83,7 +88,7 @@ class NetworkInfoProvider:
             slot = srs.get_storage_slot(variable, contract)
             srs.get_slot_values(slot)
             return slot.value
-        except (ValueError, TypeError, AssertionError):
+        except (ValueError, TypeError, AssertionError, AttributeError):
             return ""
 
     def get_proxy_implementation(
@@ -263,6 +268,13 @@ class NetworkInfoProvider:
                 sleep(10)
                 max_retries -= 1
                 continue
+            except ABIEventFunctionNotFound as err:
+                CryticPrint.print_error(
+                    f"Contract at {address} doesn't appear to be a token. It does not have a Transfer event."
+                )
+                raise ValueError(
+                    f"Contract at {address} doesn't appear to be a token. It does not have a Transfer event."
+                ) from err
 
         if len(holders) > 0:
             CryticPrint.print_warning(
