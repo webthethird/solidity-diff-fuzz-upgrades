@@ -86,6 +86,7 @@ def test_contract_variable_value() -> None:
     assert rpc_url is not None
     net_info = NetworkInfoProvider(rpc_url, "latest")
     api_key = os.getenv("GOERLI_API_KEY")
+    assert api_key is not None
     contract_addr = "0xDc0Da9E56d7AEaA47b0f4913bAbb467b6E0C81cB"
     switch_global_version("0.8.18", always_install=True)
     sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
@@ -104,6 +105,7 @@ def test_empty_proxy_implementation() -> None:
     assert rpc_url is not None
     net_info = NetworkInfoProvider(rpc_url, "latest")
     api_key = os.getenv("GOERLI_API_KEY")
+    assert api_key is not None
     contract_addr = "0xDc0Da9E56d7AEaA47b0f4913bAbb467b6E0C81cB"
     switch_global_version("0.8.18", always_install=True)
     sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
@@ -124,6 +126,7 @@ def test_proxy_missing_slot_info() -> None:
     assert rpc_url is not None
     net_info = NetworkInfoProvider(rpc_url, "latest")
     api_key = os.getenv("GOERLI_API_KEY")
+    assert api_key is not None
     contract_addr = "0x5a763c928430bc5742A144358B68CD8E14243030"
     switch_global_version("0.8.18", always_install=True)
     sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
@@ -142,6 +145,7 @@ def test_missing_token_holders() -> None:
     assert rpc_url is not None
     net_info = NetworkInfoProvider(rpc_url, "latest")
     api_key = os.getenv("GOERLI_API_KEY")
+    assert api_key is not None
     contract_addr = "0xDc0Da9E56d7AEaA47b0f4913bAbb467b6E0C81cB"
     switch_global_version("0.8.18", always_install=True)
     sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
