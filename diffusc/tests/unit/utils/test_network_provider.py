@@ -1,4 +1,6 @@
 import os
+from time import sleep
+from random import random
 from pathlib import Path
 from typing import Optional, Any
 
@@ -73,6 +75,7 @@ def _retry_slither_etherscan(address: str, prefix: str, api_key: str, retries: i
             sl = Slither(f"{prefix}:{address}", etherscan_api_key=api_key)
         except SlitherError:
             retries -= 1
+            sleep(random() * 3)
     return sl
 
 
