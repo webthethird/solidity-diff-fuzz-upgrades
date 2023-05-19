@@ -59,9 +59,9 @@ def test_block_number() -> None:
     rpc_url = os.getenv("BSC_RPC_URL")
     assert rpc_url is not None
     net_info = NetworkInfoProvider(rpc_url, 26857408, is_poa=True)
-    assert net_info.get_block_timestamp() == 26857408
+    assert net_info.get_block_number() == 26857408
     net_info = NetworkInfoProvider(rpc_url, 0, is_poa=True)
-    assert net_info.get_block_timestamp() != 0
+    assert net_info.get_block_number() != 0
 
 
 def test_contract_variable_value() -> None:
