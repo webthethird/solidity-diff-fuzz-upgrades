@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 
 # import pytest
 from solc_select.solc_select import switch_global_version
@@ -66,15 +66,14 @@ def test_block_number() -> None:
     assert net_info.get_block_number() != 0
 
 
-def retry_slither(address: str, prefix: str, retries: int, **kwargs) -> Optional[Slither]:
+def retry_slither(address: str, prefix: str, retries: int, **kwargs: Any) -> Optional[Slither]:
     sl: Optional[Slither] = None
     while sl is None and retries > 0:
         try:
             sl = Slither(f"{prefix}:{address}", kwargs=kwargs)
-        except SlitherError as err:
+        except SlitherError:
             retries -= 1
     return sl
-
 
 
 def test_contract_variable_value() -> None:
