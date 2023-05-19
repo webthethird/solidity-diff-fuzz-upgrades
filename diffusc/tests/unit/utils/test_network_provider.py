@@ -140,6 +140,56 @@ def test_proxy_missing_slot_info() -> None:
         assert str(err) == "Proxy storage slot read is not an address"
 
 
+def test_proxy_backup_slot_info() -> None:
+    # Should not fail, because even though this BadProxy doesn't use _IMPLEMENTATION_SLOT in its fallback,
+    # there is still an address stored in that slot, so the backup method in get_proxy_implementation works
+    rpc_url = os.getenv("GOERLI_RPC_URL")
+    assert rpc_url is not None
+    net_info = NetworkInfoProvider(rpc_url, "latest")
+    api_key = os.getenv("GOERLI_API_KEY")
+    assert api_key is not None
+    contract_addr = "0x95315eae9e96d8603e12e2d84c5458e85b1a6a0d"
+    switch_global_version("0.8.18", always_install=True)
+    sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
+    assert sl is not None
+    contract_obj = sl.get_contract_from_name("BadProxy")[0]
+    contract_data = CodeGenerator.get_contract_data(contract_obj)
+    contract_data["address"] = contract_addr
+    impl_addr, contract_data = net_info.get_proxy_implementation(contract_obj, contract_data)
+    assert impl_addr == "0x5a763c928430bc5742a144358b68cd8e14243030"
+    assert contract_data["implementation_slot"] is not None
+    assert contract_data["implementation_slot"].name == "IMPLEMENTATION_SLOT"
+    assert (
+        contract_data["implementation_slot"].slot
+        == 24440054405305269366569402256811496959409073762505157381672968839269610695612
+    )
+
+
+def test_proxy_legacy_slot_info() -> None:
+    # Should not fail, because even though this BadProxy doesn't use _IMPLEMENTATION_SLOT in its fallback, there is
+    # an address stored in the old ZeppelinOS slot, so the second backup method in get_proxy_implementation works
+    rpc_url = os.getenv("GOERLI_RPC_URL")
+    assert rpc_url is not None
+    net_info = NetworkInfoProvider(rpc_url, "latest")
+    api_key = os.getenv("GOERLI_API_KEY")
+    assert api_key is not None
+    contract_addr = "0xa5D39EB3F17D43BC1e7Ded5BFA6cD61EceF2C5f0"
+    switch_global_version("0.8.18", always_install=True)
+    sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
+    assert sl is not None
+    contract_obj = sl.get_contract_from_name("BadProxy")[0]
+    contract_data = CodeGenerator.get_contract_data(contract_obj)
+    contract_data["address"] = contract_addr
+    impl_addr, contract_data = net_info.get_proxy_implementation(contract_obj, contract_data)
+    assert impl_addr == "0x5a763c928430bc5742a144358b68cd8e14243030"
+    assert contract_data["implementation_slot"] is not None
+    assert contract_data["implementation_slot"].name == "IMPLEMENTATION_SLOT"
+    assert (
+        contract_data["implementation_slot"].slot
+        == 50801780122331352337026042894847907698553222651959119521779622085092237899971
+    )
+
+
 def test_missing_token_holders() -> None:
     rpc_url = os.getenv("GOERLI_RPC_URL")
     assert rpc_url is not None
