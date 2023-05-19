@@ -190,7 +190,7 @@ def test_proxy_legacy_slot_info() -> None:
     )
 
 
-def test_missing_token_holders() -> None:
+def test_missing_transfer_event() -> None:
     rpc_url = os.getenv("GOERLI_RPC_URL")
     assert rpc_url is not None
     net_info = NetworkInfoProvider(rpc_url, "latest")
@@ -211,3 +211,45 @@ def test_missing_token_holders() -> None:
             str(err) == f"Contract at {contract_addr} doesn't appear to be a token. "
             "It does not have a Transfer event."
         )
+
+
+def test_missing_token_holders() -> None:
+    rpc_url = os.getenv("GOERLI_RPC_URL")
+    assert rpc_url is not None
+    net_info = NetworkInfoProvider(rpc_url, "latest")
+    api_key = os.getenv("GOERLI_API_KEY")
+    assert api_key is not None
+    contract_addr = "0xe1185049a764faa013b3b398beb4defb4e47bab0"
+    switch_global_version("0.8.18", always_install=True)
+    sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
+    assert sl is not None
+    contract = sl.get_contract_from_name("TestToken")[0]
+    abi = contract.file_scope.abi(
+        sl.compilation_units[0].crytic_compile_compilation_unit, contract.name
+    )
+    try:
+        net_info.get_token_holders(1000, 1, contract_addr, abi)
+    except ValueError as err:
+        assert (
+            str(err)
+            == "Could not find a token holder. Please use --token-holder to set it manually."
+        )
+
+
+def test_few_token_holders() -> None:
+    rpc_url = os.getenv("GOERLI_RPC_URL")
+    assert rpc_url is not None
+    net_info = NetworkInfoProvider(rpc_url, "latest")
+    api_key = os.getenv("GOERLI_API_KEY")
+    assert api_key is not None
+    contract_addr = "0xae4c231A9e2D5db591540e59d6374C3D2c1a2e04"
+    switch_global_version("0.8.18", always_install=True)
+    sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
+    assert sl is not None
+    contract = sl.get_contract_from_name("TestToken")[0]
+    abi = contract.file_scope.abi(
+        sl.compilation_units[0].crytic_compile_compilation_unit, contract.name
+    )
+    token_holders = net_info.get_token_holders(1000, 5, contract_addr, abi)
+    assert len(token_holders) == 1
+    assert token_holders[0] == "0x4E39DCdac1DCa1694897B5CB783Ab52683586962"
