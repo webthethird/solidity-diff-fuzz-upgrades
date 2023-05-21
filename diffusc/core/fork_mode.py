@@ -4,7 +4,7 @@
 
 import argparse
 import os
-from typing import Optional, List
+from typing import Optional, List, Union
 from eth_utils import is_address
 from diffusc.utils.classes import ContractData
 from diffusc.utils.helpers import do_diff
@@ -32,23 +32,28 @@ class ForkMode(AnalysisMode):
     _prefix: str
     _network_rpc: str
     _is_poa: bool
-    _block_number: int
+    _block_number: Union[int, str]
     _tokens: List[ContractData]
     _token_holders: Optional[List[str]]
 
     def __init__(self, args: argparse.Namespace) -> None:
         self._mode = "fork"
-        super().__init__(args)
-        self._provider = NetworkSlitherProvider(self._prefix, self._api_key)
-        self._net_info = NetworkInfoProvider(self._network_rpc, self._block_number, self._is_poa)
-        self._tokens = []
+        try:
+            super().__init__(args)
+            self._provider = NetworkSlitherProvider(self._prefix, self._api_key)
+            self._net_info = NetworkInfoProvider(
+                self._network_rpc, self._block_number, self._is_poa
+            )
+            self._tokens = []
+        except ValueError as err:
+            raise ValueError(str(err)) from err
 
     @property
     def network_rpc(self) -> str:
         return self._network_rpc
 
     @property
-    def block_number(self) -> int:
+    def block_number(self) -> Union[int, str]:
         return self._block_number
 
     @property
@@ -88,11 +93,10 @@ class ForkMode(AnalysisMode):
             )
             raise ValueError("No RPC provided")
         if self._api_key is None or self._api_key == "":
-            CryticPrint.print_error(
-                "* Error: Block explorer API key not found. Either specify a key using the "
-                f"--etherscan-key flag or set it with the {self._api_env_var} environment variable."
+            CryticPrint.print_warning(
+                "* Warning: Block explorer API key not found. Either specify a key using the "
+                f"-K flag or set it with the {self._api_env_var} environment variable."
             )
-            raise ValueError("No block explorer API key provided")
 
         # Workaround for PoA networks
         self._is_poa = False
@@ -100,13 +104,17 @@ class ForkMode(AnalysisMode):
             self._is_poa = True
 
         # Get block number
+        self._block_number = "latest"
+        valid = ["latest", "earliest", "pending", "safe", "finalized"]
         if args.block:
-            self._block_number = int(args.block)
+            self._block_number = args.block if args.block in valid else int(args.block)
             CryticPrint.print_information(
                 f"* Block number specified via command line parameter: {self._block_number}",
             )
         elif "ECHIDNA_RPC_BLOCK" in os.environ:
-            self._block_number = int(os.environ["ECHIDNA_RPC_BLOCK"])
+            self._block_number = (
+                args.block if args.block in valid else int(os.environ["ECHIDNA_RPC_BLOCK"])
+            )
             CryticPrint.print_information(
                 "* Block number specified via ECHIDNA_RPC_BLOCK environment variable: "
                 f"{self._block_number}",

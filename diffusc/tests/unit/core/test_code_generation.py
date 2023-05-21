@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 from random import random
 from time import sleep
 from pathlib import Path
@@ -19,7 +20,7 @@ TEST_DATA_DIR = Path(__file__).resolve().parent / "test_data"
 TEST_CONTRACTS = {"CodeGeneration.sol": "0.8.4", "TransparentUpgradeableProxy.sol": "0.8.0"}
 
 
-def test_interface_from_file() -> None:
+def test_interface_from_file(update: bool = False) -> None:
     for test, version in TEST_CONTRACTS.items():
         solc_select.switch_global_version(version, always_install=True)
         file_path = os.path.join(TEST_DATA_DIR, test)
@@ -35,14 +36,15 @@ def test_interface_from_file() -> None:
         )  # type: ignore[typeddict-item]
         contract_data = CodeGenerator.get_contract_interface(contract_data)
         expected_file = os.path.join(TEST_DATA_DIR, f"I{test}")
-        # with open(expected_file, "w", encoding="utf-8") as file:
-        #     file.write(contract_data["interface"])
+        if update:
+            with open(expected_file, "w", encoding="utf-8") as file:
+                file.write(contract_data["interface"])
         with open(expected_file, "r", encoding="utf-8") as file:
             expected = file.read()
         assert contract_data["interface"] == expected
 
 
-def test_contract_data_from_slither() -> None:
+def test_contract_data_from_slither(update: bool = False) -> None:
     for test, version in TEST_CONTRACTS.items():
         solc_select.switch_global_version(version, always_install=True)
         file_path = os.path.join(TEST_DATA_DIR, test)
@@ -52,13 +54,15 @@ def test_contract_data_from_slither() -> None:
         assert contract_data["valid_data"]
         assert isinstance(contract_data["slither"], Slither)
         assert contract_data["slither"].crytic_compile == sl.crytic_compile
-        assert contract_data["path"] == file_path
+        assert contract_data["path"] == os.path.relpath(file_path)
         assert contract_data["name"] == test.replace(".sol", "")
         assert contract_data["interface_name"] == "I" + test.replace(".sol", "")
         assert contract_data["solc_version"] == version
         expected_file = os.path.join(TEST_DATA_DIR, f"I{test}")
-        # with open(expected_file, "w", encoding="utf-8") as file:
-        #     file.write(contract_data["interface"])
+        if update:
+            with open(expected_file, "w", encoding="utf-8") as file:
+                assert contract_data["interface"] is not None
+                file.write(contract_data["interface"])
         with open(expected_file, "r", encoding="utf-8") as file:
             expected_interface = file.read()
         assert contract_data["interface"] == expected_interface
@@ -67,7 +71,7 @@ def test_contract_data_from_slither() -> None:
             assert isinstance(contract_data["implementation_slot"], SlotInfo)
 
 
-def test_args_and_returns() -> None:
+def test_args_and_returns(update: bool = False) -> None:
     solc_select.switch_global_version("0.8.4", always_install=True)
     file_path = os.path.join(TEST_DATA_DIR, "CodeGeneration.sol")
     sl = Slither(file_path)
@@ -78,22 +82,24 @@ def test_args_and_returns() -> None:
             "args": CodeGenerator.get_solidity_function_parameters(func.parameters),
             "rets": CodeGenerator.get_solidity_function_returns(func.return_type),
         }
-    expected_path = os.path.join(TEST_DATA_DIR, "output", "test_args_and_returns.json")
-    # with open(expected_path, "w", encoding="utf-8") as expected_file:
-    #     expected_file.write(json.dumps(results, indent=4))
+    expected_path = os.path.join(TEST_DATA_DIR, "expected", "test_args_and_returns.json")
+    if update:
+        with open(expected_path, "w", encoding="utf-8") as expected_file:
+            expected_file.write(json.dumps(results, indent=4))
     with open(expected_path, "r", encoding="utf-8") as file:
         expected_results = json.load(file)
     assert results == expected_results
 
 
-def test_generate_contract_path_mode() -> None:
+# pylint: disable=too-many-statements
+def test_generate_contract_path_mode(update: bool = False) -> None:
     provider = FileSlitherProvider()
-    output_dir = os.path.join(TEST_DATA_DIR, "output")
+    output_dir = os.path.join(TEST_DATA_DIR, "expected")
     v1_data = get_contract_data_from_path(
-        os.path.join(TEST_DATA_DIR, "ContractV1.sol"), output_dir, provider
+        os.path.join(TEST_DATA_DIR, "ContractV1.sol"), output_dir, provider, "V1"
     )
     v2_data = get_contract_data_from_path(
-        os.path.join(TEST_DATA_DIR, "ContractV2.sol"), output_dir, provider
+        os.path.join(TEST_DATA_DIR, "ContractV2.sol"), output_dir, provider, "V2"
     )
     proxy_data = get_contract_data_from_path(
         os.path.join(TEST_DATA_DIR, "TransparentUpgradeableProxy.sol"), output_dir, provider
@@ -111,8 +117,15 @@ def test_generate_contract_path_mode() -> None:
     # Test code generation w/o proxy, additional targets, upgrade function or protected functions
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, False)
     code = generator.generate_test_contract(diff)
+    if update:
+        with open(
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_0.sol"),
+            "w",
+            encoding="utf-8",
+        ) as expected:
+            expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_0.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_0.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -122,8 +135,15 @@ def test_generate_contract_path_mode() -> None:
     assert proxy_data["valid_data"]
     generator.proxy = proxy_data
     code = generator.generate_test_contract(diff)
+    if update:
+        with open(
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_1.sol"),
+            "w",
+            encoding="utf-8",
+        ) as expected:
+            expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_1.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_1.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -134,8 +154,15 @@ def test_generate_contract_path_mode() -> None:
     generator.targets = [market_data, oracle_data]
     diff = do_diff(v1_data, v2_data, [market_data, oracle_data])
     code = generator.generate_test_contract(diff)
+    if update:
+        with open(
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_2.sol"),
+            "w",
+            encoding="utf-8",
+        ) as expected:
+            expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_2.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_2.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -144,9 +171,16 @@ def test_generate_contract_path_mode() -> None:
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, True)
     generator.targets = [market_data, oracle_data]
     diff = do_diff(v1_data, v2_data, [market_data, oracle_data], include_external=True)
-    code = generator.generate_test_contract(diff)
+    code = generator.generate_test_contract(diff, output_dir)
+    if update:
+        with open(
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_3.sol"),
+            "w",
+            encoding="utf-8",
+        ) as expected:
+            expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_3.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_3.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -155,17 +189,25 @@ def test_generate_contract_path_mode() -> None:
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", True, True)
     generator.targets = [market_data, oracle_data]
     generator.proxy = proxy_data
-    code = generator.generate_test_contract(diff)
+    code = generator.generate_test_contract(diff, output_dir)
+    if update:
+        with open(
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_4.sol"),
+            "w",
+            encoding="utf-8",
+        ) as expected:
+            expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_PathMode_4.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_4.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
 
 
-def test_generate_contract_fork_mode() -> None:
-    api_key = os.getenv("BSC_API_KEY")
-    rpc_url = os.getenv("BSC_RPC_URL")
+# pylint: disable=too-many-statements
+def test_generate_contract_fork_mode(update: bool = False) -> None:
+    api_key = os.getenv("BSC_API_KEY") or ""
+    rpc_url = os.getenv("BSC_RPC_URL") or ""
     provider = NetworkSlitherProvider("bsc:", api_key)
     net_info = NetworkInfoProvider(rpc_url, 26857408, is_poa=True)
 
@@ -201,8 +243,15 @@ def test_generate_contract_fork_mode() -> None:
     # Test code generation w/o proxy, additional targets, upgrade function or protected functions
     generator = CodeGenerator(v1_data, v2_data, "fork", "0.8.11", False, False, net_info)
     code = generator.generate_test_contract(diff)
+    if update:
+        with open(
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_0.sol"),
+            "w",
+            encoding="utf-8",
+        ) as expected:
+            expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_0.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_0.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -212,8 +261,15 @@ def test_generate_contract_fork_mode() -> None:
     assert proxy_data["valid_data"]
     generator.proxy = proxy_data
     code = generator.generate_test_contract(diff)
+    if update:
+        with open(
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_1.sol"),
+            "w",
+            encoding="utf-8",
+        ) as expected:
+            expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_1.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_1.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -224,8 +280,15 @@ def test_generate_contract_fork_mode() -> None:
     generator.targets = [swap_router_data, trade_router_data]
     diff = do_diff(v1_data, v2_data, [swap_router_data, trade_router_data])
     code = generator.generate_test_contract(diff)
+    if update:
+        with open(
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_2.sol"),
+            "w",
+            encoding="utf-8",
+        ) as expected:
+            expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_2.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_2.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -235,8 +298,15 @@ def test_generate_contract_fork_mode() -> None:
     generator.targets = [swap_router_data, trade_router_data]
     diff = do_diff(v1_data, v2_data, [swap_router_data, trade_router_data], include_external=True)
     code = generator.generate_test_contract(diff)
+    if update:
+        with open(
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_3.sol"),
+            "w",
+            encoding="utf-8",
+        ) as expected:
+            expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_3.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_3.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
@@ -246,14 +316,21 @@ def test_generate_contract_fork_mode() -> None:
     generator.targets = [swap_router_data, trade_router_data]
     generator.proxy = proxy_data
     code = generator.generate_test_contract(diff)
+    if update:
+        with open(
+            os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_4.sol"),
+            "w",
+            encoding="utf-8",
+        ) as expected:
+            expected.write(code)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "Expected_ForkMode_4.sol"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_4.sol"), "r", encoding="utf-8"
     ) as expected:
         expected_code = expected.read()
     assert code == expected_code
 
 
-def test_generate_config() -> None:
+def test_generate_config(update: bool = False) -> None:
     config = CodeGenerator.generate_config_file(
         corpus_dir="",
         campaign_length=123456,
@@ -263,8 +340,31 @@ def test_generate_config() -> None:
         rpc_url="https://mainnet.infura.io/v3/1234567891011121314151617181920",
         senders=["0x0123", "0x4567", "0x8910"],
     )
+    if update:
+        with open(
+            os.path.join(TEST_DATA_DIR, "expected", "ExpectedConfig.yaml"), "w", encoding="utf-8"
+        ) as expected:
+            expected.write(config)
     with open(
-        os.path.join(TEST_DATA_DIR, "output", "ExpectedConfig.yaml"), "r", encoding="utf-8"
+        os.path.join(TEST_DATA_DIR, "expected", "ExpectedConfig.yaml"), "r", encoding="utf-8"
     ) as file:
-        expected = file.read()
+        expected = file.read()  # type: ignore[assignment]
     assert config == expected
+
+
+def run_all_tests(update: bool = False) -> None:
+    test_generate_config(update)
+    test_generate_contract_fork_mode(update)
+    test_generate_contract_path_mode(update)
+    test_args_and_returns(update)
+    test_contract_data_from_slither(update)
+    test_interface_from_file(update)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2 or sys.argv[1] not in ["--overwrite"]:
+        print(
+            "To re-generate all the expected artifacts run\n\tpython tests/unit/core/test_code_generation --overwrite"
+        )
+    elif sys.argv[1] == "--overwrite":
+        run_all_tests(update=True)

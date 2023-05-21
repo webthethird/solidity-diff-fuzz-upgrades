@@ -6,6 +6,7 @@ from typing import Any, Tuple, List
 from requests.exceptions import HTTPError
 from web3 import Web3, logs
 from web3.middleware import geth_poa_middleware
+from web3.exceptions import ExtraDataLengthError, BadFunctionCallOutput, ABIEventFunctionNotFound
 from slither.core.variables.state_variable import StateVariable
 from slither.core.declarations.contract import Contract
 from slither.tools.read_storage import SlitherReadStorage  # , RpcInfo
@@ -35,17 +36,30 @@ class NetworkInfoProvider:
             CryticPrint.print_error("* Could not connect to the provided RPC endpoint.")
             raise ValueError(f"Could not connect to the provided RPC endpoint: {rpc_provider}.")
 
-        if block in [0, ""]:
-            self._block = int(self._w3.eth.get_block("latest")["number"])
-        else:
-            self._block = int(block)
-
         # Workaround for PoA networks
         if is_poa:
             self._is_poa = True
             self._w3.middleware_onion.inject(geth_poa_middleware, layer=0)
         else:
             self._is_poa = False
+
+        try:
+            if block in [0, ""]:
+                self._block = int(self._w3.eth.get_block("latest")["number"])
+            elif block in ["latest", "earliest", "pending", "safe", "finalized"]:
+                self._block = int(self._w3.eth.get_block(block)["number"])  # type: ignore[arg-type]
+            else:
+                self._block = int(block)
+        except ExtraDataLengthError as err:
+            raise ValueError(
+                f"Got ExtraDataLengthError when getting block {str(block)}."
+                " Probably missing network value, if RPC url is for a POA chain."
+            ) from err
+        except ValueError as err:
+            raise ValueError(
+                f'"{block}" is not a valid block identifier. Use '
+                '"latest", "earliest", "pending", "safe" or "finalized" if not specifying an integer block number'
+            ) from err
 
     def get_block_timestamp(self) -> int:
         """Timestamp getter."""
@@ -74,7 +88,7 @@ class NetworkInfoProvider:
             slot = srs.get_storage_slot(variable, contract)
             srs.get_slot_values(slot)
             return slot.value
-        except (ValueError, TypeError, AssertionError):
+        except (ValueError, TypeError, AssertionError, AttributeError):
             return ""
 
     def get_proxy_implementation(
@@ -193,58 +207,10 @@ class NetworkInfoProvider:
             raise ValueError("Proxy storage slot read is not an address") from err
 
     # pylint: disable=too-many-locals
-    def get_token_holder(self, min_token_amount: int, address: str, abi: str) -> str:
-        """Get the address of a holder of the token at the given address."""
-
-        block_from = int(self._block) - 2000
-        block_to = int(self._block)
-        max_retries = 10
-        holder = None
-
-        contract = self._w3.eth.contract(address=to_checksum_address(address), abi=abi)
-
-        while max_retries > 0:
-            block_filter = contract.events.Transfer.create_filter(  # type: ignore[attr-defined]
-                fromBlock=block_from, toBlock=block_to
-            )
-            events = block_filter.get_all_entries()
-            if not events:
-                max_retries -= 1
-                block_from -= 2000
-                block_to -= 2000
-                continue
-
-            events.reverse()
-
-            for event in events:
-                receipt = self._w3.eth.wait_for_transaction_receipt(event["transactionHash"])
-                result = contract.events.Transfer().process_receipt(receipt, errors=logs.DISCARD)
-                event_data = list(result[0]["args"].values())
-                recipient = event_data[1]
-                amount = int(event_data[2])
-                if amount > min_token_amount and not self._w3.eth.get_code(recipient, self._block):
-                    holder = recipient
-                    break
-
-            if holder:
-                return holder
-            max_retries -= 1
-            block_from -= 2000
-            block_to -= 2000
-
-        CryticPrint.print_error(
-            f"* Could not find a token holder for {address}. "
-            "Please use --token-holder to set it manually."
-        )
-        raise ValueError(
-            "Could not find a token holder. Please use --token-holder to set it manually."
-        )
-
-    # pylint: disable=too-many-locals
     def get_token_holders(
         self, min_token_amount: int, max_holders: int, address: str, abi: str
     ) -> List[str]:
-        """Get the address of a holder of the token at the given address."""
+        """Get a list of holder addresses for the token at the given address."""
 
         block_from = int(self._block) - 2000
         block_to = int(self._block)
@@ -276,11 +242,14 @@ class NetworkInfoProvider:
                     )
                     event_data = list(result[0]["args"].values())
                     recipient = event_data[1]
-                    if recipient in holders:
+                    if recipient in holders or recipient == address:
                         continue
-                    balance = contract.functions.balanceOf(recipient).call(
-                        block_identifier=int(self._block)
-                    )
+                    try:
+                        balance = contract.functions.balanceOf(recipient).call(
+                            block_identifier=int(self._block)
+                        )
+                    except BadFunctionCallOutput:
+                        continue
                     if balance < min_token_amount:
                         continue
                     if self._w3.eth.get_code(recipient, self._block):
@@ -299,6 +268,13 @@ class NetworkInfoProvider:
                 sleep(10)
                 max_retries -= 1
                 continue
+            except ABIEventFunctionNotFound as err:
+                CryticPrint.print_error(
+                    f"Contract at {address} doesn't appear to be a token. It does not have a Transfer event."
+                )
+                raise ValueError(
+                    f"Contract at {address} doesn't appear to be a token. It does not have a Transfer event."
+                ) from err
 
         if len(holders) > 0:
             CryticPrint.print_warning(

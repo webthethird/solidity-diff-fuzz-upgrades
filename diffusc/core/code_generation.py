@@ -1,6 +1,6 @@
 """Module for generating test contract code."""
 import os
-from os.path import abspath
+from os.path import relpath, curdir
 from typing import List, Tuple, Optional
 
 # pylint: disable= no-name-in-module,too-many-lines
@@ -103,7 +103,7 @@ class CodeGenerator:
         campaign_length: int,
         contract_addr: str,
         seq_len: int,
-        block: int = 0,
+        block: str | int = 0,
         rpc_url: str = "",
         senders: List[str] = None,
     ) -> str:
@@ -116,12 +116,12 @@ class CodeGenerator:
         )
         config_file = "testMode: assertion\n"
         config_file += f"testLimit: {campaign_length}\n"
-        config_file += f"corpusDir: {abspath(corpus_dir)}\n" if corpus_dir != "" else ""
+        config_file += f"corpusDir: {relpath(corpus_dir, curdir)}\n" if corpus_dir != "" else ""
         config_file += "codeSize: 0xffff\n"
         config_file += f"seqLen: {seq_len}\n"
         if contract_addr != "":
             config_file += f"contractAddr: '{contract_addr}'\n"
-        if block > 0:
+        if str(block) != "0":
             config_file += f"rpcBlock: {block}\n"
         if rpc_url != "":
             config_file += f"rpcUrl: {rpc_url}\n"
@@ -232,7 +232,9 @@ class CodeGenerator:
         return contract_data
 
     @staticmethod
-    def get_contract_data(contract: Contract, suffix: str = "") -> ContractData:
+    def get_contract_data(
+        contract: Contract, suffix: str = "", out_dir: str = "./"
+    ) -> ContractData:
         """Get ContractData object from Contract object."""
 
         CryticPrint.print_message(f"  * Getting contract data from {contract.name}")
@@ -241,7 +243,7 @@ class CodeGenerator:
         contract_data = ContractData(
             contract_object=contract,
             suffix=suffix,
-            path=contract.file_scope.filename.absolute,
+            path=os.path.relpath(contract.file_scope.filename.absolute, out_dir),
             solc_version=version,
             address="",
             valid_data=False,
@@ -723,7 +725,7 @@ class CodeGenerator:
         return wrapped
 
     # pylint: disable=too-many-branches,too-many-statements,too-many-locals
-    def generate_test_contract(self, diff: Diff) -> str:
+    def generate_test_contract(self, diff: Diff, output_dir: str = "./") -> str:
         """Main function for generating a diff fuzzing test contract."""
 
         v_1 = self.v_1
@@ -746,7 +748,7 @@ class CodeGenerator:
         tainted_contracts.sort(key=lambda taint: taint.contract.name)
         CryticPrint.print_information("* Getting contract data for tainted contracts.")
         tainted_targets = [
-            self.get_contract_data(t.contract)
+            self.get_contract_data(t.contract, out_dir=output_dir)
             if t.contract.name
             not in [
                 target["contract_object"].name if target["contract_object"] is not None else ""

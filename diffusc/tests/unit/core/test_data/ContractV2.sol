@@ -11,7 +11,14 @@ contract ContractV2 {
     uint public stateB = 0;
     uint constant CONST = 32;
     bool bug = false;
+    mapping(uint => uint) public mapB;
+    address[] public callers;
     uint public stateC = 0;
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin);
+        _;
+    }
 
     function f(uint x) public {
         if (msg.sender == admin) {
@@ -21,7 +28,9 @@ contract ContractV2 {
 
     function g(uint y) public {
         if (checkA()) {
-            stateB = y + 10;
+            mapB[y] = 10;
+            callers.push(msg.sender);
+            stateB = y + mapB[y];
         }
     }
 
@@ -35,12 +44,24 @@ contract ContractV2 {
         stateC = stateC + 1;
     }
 
+    function j() public onlyAdmin {
+
+    }
+
+    function setMap(uint x, uint y) public onlyAdmin {
+        mapB[x] = y;
+    }
+
     function totalValue() public returns (uint256) {
-        return balance(address(this)) * underlyingPrice();
+        return balance(address(this)) * price() + balanceUnderlying(address(this)) * underlyingPrice();
     }
 
     function balance(address holder) public returns (uint256) {
         return mToken.balanceOf(holder);
+    }
+
+    function balanceUnderlying(address holder) public returns (uint256) {
+        return mToken.underlying().balanceOf(holder);
     }
 
     function checkA() internal returns (bool) {

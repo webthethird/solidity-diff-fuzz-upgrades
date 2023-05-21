@@ -6,6 +6,7 @@ import argparse
 import logging
 import os
 import sys
+from typing import Sequence, Optional
 
 from eth_utils import is_address
 from diffusc.core.path_mode import PathMode
@@ -19,7 +20,7 @@ import diffusc.utils.network_vars as net_vars
 
 
 # pylint: disable=too-many-statements,too-many-branches
-def main() -> int:
+def main(_args: Optional[Sequence[str]] = None) -> int:
     """Main method, parses arguments and calls path_mode or fork_mode."""
     # Read command line arguments
 
@@ -136,7 +137,7 @@ def main() -> int:
         help="Specifies whether to analyze external calls to find tainted external contracts (default false).",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(_args)
 
     CryticPrint.initialize()
     CryticPrint.print_message("\nWelcome to diff-fuzz-upgrades, enjoy your stay!")
@@ -182,8 +183,12 @@ def main() -> int:
     CryticPrint.print_information("* Inspecting V1 and V2 contracts:")
     if is_address(args.v1) and is_address(args.v2):
         CryticPrint.print_information("* Using 'fork mode':")
-        analysis = ForkMode(args)
-        contract = analysis.write_test_contract()
+        try:
+            analysis = ForkMode(args)
+            contract = analysis.write_test_contract()
+        except (ValueError, AssertionError) as err:
+            CryticPrint.print_error(f"* Error: fork mode failed ({err})")
+            return 1
     elif os.path.exists(args.v1) and os.path.exists(args.v2):
         CryticPrint.print_information("* Using 'path mode' (no fork):")
         analysis = PathMode(args)
@@ -201,7 +206,6 @@ def main() -> int:
     )
 
     if isinstance(analysis, ForkMode):
-        holders = analysis.token_holders
         config_file = CodeGenerator.generate_config_file(
             f"{output_dir}corpus",
             test_len,
@@ -209,7 +213,7 @@ def main() -> int:
             seq_len,
             block=analysis.block_number,
             rpc_url=analysis.network_rpc,
-            senders=holders,
+            senders=analysis.token_holders,
         )
     else:
         config_file = CodeGenerator.generate_config_file(
