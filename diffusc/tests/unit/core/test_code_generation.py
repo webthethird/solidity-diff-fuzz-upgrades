@@ -352,7 +352,7 @@ def test_generate_config(update: bool = False) -> None:
     assert config == expected
 
 
-def run_all_tests(update: bool = False) -> None:
+def run_all_tests(update: bool = False) -> None:  # pragma: no cover
     test_generate_config(update)
     test_generate_contract_fork_mode(update)
     test_generate_contract_path_mode(update)

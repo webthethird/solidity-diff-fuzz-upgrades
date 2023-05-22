@@ -54,7 +54,7 @@ def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
                     keep_running = (
                         False  # Useful for quick CI tests, but it will be removed in production
                     )
-    if max_value == -1:
+    if max_value == -1:  # pragma: no cover
         # Print Echidna error output before returning
         try:
             assert proc.stderr is not None

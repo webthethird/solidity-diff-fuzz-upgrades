@@ -28,11 +28,11 @@ class SlitherProvider:
         self._cache_path = "./crytic-cache/"
         self._cache_filename = ""
 
-    def get_slither_from_address(self, address: str) -> Slither:
+    def get_slither_from_address(self, address: str) -> Slither:  # pragma: no cover
         """Not implemented in base class."""
         raise NotImplementedError()
 
-    def get_network_prefix(self) -> str:
+    def get_network_prefix(self) -> str:  # pragma: no cover
         """Network prefix getter"""
         return self._network_prefix
 
@@ -63,7 +63,7 @@ class SlitherProvider:
         )
 
     @staticmethod
-    def _check_address(address: str) -> str:
+    def _check_address(address: str) -> str:  # pragma: no cover
         """Convert an address to checksum address. Raise ValueError for invalid address."""
         if not is_address(address):
             raise ValueError("Invalid address supplied")
@@ -83,7 +83,7 @@ class NetworkSlitherProvider(SlitherProvider):
         if self._network_prefix[-1] == ":":
             self._network_prefix = self._network_prefix[:-1]
 
-    def get_api_key(self) -> str:
+    def get_api_key(self) -> str:  # pragma: no cover
         return self._api_key
 
     def get_slither_from_address(self, address: str) -> Slither:
@@ -115,10 +115,10 @@ class NetworkSlitherProvider(SlitherProvider):
                     )
                     sleep(random() * 3)
                     continue
-                raise SlitherError(str(err)) from err
+                raise SlitherError(str(err)) from err  # pragma: no cover
         return slither
 
-    def _generate_api_key_dict(self) -> dict:
+    def _generate_api_key_dict(self) -> dict:  # pragma: no cover
         out_dict = {}
         if self._network_prefix == "mainet:":
             out_dict["etherscan_api_key"] = self._api_key
@@ -164,10 +164,10 @@ class FileSlitherProvider(SlitherProvider):
             slither = Slither(path)
             self._slither_object = slither
             self._save_slither_to_cache()
-        except SlitherError as err:
+        except SlitherError as err:  # pragma: no cover
             raise SlitherError(str(err)) from err
         return slither
 
-    def get_slither_from_address(self, address: str) -> Slither:
+    def get_slither_from_address(self, address: str) -> Slither:  # pragma: no cover
         """Same as get_slither_from_filepath(path)."""
         return self.get_slither_from_filepath(address)

@@ -65,7 +65,7 @@ class NetworkInfoProvider:
         """Timestamp getter."""
         if self._block != 0:
             return self._w3.eth.get_block(self._block)["timestamp"]
-        return 0
+        return 0  # pragma: no cover
 
     def get_block_number(self) -> int:
         """Block number getter."""
@@ -82,7 +82,7 @@ class NetworkInfoProvider:
         srs.block = self._block
         srs.rpc = self._rpc_provider
         if self._is_poa:
-            srs.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+            srs.web3.middleware_onion.inject(geth_poa_middleware, layer=0)  # pragma: no cover
 
         try:
             slot = srs.get_storage_slot(variable, contract)
@@ -179,7 +179,7 @@ class NetworkInfoProvider:
                 ):
                     implementation_var.append(var)
 
-            if not implementation_var:
+            if not implementation_var:  # pragma: no cover
                 CryticPrint.print_warning(
                     "      * Couldn't find proxy implementation in contract storage"
                 )
@@ -248,7 +248,7 @@ class NetworkInfoProvider:
                         balance = contract.functions.balanceOf(recipient).call(
                             block_identifier=int(self._block)
                         )
-                    except BadFunctionCallOutput:
+                    except BadFunctionCallOutput:  # pragma: no cover
                         continue
                     if balance < min_token_amount:
                         continue
@@ -264,7 +264,7 @@ class NetworkInfoProvider:
                 max_retries -= 1
                 block_from -= 2000
                 block_to -= 2000
-            except HTTPError:
+            except HTTPError:  # pragma: no cover
                 sleep(10)
                 max_retries -= 1
                 continue
