@@ -112,7 +112,8 @@ def test_diffusc_path_run_mode() -> None:
 
     # Remove the crytic-export directory if it exists
     export_dir = Path(__file__).resolve().parent / "crytic-export"
-    rmtree(export_dir)
+    if os.path.exists(export_dir):
+        rmtree(export_dir)
 
     args = [
         os.path.join(safemoon_dir, "SafemoonV2.sol"),
