@@ -190,6 +190,28 @@ def test_proxy_legacy_slot_info() -> None:
     )
 
 
+def test_proxy_state_var_slot_info() -> None:
+    # Should not fail, because even though this BadProxy doesn't use _IMPLEMENTATION_SLOT in its fallback, there is an
+    # address stored in a state var called implementation, so the last backup method in get_proxy_implementation works
+    rpc_url = os.getenv("GOERLI_RPC_URL")
+    assert rpc_url is not None
+    net_info = NetworkInfoProvider(rpc_url, "latest")
+    api_key = os.getenv("GOERLI_API_KEY")
+    assert api_key is not None
+    contract_addr = "0x22F550d4B1986075088CDa550fA57B241B993AA8"
+    switch_global_version("0.8.18", always_install=True)
+    sl = _retry_slither_etherscan(contract_addr, "goerli", api_key, 5)
+    assert sl is not None
+    contract_obj = sl.get_contract_from_name("BadProxy")[0]
+    contract_data = CodeGenerator.get_contract_data(contract_obj)
+    contract_data["address"] = contract_addr
+    impl_addr, contract_data = net_info.get_proxy_implementation(contract_obj, contract_data)
+    assert impl_addr == "0x5a763c928430bc5742A144358B68CD8E14243030"
+    assert contract_data["implementation_slot"] is not None
+    assert contract_data["implementation_slot"].name == "implementation"
+    assert contract_data["implementation_slot"].slot == 1
+
+
 def test_missing_transfer_event() -> None:
     rpc_url = os.getenv("GOERLI_RPC_URL")
     assert rpc_url is not None
