@@ -156,7 +156,7 @@ def main(_args: Optional[Sequence[str]] = None) -> int:
     if args.seq_len:
         if str(args.seq_len).isnumeric():
             seq_len = int(args.seq_len)
-        else:
+        else:   # pragma: no cover
             CryticPrint.print_error(
                 "\n* Sequence length provided is not numeric. Defaulting to 100.",
             )
@@ -165,9 +165,9 @@ def main(_args: Optional[Sequence[str]] = None) -> int:
     if args.campaign_len:
         if str(args.campaign_len).isnumeric():
             test_len = int(args.campaign_len)
-        else:
+        else:   # pragma: no cover
             CryticPrint.print_error(
-                "\n* Sequence length provided is not numeric. Defaulting to 100.",
+                "\n* Campaign length provided is not numeric. Defaulting to 100.",
             )
 
     contract_addr = ""
@@ -193,10 +193,10 @@ def main(_args: Optional[Sequence[str]] = None) -> int:
         CryticPrint.print_information("* Using 'path mode' (no fork):")
         analysis = PathMode(args)
         contract = analysis.write_test_contract()
-    elif not os.path.exists(args.v1):
+    elif not os.path.exists(args.v1):   # pragma: no cover
         CryticPrint.print_error(f"\nFile not found: {args.v1}")
         raise FileNotFoundError(args.v1)
-    else:
+    else:   # pragma: no cover
         CryticPrint.print_error(f"\nFile not found: {args.v2}")
         raise FileNotFoundError(args.v2)
 
