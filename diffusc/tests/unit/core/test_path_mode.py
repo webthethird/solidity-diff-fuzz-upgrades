@@ -1,5 +1,8 @@
 import os
+import sys
 from pathlib import Path
+
+import pytest
 from diffusc.diffusc import main
 
 
@@ -100,6 +103,7 @@ def test_diffusc_path_mode() -> None:
             assert actual_lines[idx] == line
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Run Echidna on Linux only")
 def test_diffusc_path_run_mode() -> None:
     output_dir = os.path.join(TEST_DATA_DIR, "output")
     safemoon_dir = os.path.join(TEST_DATA_DIR, "safemoon")
