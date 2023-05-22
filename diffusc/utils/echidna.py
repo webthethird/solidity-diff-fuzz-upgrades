@@ -54,6 +54,21 @@ def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
                     keep_running = (
                         False  # Useful for quick CI tests, but it will be removed in production
                     )
+    if max_value == -1:
+        # Print Echidna error output before returning
+        try:
+            assert proc.stderr is not None
+            line = proc.stderr.readline()
+            print(line.strip())
+        except UnsupportedOperation:
+            line = ""
+        while line != "":
+            try:
+                line = proc.stderr.readline()
+                print(line.strip())
+            except UnsupportedOperation:
+                line = ""
+
     CryticPrint.print_information("* Terminating Echidna campaign!")
     proc.terminate()
     proc.wait()
