@@ -361,7 +361,7 @@ def run_all_tests(update: bool = False) -> None:
     test_interface_from_file(update)
 
 
-if __name__ == "__main__":      # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     if len(sys.argv) != 2 or sys.argv[1] not in ["--overwrite"]:
         print(
             "To re-generate all the expected artifacts run\n\tpython tests/unit/core/test_code_generation --overwrite"
