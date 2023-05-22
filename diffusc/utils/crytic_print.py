@@ -23,7 +23,7 @@ class CryticPrint:
         colorama_init()
 
     @staticmethod
-    def print(mode: PrintMode, message: str) -> None:
+    def print(mode: PrintMode, message: str) -> None:  # pragma: no cover
         """Print using any PrintMode"""
         if mode is PrintMode.MESSAGE:
             CryticPrint.print_message(message)

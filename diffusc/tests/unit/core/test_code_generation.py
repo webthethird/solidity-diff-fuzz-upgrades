@@ -36,7 +36,7 @@ def test_interface_from_file(update: bool = False) -> None:
         )  # type: ignore[typeddict-item]
         contract_data = CodeGenerator.get_contract_interface(contract_data)
         expected_file = os.path.join(TEST_DATA_DIR, f"I{test}")
-        if update:
+        if update:  # pragma: no cover
             with open(expected_file, "w", encoding="utf-8") as file:
                 file.write(contract_data["interface"])
         with open(expected_file, "r", encoding="utf-8") as file:
@@ -59,7 +59,7 @@ def test_contract_data_from_slither(update: bool = False) -> None:
         assert contract_data["interface_name"] == "I" + test.replace(".sol", "")
         assert contract_data["solc_version"] == version
         expected_file = os.path.join(TEST_DATA_DIR, f"I{test}")
-        if update:
+        if update:  # pragma: no cover
             with open(expected_file, "w", encoding="utf-8") as file:
                 assert contract_data["interface"] is not None
                 file.write(contract_data["interface"])
@@ -83,7 +83,7 @@ def test_args_and_returns(update: bool = False) -> None:
             "rets": CodeGenerator.get_solidity_function_returns(func.return_type),
         }
     expected_path = os.path.join(TEST_DATA_DIR, "expected", "test_args_and_returns.json")
-    if update:
+    if update:  # pragma: no cover
         with open(expected_path, "w", encoding="utf-8") as expected_file:
             expected_file.write(json.dumps(results, indent=4))
     with open(expected_path, "r", encoding="utf-8") as file:
@@ -117,7 +117,7 @@ def test_generate_contract_path_mode(update: bool = False) -> None:
     # Test code generation w/o proxy, additional targets, upgrade function or protected functions
     generator = CodeGenerator(v1_data, v2_data, "path", "0.8.2", False, False)
     code = generator.generate_test_contract(diff)
-    if update:
+    if update:  # pragma: no cover
         with open(
             os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_0.sol"),
             "w",
@@ -135,7 +135,7 @@ def test_generate_contract_path_mode(update: bool = False) -> None:
     assert proxy_data["valid_data"]
     generator.proxy = proxy_data
     code = generator.generate_test_contract(diff)
-    if update:
+    if update:  # pragma: no cover
         with open(
             os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_1.sol"),
             "w",
@@ -154,7 +154,7 @@ def test_generate_contract_path_mode(update: bool = False) -> None:
     generator.targets = [market_data, oracle_data]
     diff = do_diff(v1_data, v2_data, [market_data, oracle_data])
     code = generator.generate_test_contract(diff)
-    if update:
+    if update:  # pragma: no cover
         with open(
             os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_2.sol"),
             "w",
@@ -172,7 +172,7 @@ def test_generate_contract_path_mode(update: bool = False) -> None:
     generator.targets = [market_data, oracle_data]
     diff = do_diff(v1_data, v2_data, [market_data, oracle_data], include_external=True)
     code = generator.generate_test_contract(diff, output_dir)
-    if update:
+    if update:  # pragma: no cover
         with open(
             os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_3.sol"),
             "w",
@@ -190,7 +190,7 @@ def test_generate_contract_path_mode(update: bool = False) -> None:
     generator.targets = [market_data, oracle_data]
     generator.proxy = proxy_data
     code = generator.generate_test_contract(diff, output_dir)
-    if update:
+    if update:  # pragma: no cover
         with open(
             os.path.join(TEST_DATA_DIR, "expected", "Expected_PathMode_4.sol"),
             "w",
@@ -243,7 +243,7 @@ def test_generate_contract_fork_mode(update: bool = False) -> None:
     # Test code generation w/o proxy, additional targets, upgrade function or protected functions
     generator = CodeGenerator(v1_data, v2_data, "fork", "0.8.11", False, False, net_info)
     code = generator.generate_test_contract(diff)
-    if update:
+    if update:  # pragma: no cover
         with open(
             os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_0.sol"),
             "w",
@@ -261,7 +261,7 @@ def test_generate_contract_fork_mode(update: bool = False) -> None:
     assert proxy_data["valid_data"]
     generator.proxy = proxy_data
     code = generator.generate_test_contract(diff)
-    if update:
+    if update:  # pragma: no cover
         with open(
             os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_1.sol"),
             "w",
@@ -280,7 +280,7 @@ def test_generate_contract_fork_mode(update: bool = False) -> None:
     generator.targets = [swap_router_data, trade_router_data]
     diff = do_diff(v1_data, v2_data, [swap_router_data, trade_router_data])
     code = generator.generate_test_contract(diff)
-    if update:
+    if update:  # pragma: no cover
         with open(
             os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_2.sol"),
             "w",
@@ -298,7 +298,7 @@ def test_generate_contract_fork_mode(update: bool = False) -> None:
     generator.targets = [swap_router_data, trade_router_data]
     diff = do_diff(v1_data, v2_data, [swap_router_data, trade_router_data], include_external=True)
     code = generator.generate_test_contract(diff)
-    if update:
+    if update:  # pragma: no cover
         with open(
             os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_3.sol"),
             "w",
@@ -316,7 +316,7 @@ def test_generate_contract_fork_mode(update: bool = False) -> None:
     generator.targets = [swap_router_data, trade_router_data]
     generator.proxy = proxy_data
     code = generator.generate_test_contract(diff)
-    if update:
+    if update:  # pragma: no cover
         with open(
             os.path.join(TEST_DATA_DIR, "expected", "Expected_ForkMode_4.sol"),
             "w",
@@ -340,7 +340,7 @@ def test_generate_config(update: bool = False) -> None:
         rpc_url="https://mainnet.infura.io/v3/1234567891011121314151617181920",
         senders=["0x0123", "0x4567", "0x8910"],
     )
-    if update:
+    if update:  # pragma: no cover
         with open(
             os.path.join(TEST_DATA_DIR, "expected", "ExpectedConfig.yaml"), "w", encoding="utf-8"
         ) as expected:
@@ -352,7 +352,7 @@ def test_generate_config(update: bool = False) -> None:
     assert config == expected
 
 
-def run_all_tests(update: bool = False) -> None:
+def run_all_tests(update: bool = False) -> None:  # pragma: no cover
     test_generate_config(update)
     test_generate_contract_fork_mode(update)
     test_generate_contract_path_mode(update)
@@ -361,7 +361,7 @@ def run_all_tests(update: bool = False) -> None:
     test_interface_from_file(update)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     if len(sys.argv) != 2 or sys.argv[1] not in ["--overwrite"]:
         print(
             "To re-generate all the expected artifacts run\n\tpython tests/unit/core/test_code_generation --overwrite"

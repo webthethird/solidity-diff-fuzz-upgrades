@@ -1,5 +1,9 @@
 import os
+import sys
+from shutil import rmtree
 from pathlib import Path
+
+import pytest
 from diffusc.diffusc import main
 
 
@@ -98,3 +102,32 @@ def test_diffusc_path_mode() -> None:
     for idx, line in enumerate(expected_lines):
         if not (line.startswith("sender") or line.startswith("corpusDir")):
             assert actual_lines[idx] == line
+
+
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Run Echidna on Linux only")
+def test_diffusc_path_run_mode() -> None:
+    output_dir = os.path.join(TEST_DATA_DIR, "output")
+    safemoon_dir = os.path.join(TEST_DATA_DIR, "safemoon")
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Remove the crytic-export directory if it exists
+    parent_dirs = Path(__file__).resolve().parents
+    for parent in parent_dirs:
+        export_dir = os.path.join(parent, "crytic-export")
+        if os.path.exists(export_dir):
+            rmtree(export_dir)
+
+    args = [
+        os.path.join(safemoon_dir, "SafemoonV2.sol"),
+        os.path.join(safemoon_dir, "SafemoonV3.sol"),
+        "-p",
+        os.path.join(safemoon_dir, "TransparentProxyTestHarness.sol"),
+        "-v",
+        "0.8.11",
+        "-d",
+        output_dir,
+        "--run-custom",
+        os.path.join(safemoon_dir, "DiffFuzzCustomInit.sol"),
+        "DiffFuzzInit",
+    ]
+    assert main(args) == 0

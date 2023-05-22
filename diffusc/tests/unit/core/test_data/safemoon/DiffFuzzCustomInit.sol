@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPLv3
 pragma solidity ^0.8.11;
 
-import "./DiffFuzzUpgrades.sol";
-import { Safemoon as Safemoon_V1 } from "../../../diffusc/tests/unit/core/test_data/safemoon/SafemoonV2.sol";
-import { Safemoon as Safemoon_V2 } from "../../../diffusc/tests/unit/core/test_data/safemoon/SafemoonV3.sol";
+import "../output/DiffFuzzUpgrades.sol";
+import { Safemoon as Safemoon_V1 } from "./SafemoonV2.sol";
+import { Safemoon as Safemoon_V2 } from "./SafemoonV3.sol";
 
 contract DiffFuzzInit is DiffFuzzUpgrades {
      constructor() {
