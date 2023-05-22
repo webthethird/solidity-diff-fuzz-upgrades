@@ -64,6 +64,7 @@ def run_echidna_campaign(proc: Popen, min_tests: int = 1) -> int:
             line = ""
         while line != "":
             try:
+                assert proc.stderr is not None
                 line = proc.stderr.readline()
                 print(line.strip())
             except UnsupportedOperation:
