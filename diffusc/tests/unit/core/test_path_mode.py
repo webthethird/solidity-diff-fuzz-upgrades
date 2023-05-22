@@ -1,5 +1,6 @@
 import os
 import sys
+from shutil import rmtree
 from pathlib import Path
 
 import pytest
@@ -108,6 +109,10 @@ def test_diffusc_path_run_mode() -> None:
     output_dir = os.path.join(TEST_DATA_DIR, "output")
     safemoon_dir = os.path.join(TEST_DATA_DIR, "safemoon")
     os.makedirs(output_dir, exist_ok=True)
+
+    # Remove the crytic-export directory if it exists
+    export_dir = Path(__file__).resolve().parent / "crytic-export"
+    rmtree(export_dir)
 
     args = [
         os.path.join(safemoon_dir, "SafemoonV2.sol"),
